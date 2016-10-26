@@ -1,0 +1,6 @@
+.pyc
+.o
+.obj
+build
+.swp
+__pycache__

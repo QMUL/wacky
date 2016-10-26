@@ -23,7 +23,7 @@ def new_data_block():
 
   _current_block = _current_block + 1
   
-  if _current_block >= len(_current_data_block):
+  if _current_block >= len(_integer_files):
     _current_block = 0
     _data_offset = 0
   else:
@@ -121,6 +121,9 @@ def read_integer_file(filepath):
 
 # Set the integer data files, reading the first into the buffer
 def set_integer_files(integer_files, size_files):
+
+  global _data_barriers
+  global _integer_files
 
   _integer_files = integer_files
 

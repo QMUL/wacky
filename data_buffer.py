@@ -1,5 +1,8 @@
 '''
-Data functions
+Data functions for Wacky parsed, ukWaC datasets. 
+Since these are so large, Wacky splits these up. We keep a global pointer
+to our dataset and move through the set, loading a new file when we need to.
+
 '''
 
 import os, collections, random
@@ -20,9 +23,12 @@ def new_data_block():
   global _current_data_block
   global _integer_files
   global _data_barriers
+  global _data_offset
+  global _data_index
 
   _current_block = _current_block + 1
   
+  print("Loading new block", _current_block, len(_integer_files), _data_index, _data_offset)
   if _current_block >= len(_integer_files):
     _current_block = 0
     _data_offset = 0
@@ -30,7 +36,7 @@ def new_data_block():
     _data_offset = _data_barriers[_current_block]
     read_integer_file(_integer_files[_current_block])
 
-
+# Called by Tensorflow to grab some more data
 def generate_batch( batch_size, num_skips, skip_window):
 
   global _data_index
@@ -49,7 +55,7 @@ def generate_batch( batch_size, num_skips, skip_window):
     offset = _data_index-_data_offset
     if offset >= len(_current_data_block) or offset < 0:
       new_data_block()
-      offset = _data_index -_data_offset
+      offset = _data_index-_data_offset
 
     bbuffer.append(_current_data_block[offset])
     _data_index = (_data_index + 1) % _total_size
@@ -68,7 +74,7 @@ def generate_batch( batch_size, num_skips, skip_window):
     offset = _data_index -_data_offset
     if offset >= len(_current_data_block) or offset < 0:
       new_data_block()
-      offset = _data_index -_data_offset
+      offset = _data_index-_data_offset
 
     bbuffer.append(_current_data_block[offset])
     _data_index = (_data_index + 1) % _total_size
@@ -76,7 +82,7 @@ def generate_batch( batch_size, num_skips, skip_window):
   return batch, labels
 
 
-
+# Read the dictionary file
 def read_dictionary(dict_path):
   
   dictionary = dict()
@@ -86,6 +92,7 @@ def read_dictionary(dict_path):
     size_dict = int(lines[0])
 
     for line in lines[1:]:
+      line = line.replace("\n","")
       dictionary[line] = len(dictionary)
 
   reverse_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
@@ -129,10 +136,12 @@ def set_integer_files(integer_files, size_files):
 
   # Set the barriers from the sizes
   offset = 0
-  with open(size_files[0], 'r') as f:
-    for line in f.readlines():
-      offset += int(line)
-      _data_barriers.append(offset)
+  _data_barriers.append(0)
+  for size_file in size_files:
+    with open(size_file, 'r') as f:
+      for line in f.readlines():
+        offset += int(line)
+        _data_barriers.append(offset)
 
   read_integer_file(integer_files[0])
 
@@ -154,11 +163,6 @@ def read_freq(freq_file, dict_size):
 
   print("Frequency Table Errors: ", errors)
 
-
-  # Modify with the vocab size
-  n = 10
-  print(c.most_common()[:-n-1:-1])
-      
   count = [['UNK', -1]]
   count.extend(c.most_common(dict_size))
   
@@ -179,3 +183,15 @@ def read_total_size(total_file):
     _total_size = int(f.readlines()[0])
 
   return _total_size
+
+# Return a random sentence from the current block
+def random_sentence():
+  global _current_data_block
+  
+  target = random.randint(0, len(_current_data_block) - 100)
+  
+  return _current_data_block[target:target+20]
+
+
+
+

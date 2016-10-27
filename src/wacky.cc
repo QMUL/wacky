@@ -36,28 +36,13 @@ using namespace boost::filesystem;
 using namespace boost::interprocess;
 
 // Our master map and set
-map<string, int> freq {};
-map<int,string> freq_flipped {};
+map<string, size_t> freq {};
+vector< pair<string,size_t> > freq_flipped {};
 set<string> word_ignores {",","-",".","<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
 unordered_map<string,int> dictionary_fast {};
 vector<string> dictionary {};
 
-const size_t VOCAB_SIZE = 500000; // Really more of a max
-
-// Functions for flipping the map
-
-template<typename A, typename B>
-std::pair<B,A> flip_pair(const std::pair<A,B> &p) {
-  return std::pair<B,A>(p.second, p.first);
-}
-
-template<typename A, typename B>
-std::map<B,A> flip_map(const std::map<A,B> &src){
-  std::map<B,A> dst;
-  std::transform(src.begin(), src.end(), std::inserter(dst, dst.begin()), flip_pair<A,B>);
-  return dst;
-}
-
+const size_t VOCAB_SIZE = 50000; // Really more of a max
 
 vector<string>::iterator find_in_dictionary(string s){
 
@@ -76,29 +61,34 @@ vector<string>::iterator find_in_dictionary(string s){
 
 }
 
+
+bool sort_freq (pair<string,size_t> i, pair<string, size_t> j) { return (i.second > j.second); }
+
 // Create a dictionary by flipping the freq around, taking the top VOCAB_SIZE 
 // and then sorting into alphabetical order
 
 int create_dictionary(){
   cout << "Creating Dictionary File" << endl;
 
-  freq_flipped = flip_map(freq);
-   
-  size_t idx = 0;
-  for (auto it = freq_flipped.rbegin(); it != freq_flipped.rend(); it++){
+  size_t idx = 0; 
 
-    dictionary.push_back(it->second);
+  for (auto it = freq.begin(); it != freq.end(); it++){
+    freq_flipped.push_back(*it);
+  }
+
+  std::sort(freq_flipped.begin(), freq_flipped.end(), sort_freq);
+
+  for (auto it = freq_flipped.begin(); it != freq_flipped.end(); it++) {
+    dictionary.push_back(it->first);
     idx++;
     if (idx >= VOCAB_SIZE){
       break;
     }  
   }
-
+ 
   std::sort(dictionary.begin(), dictionary.end());
 
-  // This is a bit annoying but we do it anyway
-  // We set the first thing to UNK without inserting - slightly naughty
-  dictionary[0] = string("UNK");
+  dictionary.push_back(string("UNK"));
   idx = 0;
   ofstream dictionary_file ("dictionary.txt");
   dictionary_file << s9::ToString(dictionary.size()) << endl;
@@ -159,7 +149,7 @@ int create_freq(vector<string> filenames) {
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
         mem += step;
-        while (*mem != '\n'){
+        while (*mem != '\n' && *mem != '\r'){
           mem++;
         }
         block_pointer[i] = mem;
@@ -191,17 +181,10 @@ int create_freq(vector<string> filenames) {
         int block_id = omp_get_thread_num();
         char *mem = block_pointer[block_id];
         string str;
-        //string filename = "words_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
-        
-        //ofstream words_file (filename);
-
-        //if (!words_file.is_open()) {
-        //  cout << "ERROR: Unable to up " << filename << " for writing." << endl;
-        //}
 
         for(std::size_t i = 0; i < block_size[block_id]; ++i){
           char data = *mem;
-          if (data != '\n'){
+          if (data != '\n' && data != '\r'){
             str += data;
           } else {
             // Can now look at the string and work on our freq
@@ -220,9 +203,9 @@ int create_freq(vector<string> filenames) {
                   }  else {
                     #pragma omp atomic 
                     freq[val] = freq[val] + 1;
+                    //#pragma omp critical
+                    //cout << val << endl;
                   }
-                  //#pragma omp critical
-                  //words_file << val << endl;
                 }
               }
             }
@@ -230,8 +213,7 @@ int create_freq(vector<string> filenames) {
           }
           mem++;
         }
-        //words_file.flush();
-        //words_file.close();
+      
       }
 
     } catch (interprocess_exception &ex) {
@@ -309,7 +291,7 @@ int create_integers(vector<string> filenames) {
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
         mem += step;
-        while (*mem != '\n'){
+        while (*mem != '\n' && *mem != '\r'){
           mem++;
         }
         block_pointer[i] = mem;
@@ -349,7 +331,7 @@ int create_integers(vector<string> filenames) {
 
         for(std::size_t i = 0; i < block_size[block_id]; ++i){
           char data = *mem;
-          if (data != '\n'){
+          if (data != '\n' && data != '\r'){
             str += data;
           } else {       
             // Can now look at the string and work on our freq
@@ -358,7 +340,7 @@ int create_integers(vector<string> filenames) {
               string val = s9::ToLower(tokens[0]);
               
               if (dictionary_fast.find(val) == dictionary_fast.end()){
-                int_file << s9::ToString(0) << endl;
+                int_file << s9::ToString(VOCAB_SIZE) << endl;
                 unk_count++; 
               } else {
                 int_file << s9::ToString( dictionary_fast[val] ) << endl;

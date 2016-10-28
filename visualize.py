@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def plot_with_labels(low_dim_embs, labels, filename='tsne.png'):
   assert low_dim_embs.shape[0] >= len(labels), "More labels than embeddings"
-  plt.figure(figsize=(18, 18))  #in inches
+  plt.figure(figsize=(36, 36))  #in inches
   for i, label in enumerate(labels):
     x, y = low_dim_embs[i,:]
     plt.scatter(x, y)

@@ -53,19 +53,19 @@ if __name__ == "__main__" :
   print("Top 100 words")
   print(count[:100]) 
 
-  batch_size = 256
-  embedding_size = 256  # Dimension of the embedding vector.
+  batch_size = 512
+  embedding_size = 512  # Dimension of the embedding vector.
   skip_window = 5       # How many words to consider left and right.
   num_skips = 2         # How many times to reuse an input to generate a label.
-  num_steps = 1000001
+  num_steps = 5000000
 
   # We pick a random validation set to sample nearest neighbors. Here we limit the
   # validation samples to the words that have a low numeric ID, which by
   # construction are also the most frequent.
-  valid_size = 16     # Random set of words to evaluate similarity on.
-  valid_window = 100  # Only pick dev samples in the head of the distribution.
+  valid_size = 32     # Random set of words to evaluate similarity on.
+  valid_window = 200  # Only pick dev samples in the head of the distribution.
   valid_examples = np.random.choice(valid_window, valid_size, replace=False)
-  num_sampled = 128    # Number of negative examples to sample.
+  num_sampled = 256    # Number of negative examples to sample.
 
   # Begin the Tensorflow Setup
 
@@ -168,8 +168,8 @@ if __name__ == "__main__" :
 
     final_embeddings = normalized_embeddings.eval()
 
-    tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
-    plot_only = 500
+    tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=8000)
+    plot_only = 2000
   
     # Find interesting words and their embeddings and use these
     offset = 0

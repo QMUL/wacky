@@ -138,6 +138,10 @@ int create_freq(vector<string> filenames) {
       void * addr = region.get_address();
       size_t size = region.get_size();
   
+#ifdef _WRITE_WORDS  
+      string filename = "words_" + s9::FilenameFromPath(filepath) + ".txt";
+      ofstream words_file (filename);
+#endif
 
       size_t step = size / num_blocks;
       cout << "Step Size " << step <<endl;
@@ -192,8 +196,14 @@ int create_freq(vector<string> filenames) {
             if (tokens.size() > 0) {
               string val = s9::ToLower(tokens[0]);
               if (s9::IsAsciiPrintableString(val)){
-                if (word_ignores.find(val) == word_ignores.end()){
-                  
+                if (word_ignores.find(val) == word_ignores.end()){  
+
+#ifdef _WRITE_WORDS
+                #pragma omp critical
+                words_file << val << " ";
+#endif
+
+
                   auto result = freq.find(val); 
                   if (result == freq.end()){
                     #pragma omp critical
@@ -203,8 +213,6 @@ int create_freq(vector<string> filenames) {
                   }  else {
                     #pragma omp atomic 
                     freq[val] = freq[val] + 1;
-                    //#pragma omp critical
-                    //cout << val << endl;
                   }
                 }
               }
@@ -216,6 +224,11 @@ int create_freq(vector<string> filenames) {
       
       }
 
+#ifdef _WRITE_WORDS
+      words_file.flush();
+      words_file.close();
+#endif
+
     } catch (interprocess_exception &ex) {
       fprintf(stderr, "Exception %s\n", ex.what());
       fflush(stderr);
@@ -225,6 +238,8 @@ int create_freq(vector<string> filenames) {
     // remove memory map ?
 
   }
+
+
 
   ofstream freq_file ("freq.txt");
   if (freq_file.is_open()) {

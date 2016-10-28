@@ -53,23 +53,23 @@ if __name__ == "__main__" :
   print("Top 100 words")
   print(count[:100]) 
 
-  batch_size = 512
-  embedding_size = 512  # Dimension of the embedding vector.
+  batch_size = 256
+  embedding_size = 768  # Dimension of the embedding vector.
   skip_window = 5       # How many words to consider left and right.
-  num_skips = 2         # How many times to reuse an input to generate a label.
-  num_steps = 5000000
+  num_skips = 4         # How many times to reuse an input to generate a label.
+  num_steps = 15000000   # Roughly 8 million steps to cover all of ukWaC
 
   # We pick a random validation set to sample nearest neighbors. Here we limit the
   # validation samples to the words that have a low numeric ID, which by
   # construction are also the most frequent.
   valid_size = 32     # Random set of words to evaluate similarity on.
-  valid_window = 200  # Only pick dev samples in the head of the distribution.
+  valid_window = 2000  # Only pick dev samples in the head of the distribution.
   valid_examples = np.random.choice(valid_window, valid_size, replace=False)
-  num_sampled = 256    # Number of negative examples to sample.
+  num_sampled = 128    # Number of negative examples to sample.
 
   # Begin the Tensorflow Setup
 
-  batch, labels = generate_batch(batch_size=8, num_skips=2, skip_window=1)
+  batch, labels = generate_batch(batch_size, num_skips, skip_window)
   
   for i in range(8):
     try:
@@ -108,6 +108,9 @@ if __name__ == "__main__" :
       # Compute the average NCE loss for the batch.
       # tf.nce_loss automatically draws a new sample of the negative labels each
       # time we evaluate the loss.
+
+      # tf.nn.sampled_softmax_loss() is another option
+
       loss = tf.reduce_mean(tf.nn.nce_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size))
       
       # Construct the SGD optimizer using a learning rate of 1.0.

@@ -33,6 +33,7 @@ INTEGER_DIR         = "./build"
 UNKNOWN_FILE        = "./build/unk_count.txt"
 TOTAL_FILE          = "./build/total_count.txt"
 OUT_DIR             = "."
+CHECKPOINT_DIR      = "./checkpoints"
 
 if __name__ == "__main__" :
 
@@ -57,8 +58,9 @@ if __name__ == "__main__" :
   embedding_size = 768  # Dimension of the embedding vector.
   skip_window = 5       # How many words to consider left and right.
   num_skips = 4         # How many times to reuse an input to generate a label.
-  num_steps = 15000000   # Roughly 8 million steps to cover all of ukWaC
-
+  num_steps = 15000000  # Roughly 8 million steps to cover all of ukWaC
+   
+  #num_steps = 1000  # Roughly 8 million steps to cover all of ukWaC
   # We pick a random validation set to sample nearest neighbors. Here we limit the
   # validation samples to the words that have a low numeric ID, which by
   # construction are also the most frequent.
@@ -79,17 +81,18 @@ if __name__ == "__main__" :
 
   graph = tf.Graph()
 
+  checkpoint_file = tf.train.latest_checkpoint(CHECKPOINT_DIR)
   # Setup the Tensorflow Graph itself
 
   with graph.as_default():
     # Input data.
-    train_inputs = tf.placeholder(tf.int32, shape=[batch_size])
-    train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1])
-    valid_dataset = tf.constant(valid_examples, dtype=tf.int32)
+    train_inputs = tf.placeholder(tf.int32, shape=[batch_size], name="inputs")
+    train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1], name="labels")
+    valid_dataset = tf.constant(valid_examples, dtype=tf.int32, name="valid_dataset")
 
     with tf.device("/cpu:0"):
       # Look up embeddings for inputs.
-      embeddings = tf.Variable(tf.random_uniform([vocabulary_size, embedding_size], -1.0, 1.0))
+      embeddings = tf.Variable(tf.random_uniform([vocabulary_size, embedding_size], -1.0, 1.0), name="embeddings")
       embed = tf.nn.embedding_lookup(embeddings, train_inputs)
       
       # Save progress
@@ -99,38 +102,46 @@ if __name__ == "__main__" :
       if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
-      saver = tf.train.Saver(tf.all_variables())
-      
       # Construct the variables for the NCE loss
       nce_weights = tf.Variable(tf.truncated_normal([vocabulary_size, embedding_size],stddev=1.0 / math.sqrt(embedding_size)))
-      nce_biases = tf.Variable(tf.zeros([vocabulary_size]))
+      nce_biases = tf.Variable(tf.zeros([vocabulary_size]),name="biases")
 
       # Compute the average NCE loss for the batch.
       # tf.nce_loss automatically draws a new sample of the negative labels each
       # time we evaluate the loss.
 
-      # tf.nn.sampled_softmax_loss() is another option
+      loss = tf.reduce_mean(tf.nn.sampled_softmax_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size), name="loss")
 
-      loss = tf.reduce_mean(tf.nn.nce_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size))
+      #loss = tf.reduce_mean(tf.nn.nce_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size))
       
       # Construct the SGD optimizer using a learning rate of 1.0.
-      optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss)
+      optimizer = tf.train.GradientDescentOptimizer(1.0, name='optimizer').minimize(loss)
 
       # Compute the cosine similarity between minibatch examples and all embeddings.
       norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
       normalized_embeddings = embeddings / norm
       valid_embeddings = tf.nn.embedding_lookup(normalized_embeddings, valid_dataset)
-      similarity = tf.matmul(valid_embeddings, normalized_embeddings, transpose_b=True)
-
+      similarity = tf.matmul(valid_embeddings, normalized_embeddings, transpose_b=True, name="similarity")
+ 
+      saver = tf.train.Saver()
+      
       # Add variable initializer.
       init = tf.initialize_all_variables()
 
   # Step 5: Begin training.
-
+  
   with tf.Session(graph=graph) as session:
     # We must initialize all variables before we use them.
     init.run()
     print("Initialized")
+
+    ckpt = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
+    if ckpt and ckpt.model_checkpoint_path:
+      print(ckpt.model_checkpoint_path)
+      saver.restore(session,ckpt.model_checkpoint_path) 
+      print ("reloaded session")
+    else:
+      print ("Could not loaded checkpoint for some reason")
 
     average_loss = 0
     for step in xrange(num_steps):
@@ -151,7 +162,7 @@ if __name__ == "__main__" :
         average_loss = 0
 
       # Note that this is expensive (~20% slowdown if computed every 500 steps)
-      if step % 10000 == 0:
+      if step % 100000 == 0:
         sim = similarity.eval()
         for i in xrange(valid_size):
           valid_word = reverse_dictionary[valid_examples[i]]
@@ -166,10 +177,13 @@ if __name__ == "__main__" :
               print("Problem in closelookup", k)
           print(log_str)
 
+      if step % 10000 == 0:
         path = saver.save(session, checkpoint_prefix, global_step=step)
         print("Saved model checkpoint to {}\n".format(path))
 
     final_embeddings = normalized_embeddings.eval()
+
+    np.save("final_embeddings", final_embeddings)
 
     tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=8000)
     plot_only = 2000
@@ -183,5 +197,5 @@ if __name__ == "__main__" :
       labels.append(word[0])
 
     low_dim_embs = tsne.fit_transform(useful_embeddings)
-    plot_with_labels(low_dim_embs, labels)
+    plot_with_labels( low_dim_embs, labels, filename="tsne.png")
 

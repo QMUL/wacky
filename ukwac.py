@@ -14,7 +14,7 @@ import math
 import os
 import random
 import zipfile
-
+import sys
 import numpy as np
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
@@ -27,29 +27,31 @@ from data_buffer import read_dictionary, find_integer_files, set_integer_files, 
 from visualize import plot_with_labels
 
 # Options and config
-DICTIONARY_FILE     = "./build/dictionary.txt"
-FREQ_FILE           = "./build/freq.txt"
-INTEGER_DIR         = "./build"
-UNKNOWN_FILE        = "./build/unk_count.txt"
-TOTAL_FILE          = "./build/total_count.txt"
+DICTIONARY_FILE     = "dictionary.txt"
+FREQ_FILE           = "freq.txt"
+INTEGER_DIR         = "."
+UNKNOWN_FILE        = "unk_count.txt"
+TOTAL_FILE          = "total_count.txt"
 OUT_DIR             = "."
-CHECKPOINT_DIR      = "./checkpoints"
+CHECKPOINT_DIR      = "checkpoints"
 
 if __name__ == "__main__" :
+
+  BASE_DIR = sys.argv[1] + "/"
 
   # Read all the config options and perform setup
 
   print("Reading dictionary")
-  dictionary, reverse_dictionary, vocabulary_size = read_dictionary(DICTIONARY_FILE) 
-  data_files, size_files = find_integer_files(INTEGER_DIR)
-  count = read_freq(FREQ_FILE, vocabulary_size)
-  count[0][1] = read_unk_count(UNKNOWN_FILE)
+  dictionary, reverse_dictionary, vocabulary_size = read_dictionary(BASE_DIR + DICTIONARY_FILE) 
+  data_files, size_files = find_integer_files(BASE_DIR + INTEGER_DIR)
+  count = read_freq(BASE_DIR + FREQ_FILE, vocabulary_size)
+  count[0][1] = read_unk_count(BASE_DIR + UNKNOWN_FILE)
 
   print("Reading integer data files")
   set_integer_files(data_files, size_files)
   
   print("Reading total data size")
-  data_size = read_total_size(TOTAL_FILE)
+  data_size = read_total_size(BASE_DIR + TOTAL_FILE)
 
   print("Top 100 words")
   print(count[:100]) 
@@ -81,7 +83,7 @@ if __name__ == "__main__" :
 
   graph = tf.Graph()
 
-  checkpoint_file = tf.train.latest_checkpoint(CHECKPOINT_DIR)
+  checkpoint_file = tf.train.latest_checkpoint(BASE_DIR + CHECKPOINT_DIR)
   # Setup the Tensorflow Graph itself
 
   with graph.as_default():
@@ -96,7 +98,7 @@ if __name__ == "__main__" :
       embed = tf.nn.embedding_lookup(embeddings, train_inputs)
       
       # Save progress
-      checkpoint_dir = os.path.abspath(os.path.join(OUT_DIR, "checkpoints"))
+      checkpoint_dir = os.path.abspath(os.path.join(BASE_DIR + OUT_DIR, "checkpoints"))
       checkpoint_prefix = os.path.join(checkpoint_dir, "model")
       
       if not os.path.exists(checkpoint_dir):
@@ -135,7 +137,7 @@ if __name__ == "__main__" :
     init.run()
     print("Initialized")
 
-    ckpt = tf.train.get_checkpoint_state(CHECKPOINT_DIR)
+    ckpt = tf.train.get_checkpoint_state(BASE_DIR + CHECKPOINT_DIR)
     if ckpt and ckpt.model_checkpoint_path:
       print(ckpt.model_checkpoint_path)
       saver.restore(session,ckpt.model_checkpoint_path) 
@@ -197,5 +199,5 @@ if __name__ == "__main__" :
       labels.append(word[0])
 
     low_dim_embs = tsne.fit_transform(useful_embeddings)
-    plot_with_labels( low_dim_embs, labels, filename="tsne.png")
+    plot_with_labels( low_dim_embs, labels, filename=BASE_DIR + "tsne.png")
 

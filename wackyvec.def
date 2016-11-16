@@ -1,0 +1,65 @@
+DistType: debian
+MirrorURL: http://archive.ubuntu.com/ubuntu/
+OSVersion: trusty
+BootStrap: debootstrap
+
+%runscript
+    export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+    export CUDA_HOME=/usr/local/cuda
+    export PATH=/usr/lib/x86_64-linux-gnu:$PATH
+    echo $LD_LIBRARY_PATH
+    echo "Running Ubuntu Trusty WackyVec"
+    cd /wacky
+    python3 ukwac.py /data
+
+%setup
+    mkdir -p $SINGULARITY_ROOTFS/data
+    mkdir -p $SINGULARITY_ROOTFS/wacky
+    mkdir -p $SINGULARITY_ROOTFS/cuda
+    cp ukwac.py $SINGULARITY_ROOTFS/wacky
+    cp data_buffer.py $SINGULARITY_ROOTFS/wacky
+    cp visualize.py $SINGULARITY_ROOTFS/wacky
+    cp /usr/lib/x86_64-linux-gnu/libcuda.so.367.57 $SINGULARITY_ROOTFS/usr/lib/x86_64-linux-gnu/.
+    cp /usr/lib/x86_64-linux-gnu/libcudnn.so.5 $SINGULARITY_ROOTFS/usr/lib/x86_64-linux-gnu/.
+    cp -r /usr/local/cuda-8.0 $SINGULARITY_ROOTFS/usr/local/    
+    cp /usr/bin/nvidia-smi $SINGULARITY_ROOTFS/usr/bin/.
+    cp /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.367.57 $SINGULARITY_ROOTFS/usr/lib/x86_64-linux-gnu/.
+    cp /usr/lib/x86_64-linux-gnu/libnvidia-fatbinaryloader.so.367.57 $SINGULARITY_ROOTFS/usr/lib/x86_64-linux-gnu/libnvidia-fatbinaryloader.so.367.57
+    cp /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.367.57 $SINGULARITY_ROOTFS/usr/lib/x86_64-linux-gnu/.
+    cp /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.367.57 $SINGULARITY_ROOTFS/usr/lib/x86_64-linux-gnu/.
+    cp /usr/lib/x86_64-linux-gnu/libnvcuvid.so.367.57 $SINGULARITY_ROOTFS/usr/lib/x86_64-linux-gnu/.
+
+%post
+    echo "Hello from inside WackyVec"
+    
+    echo "deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse" >> /etc/apt/sources.list
+    echo "deb http://archive.ubuntu.com/ubuntu trusty-backports main universe multiverse" >> /etc/apt/sources.list
+    apt-get update
+    apt-get -y install vim
+    apt-get -y install python3-tk pkg-config libfreetype6-dev libpng12-dev gfortran liblapack3 liblapack-dev libatlas-base-dev libblas3 libblas-dev python-pip python-dev python3-dev python-setuptools python3-setuptools python3-pip
+    
+    apt-get install -y libxi-dev libxmu-dev freeglut3-dev build-essential binutils-gold nvidia-modprobe
+    cd /cuda
+
+    ln -sf /usr/local/cuda-8.0 /usr/local/cuda
+    ln -sf /usr/lib/x86_64-linux-gnu/libcuda.so.367.57 /usr/lib/x86_64-linux-gnu/libcuda.so.1
+    ln -sf /usr/lib/x86_64-linux-gnu/libcuda.so.1 /usr/lib/x86_64-linux-gnu/libcuda.so
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.367.57 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.367.57 /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.1
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.367.57 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvcuvid.so.367.57 /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1
+    ln -sf /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/libnvcuvid.so
+
+
+    export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+    export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow-0.11.0rc2-cp34-cp34m-linux_x86_64.whl
+    pip3 install --upgrade $TF_BINARY_URL
+    pip3 install scipy scikit-learn numpy matplotlib
+
+    cd /usr/local/cuda/samples/0_Simple/clock/
+    make
+    cd /usr/local/cuda/samples/0_Simple/matrixMul/
+    make 

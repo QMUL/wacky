@@ -18,7 +18,7 @@ import sys
 import numpy as np
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
-from sklearn.manifold import TSNE
+
 
 import tensorflow as tf
 
@@ -38,6 +38,7 @@ CHECKPOINT_DIR      = "checkpoints"
 if __name__ == "__main__" :
 
   BASE_DIR = sys.argv[1] + "/"
+  print(BASE_DIR)
 
   # Read all the config options and perform setup
 
@@ -187,17 +188,4 @@ if __name__ == "__main__" :
 
     np.save("final_embeddings", final_embeddings)
 
-    tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=8000)
-    plot_only = 2000
-  
-    # Find interesting words and their embeddings and use these
-    offset = 0
-    useful_embeddings = []
-    labels = []
-    for word in count[offset:offset+plot_only]:  
-      useful_embeddings.append( final_embeddings[ dictionary[ word[0]] ])
-      labels.append(word[0])
-
-    low_dim_embs = tsne.fit_transform(useful_embeddings)
-    plot_with_labels( low_dim_embs, labels, filename=BASE_DIR + "tsne.png")
 

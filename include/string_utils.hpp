@@ -104,7 +104,7 @@ namespace s9 {
     size_t end = 0;
     std::vector<std::string> tokens;
     
-    auto w = []( char ch ) { return std::isspace<char>( ch, std::locale::classic() ); };
+    auto w = []( char ch ) { return isspace( ch ); };
 
     while (end < input.length()) {
          
@@ -137,6 +137,25 @@ namespace s9 {
       tokens.push_back(input.substr( current, next - current ));
     } while (next != std::string::npos);
     return tokens;
+  }
+
+
+  static inline std::vector<std::string> SplitStringNewline(const std::string& input) {
+    size_t current;
+    size_t next = -1;
+    size_t next0, next1;
+    std::vector<std::string> tokens;
+    do {
+      current = next + 1;
+      next0 = input.find('\n', current);
+      next1 = input.find('\r', current);
+      
+      next = next0 < next1 ? next0 : next1;
+      
+      tokens.push_back(input.substr( current, next - current ));
+    } while (next != std::string::npos);
+    return tokens;
+
   }
 
   static inline bool StringContains (const std::string& input, const std::string& contains){

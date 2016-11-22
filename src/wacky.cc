@@ -1,12 +1,12 @@
 /**
  * A small program that pre-processes the ukWaC dataset for reading in python
  * 
- * It creates 4 sets of files from ukWaC
+ * It creates 5 sets of files from ukWaC
  * 1) A Vocab / Frequency file that lists the frequency of all tokens - word, freq\n - freq.txt
  * 2) A dictionary of VOCAB_SIZE words in alphabetical order - word\n - dictionary.txt
  * 3) A set of files that form the sentences, one word per line
  * 4) A set of files that form the sentences with integer lookups into the dictionary 
- * 
+ * 5) A relationship file that lists the subjects of every verb
  * We remove any characters outside the ascii range. I believe ukWaC uses an annoying windows codec?
  *
  *
@@ -41,6 +41,7 @@ vector< pair<string,size_t> > freq_flipped {};
 set<string> word_ignores {",","-",".","<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
 unordered_map<string,int> dictionary_fast {};
 vector<string> dictionary {};
+vector< vector<int> > verb_subjects;
 
 const size_t VOCAB_SIZE = 50000; // Really more of a max
 
@@ -146,16 +147,26 @@ int create_freq(vector<string> filenames) {
       size_t step = size / num_blocks;
       cout << "Step Size " << step <<endl;
 
-      // Set the starting positions and the sizes, by finding the nearest newline
+      // Set the starting positions and the sizes, by finding the nearest end sentence marker
       // that occurs after the guessed block border. This likely means the last block
       // will be the smallest
+      
+      std::string ssm = "0000";
+      int sc = 0;
+
       block_pointer[0] = static_cast<char*>(addr);
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
         mem += step;
-        while (*mem != '\n' && *mem != '\r'){
+        while (ssm.compare("</s>") != 0){
+          ssm[sc] = *mem;
           mem++;
+          sc++;
+          if (sc > 3){
+            sc = 0;
+          }
         }
+        
         block_pointer[i] = mem;
       }
   
@@ -199,11 +210,9 @@ int create_freq(vector<string> filenames) {
                 if (word_ignores.find(val) == word_ignores.end()){  
 
 #ifdef _WRITE_WORDS
-                #pragma omp critical
-                words_file << val << " ";
+                  #pragma omp critical
+                  words_file << val << " ";
 #endif
-
-
                   auto result = freq.find(val); 
                   if (result == freq.end()){
                     #pragma omp critical
@@ -234,12 +243,8 @@ int create_freq(vector<string> filenames) {
       fflush(stderr);
       return 1;
     }
-
     // remove memory map ?
-
   }
-
-
 
   ofstream freq_file ("freq.txt");
   if (freq_file.is_open()) {
@@ -302,16 +307,25 @@ int create_integers(vector<string> filenames) {
       // Set the starting positions and the sizes, by finding the nearest newline
       // that occurs after the guessed block border. This likely means the last block
       // will be the smallest
+      std::string ssm = "0000";
+      int sc = 0;
+
       block_pointer[0] = static_cast<char*>(addr);
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
         mem += step;
-        while (*mem != '\n' && *mem != '\r'){
+        while (ssm.compare("</s>") != 0){
+          ssm[sc] = *mem;
           mem++;
-        }
+          sc++;
+          if (sc > 3){
+            sc = 0;
+          }
+        }  
         block_pointer[i] = mem;
       }
-  
+
+
       size_t csize = 0;
       for (int i = 0; i < num_blocks-1; ++i) {
         block_size[i] = block_pointer[i+1] - block_pointer[i];
@@ -408,6 +422,201 @@ int create_integers(vector<string> filenames) {
   return 0;
 }
 
+// This function will read everything within the sentence tags, creating a file that links 
+// verbs to objects via the dictionary
+int create_verb_subject(vector<string> filenames) {
+  cout << "Creating Verb Subject" << endl;
+
+  size_t unk_count = 0;
+  size_t total_count = 0;
+
+  // Scan directory for the files
+  for( string filepath : filenames) {
+    int num_blocks =1; 
+      
+    #pragma omp parallel
+    {
+      num_blocks = omp_get_num_threads();
+    }
+  
+    char * block_pointer[num_blocks];
+    size_t block_size[num_blocks];
+    cout << "Num Blocks: " << num_blocks << endl;
+
+    // Problem with memory-mapped files is we need the number of line
+    // endings in order to split the file for OpenMP processing on the same
+    // file. Using one thread per file is probably easier. 
+    //
+    // OR we could just move the pointers within the file backwards till we hit
+    // a newline and set it there. That would probably be quite easy
+
+    try {
+
+      file_mapping m_file(filepath.c_str(), read_only);
+      mapped_region region(m_file, read_only);  
+
+      void * addr = region.get_address();
+      size_t size = region.get_size();
+  
+      size_t step = size / num_blocks;
+      cout << "Step Size " << step <<endl;
+
+      // Set the starting positions and the sizes, by finding the nearest newline
+      // that occurs after the guessed block border. This likely means the last block
+      // will be the smallest
+      std::string ssm = "0000";
+      int sc = 0;
+
+      block_pointer[0] = static_cast<char*>(addr);
+      char *mem = static_cast<char*>(addr);
+      for (int i=1; i < num_blocks; ++i) {
+        mem += step;
+        while (ssm.compare("</s>") != 0){
+          ssm[sc] = *mem;
+          mem++;
+          sc++;
+          if (sc > 3){
+            sc = 0;
+          }
+        }  
+        block_pointer[i] = mem;
+      }
+
+
+      size_t csize = 0;
+      for (int i = 0; i < num_blocks-1; ++i) {
+        block_size[i] = block_pointer[i+1] - block_pointer[i];
+        csize += block_size[i];
+      }
+
+      if (num_blocks > 1){
+        block_size[num_blocks-1] = size - csize;
+      } else {
+        block_size[0] = size;
+      }
+
+      cout << "Block Sizes: " << endl;
+      for (int i = 0; i < num_blocks; ++i) {
+        cout << i << " " <<  block_size[i] << endl;
+      }
+
+      // Progress basically
+      size_t progress = 0;
+
+      #pragma omp parallel
+      {   
+        int block_id = omp_get_thread_num();
+        char *mem = block_pointer[block_id];
+        size_t file_count = 0;
+        std::string str;
+        std::string ssmt = "0000";
+        int sct = 0;
+
+        for(std::size_t i = 0; i < block_size[block_id]; ++i){
+          char data = *mem;
+          
+          if (ssmt.compare("</s>") != 0){
+            str += data;
+            ssmt[sct] = data;
+            sct++;
+          
+            if (sct>3){
+              sct = 0;
+            }
+          } else {       
+            // Can now look at the string and work on our freq
+            
+            vector<string> lines = s9::SplitStringNewline(str);
+
+            for (std::string line : lines){
+
+              vector<string> tokens = s9::SplitStringWhitespace(line);  
+              if (tokens.size() > 5) {
+                string val = s9::ToLower(tokens[0]);
+                
+                if (s9::StringContains(tokens[2],"V") ){
+                  // Hunt for the subject 
+                  int stepping = s9::FromString<int>(tokens[3]);
+                  bool searching = true;
+
+                  while (searching && tokens.size() > 5){
+                    if ( s9::StringContains(lines[stepping], "SBJ")){
+                      std::string sbj = tokens[0];
+                       
+                      auto vidx = dictionary_fast.find(val); 
+                      if (vidx != dictionary_fast.end()){
+                        auto widx = dictionary_fast.find(sbj);
+                        if (widx != dictionary_fast.end()){
+                          //#pragma omp critical
+                          verb_subjects[vidx->second].push_back(widx->second);
+                        }
+                      }
+
+                    } else {
+                      stepping = s9::FromString<int>(tokens[4]);
+
+                      // Annoyingly we have to search the entire list of lines for the
+                      // correct step as its not been properly ordered inside ukWaC.
+                      bool found = false;
+                      for (int i=0; i < lines.size(); ++i){
+                        tokens = s9::SplitStringWhitespace(lines[i]);
+                        if (tokens.size() > 5) {
+                          if (s9::FromString<int>(tokens[3]) == stepping){
+                            found = true;
+                            break;
+                          }
+                        } else {
+                          break;
+                        }
+                      }
+                      searching = found;
+                    }     
+                  }
+                }
+              }
+            } 
+
+            str = "";
+          }
+          mem++;
+
+          // Progress output to console
+          #pragma omp critical
+          {
+            progress +=1;
+            cout << "Progress " << static_cast<float>(progress) / static_cast<float>(size) << '\r';
+          }
+        }    
+      }
+
+    } catch (interprocess_exception &ex) {
+      fprintf(stderr, "Exception %s\n", ex.what());
+      fflush(stderr);
+      return 1;
+    }
+  }
+
+  // Write out the subject file as lines of numbers.
+  // First number is the verb. All following numbers are the subjects
+  string filename = "subjects.txt";
+  ofstream sub_file (filename);
+  int idv = 0;
+  for (vector<int> verbs : verb_subjects){
+    if (verbs.size() > 0 ){
+      sub_file << s9::ToString(idv) << " ";
+      for (int sb : verbs){
+        sub_file << s9::ToString(sb) << " ";
+      }
+      sub_file << endl;
+    }
+    idv++;
+  }
+  
+  sub_file.close();
+
+  return 0;
+}
+
 
 int main(int argc, char* argv[]) {
 
@@ -438,9 +647,15 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Initialise our verb to subject map
+  for (int i = 0; i < VOCAB_SIZE+1; ++i) {
+    verb_subjects.push_back( vector<int>() );
+  }
+
 
   if (create_freq(filenames) != 0) { return 1; }
   if (create_dictionary() != 0) { return 1; }
-  if (create_integers(filenames) != 0) { return 1; }
+  if (create_verb_subject(filenames) != 0) { return 1; }
+  //if (create_integers(filenames) != 0) { return 1; }
   return 0;
 }

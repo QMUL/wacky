@@ -39,7 +39,7 @@ using namespace boost::interprocess;
 map<string, size_t> freq {};
 vector< pair<string,size_t> > freq_flipped {};
 set<string> word_ignores {",","-",".","<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
-unordered_map<string,int> dictionary_fast {};
+map<string,int> dictionary_fast {};
 vector<string> dictionary {};
 vector< vector<int> > verb_subjects;
 
@@ -91,7 +91,7 @@ int create_dictionary(){
 
   dictionary.push_back(string("UNK"));
   idx = 0;
-  ofstream dictionary_file ("dictionary.txt");
+  std::ofstream dictionary_file ("dictionary.txt");
   dictionary_file << s9::ToString(dictionary.size()) << endl;
   for (auto it : dictionary){
     dictionary_file << it << endl;
@@ -141,7 +141,7 @@ int create_freq(vector<string> filenames) {
   
 #ifdef _WRITE_WORDS  
       string filename = "words_" + s9::FilenameFromPath(filepath) + ".txt";
-      ofstream words_file (filename);
+      std::ofstream words_file (filename);
 #endif
 
       size_t step = size / num_blocks;
@@ -246,7 +246,7 @@ int create_freq(vector<string> filenames) {
     // remove memory map ?
   }
 
-  ofstream freq_file ("freq.txt");
+  std::ofstream freq_file ("freq.txt");
   if (freq_file.is_open()) {
     freq_file << s9::ToString(freq.size()) << endl;
     for (auto it = freq.begin(); it != freq.end(); ++it) {
@@ -352,7 +352,7 @@ int create_integers(vector<string> filenames) {
 
         string filename = "integers_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
         
-        ofstream int_file (filename);
+        std::ofstream int_file (filename);
 
         if (!int_file.is_open()) {
           cout << "ERROR: Unable to up " << filename << " for writing." << endl;
@@ -386,7 +386,7 @@ int create_integers(vector<string> filenames) {
         int_file.close();
 
         filename = "size_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
-        ofstream size_file (filename);
+        std::ofstream size_file (filename);
         size_file << s9::ToString(file_count) << endl;
         size_file.close();
 
@@ -399,7 +399,7 @@ int create_integers(vector<string> filenames) {
     }
   }
 
-  ofstream unk_file ("unk_count.txt");
+  std::ofstream unk_file ("unk_count.txt");
   if (unk_file.is_open()) {
     unk_file << s9::ToString(unk_count) << endl;
     unk_file.close();
@@ -408,7 +408,7 @@ int create_integers(vector<string> filenames) {
     return 1;
   }
 
-  ofstream total_file ("total_count.txt");
+  std::ofstream total_file ("total_count.txt");
   if (total_file.is_open()) {
     total_file << s9::ToString(total_count) << endl;
     total_file.close();
@@ -512,6 +512,14 @@ int create_verb_subject(vector<string> filenames) {
         std::string ssmt = "0000";
         int sct = 0;
 
+        //string filename = "subjects_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
+        
+        //std::ofstream sub_file (filename);
+
+        //if (!sub_file.is_open()) {
+        //  cout << "ERROR: Unable to up " << filename << " for writing." << endl;
+        //}
+
         for(std::size_t i = 0; i < block_size[block_id]; ++i){
           char data = *mem;
           
@@ -524,69 +532,78 @@ int create_verb_subject(vector<string> filenames) {
               sct = 0;
             }
           } else {       
-            // Can now look at the string and work on our freq
-            
+            // Can now look at the sentence, derive its structure and find the bits we need
+          
+
             vector<string> lines = s9::SplitStringNewline(str);
 
-            for (std::string line : lines){
-
-              vector<string> tokens = s9::SplitStringWhitespace(line);  
+            for (int i = 0; i < lines.size(); ++i){
+              vector<string> tokens = s9::SplitStringWhitespace(lines[i]);  
               if (tokens.size() > 5) {
-                string val = s9::ToLower(tokens[0]);
-                
-                if (s9::StringContains(tokens[2],"V") ){
-                  // Hunt for the subject 
-                  int stepping = s9::FromString<int>(tokens[3]);
-                  bool searching = true;
+              
+                // Find the Subjects
+                if (s9::StringContains(tokens[5],"SBJ")  && s9::StringContains(tokens[2],"NN")){
+                  // Follow the chain to the root, stopping when we hit a verb
+                 
+                  int target = s9::FromString<int>(tokens[4]);
+                  string sbj = s9::ToLower(tokens[0]);
+                  auto vidx = dictionary_fast.find(sbj); 
 
-                  while (searching && tokens.size() > 5){
-                    if ( s9::StringContains(lines[stepping], "SBJ")){
-                      std::string sbj = tokens[0];
-                       
-                      auto vidx = dictionary_fast.find(val); 
-                      if (vidx != dictionary_fast.end()){
-                        auto widx = dictionary_fast.find(sbj);
-                        if (widx != dictionary_fast.end()){
-                          //#pragma omp critical
-                          verb_subjects[vidx->second].push_back(widx->second);
-                        }
-                      }
+                  if (vidx != dictionary_fast.end()){
+                    // Walk up the tree adding verbs till we get to root
 
-                    } else {
-                      stepping = s9::FromString<int>(tokens[4]);
-
-                      // Annoyingly we have to search the entire list of lines for the
-                      // correct step as its not been properly ordered inside ukWaC.
-                      bool found = false;
-                      for (int i=0; i < lines.size(); ++i){
-                        tokens = s9::SplitStringWhitespace(lines[i]);
-                        if (tokens.size() > 5) {
-                          if (s9::FromString<int>(tokens[3]) == stepping){
-                            found = true;
+                    while (target != 0){
+                      
+                      // find the next line (we cant assume the indexing is perfect)
+                      int tt = -1;
+                      for (int j = 0; j < lines.size(); ++j){
+                        vector<string> ttokens = s9::SplitStringWhitespace(lines[j]);
+                        if (ttokens.size() > 5){
+                          if (s9::FromString<int>(ttokens[3]) == target){
+                            tt = j;
                             break;
                           }
-                        } else {
-                          break;
                         }
                       }
-                      searching = found;
-                    }     
-                  }
+                      
+                      if (tt == -1){
+                        break;
+                      }
+
+                      vector<string> tokens2 = s9::SplitStringWhitespace(lines[tt]); 
+                      if (tokens2.size() > 5) {
+                        target = s9::FromString<int>(tokens2[4]);
+                        if (s9::StringContains(tokens2[5],"V")){
+                         
+                          string verb = s9::ToLower(tokens2[0]);
+                          
+                          auto widx = dictionary_fast.find(verb);
+                          if (widx != dictionary_fast.end()){
+                            verb_subjects[widx->second].push_back(vidx->second);
+                            target = 0; // Just record the one direct verb 
+                          }
+                        }
+                      } else {
+                        // We got a duff line so quit
+                        target = 0;
+                      }
+                    }
+                  } 
                 }
               }
-            } 
-
+            }         
             str = "";
           }
           mem++;
 
           // Progress output to console
-          #pragma omp critical
-          {
-            progress +=1;
-            cout << "Progress " << static_cast<float>(progress) / static_cast<float>(size) << '\r';
-          }
-        }    
+          //#pragma omp critical
+          //{
+          //  progress +=1;
+          //  cout << "Progress " << static_cast<float>(progress) / static_cast<float>(size) << '\r';
+          //}
+        }
+        // sub_file.close();
       }
 
     } catch (interprocess_exception &ex) {
@@ -599,7 +616,7 @@ int create_verb_subject(vector<string> filenames) {
   // Write out the subject file as lines of numbers.
   // First number is the verb. All following numbers are the subjects
   string filename = "subjects.txt";
-  ofstream sub_file (filename);
+  std::ofstream sub_file (filename);
   int idv = 0;
   for (vector<int> verbs : verb_subjects){
     if (verbs.size() > 0 ){
@@ -648,7 +665,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Initialise our verb to subject map
-  for (int i = 0; i < VOCAB_SIZE+1; ++i) {
+  for (int i = 0; i <= VOCAB_SIZE; ++i) {
     verb_subjects.push_back( vector<int>() );
   }
 

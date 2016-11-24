@@ -152,21 +152,19 @@ int create_freq(vector<string> filenames) {
       // will be the smallest
       
       std::string ssm = "0000";
-      int sc = 0;
 
       block_pointer[0] = static_cast<char*>(addr);
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
         mem += step;
         while (ssm.compare("</s>") != 0){
-          ssm[sc] = *mem;
+        	ssm[0] = ssm[1];
+        	ssm[1] = ssm[2];
+        	ssm[2] = ssm[3];
+					ssm[3] = *mem;
           mem++;
-          sc++;
-          if (sc > 3){
-            sc = 0;
-          }
-        }
-        
+				}
+       	ssm = "0000"; 
         block_pointer[i] = mem;
       }
   
@@ -308,20 +306,20 @@ int create_integers(vector<string> filenames) {
       // that occurs after the guessed block border. This likely means the last block
       // will be the smallest
       std::string ssm = "0000";
-      int sc = 0;
 
       block_pointer[0] = static_cast<char*>(addr);
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
         mem += step;
         while (ssm.compare("</s>") != 0){
-          ssm[sc] = *mem;
+					ssm[0] = ssm[1];
+					ssm[1] = ssm[2];
+          ssm[2] = ssm[3];
+					ssm[3] = *mem;
           mem++;
-          sc++;
-          if (sc > 3){
-            sc = 0;
-          }
-        }  
+          
+        }
+				ssm = "0000"; 
         block_pointer[i] = mem;
       }
 
@@ -465,20 +463,19 @@ int create_verb_subject(vector<string> filenames) {
       // that occurs after the guessed block border. This likely means the last block
       // will be the smallest
       std::string ssm = "0000";
-      int sc = 0;
 
       block_pointer[0] = static_cast<char*>(addr);
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
         mem += step;
         while (ssm.compare("</s>") != 0){
-          ssm[sc] = *mem;
+        	ssm[0] = ssm[1];
+        	ssm[1] = ssm[2];
+        	ssm[2] = ssm[3];
+					ssm[3] = *mem;
           mem++;
-          sc++;
-          if (sc > 3){
-            sc = 0;
-          }
         }  
+				ssm = "0000";
         block_pointer[i] = mem;
       }
 
@@ -508,9 +505,8 @@ int create_verb_subject(vector<string> filenames) {
         int block_id = omp_get_thread_num();
         char *mem = block_pointer[block_id];
         size_t file_count = 0;
-        std::string str;
+        std::string str_buffer;
         std::string ssmt = "0000";
-        int sct = 0;
 
         //string filename = "subjects_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
         
@@ -522,38 +518,40 @@ int create_verb_subject(vector<string> filenames) {
 
         for(std::size_t i = 0; i < block_size[block_id]; ++i){
           char data = *mem;
-          
           if (ssmt.compare("</s>") != 0){
-            str += data;
-            ssmt[sct] = data;
-            sct++;
-          
-            if (sct>3){
-              sct = 0;
-            }
+            str_buffer += data;
+            
+						ssmt[0] = ssmt[1];
+						ssmt[1] = ssmt[2];
+						ssmt[2] = ssmt[3];
+						ssmt[3] = data;
+          	
           } else {       
             // Can now look at the sentence, derive its structure and find the bits we need
-          
+        		ssmt = "0000";
 
-            vector<string> lines = s9::SplitStringNewline(str);
+            vector<string> lines = s9::SplitStringNewline(str_buffer);
+						
+						str_buffer = "";
 
-            for (int i = 0; i < lines.size(); ++i){
-              vector<string> tokens = s9::SplitStringWhitespace(lines[i]);  
+            for (int k = 0; k < lines.size(); ++k){
+              vector<string> tokens = s9::SplitStringWhitespace(lines[k]);  
               if (tokens.size() > 5) {
               
                 // Find the Subjects
-                if (s9::StringContains(tokens[5],"SBJ")  && s9::StringContains(tokens[2],"NN")){
-                  // Follow the chain to the root, stopping when we hit a verb
+               	if (s9::StringContains(tokens[5],"SBJ")  && s9::StringContains(tokens[2],"NN")){
+                //if (s9::StringContains(tokens[5],"SBJ")){
+						      // Follow the chain to the root, stopping when we hit a verb
                  
                   int target = s9::FromString<int>(tokens[4]);
                   string sbj = s9::ToLower(tokens[0]);
                   auto vidx = dictionary_fast.find(sbj); 
-
+														
                   if (vidx != dictionary_fast.end()){
                     // Walk up the tree adding verbs till we get to root
 
                     while (target != 0){
-                      
+                     
                       // find the next line (we cant assume the indexing is perfect)
                       int tt = -1;
                       for (int j = 0; j < lines.size(); ++j){
@@ -567,41 +565,58 @@ int create_verb_subject(vector<string> filenames) {
                       }
                       
                       if (tt == -1){
-                        break;
+												break;
                       }
 
                       vector<string> tokens2 = s9::SplitStringWhitespace(lines[tt]); 
-                      if (tokens2.size() > 5) {
+											
+											if (tokens2.size() > 5) {
                         target = s9::FromString<int>(tokens2[4]);
-                        if (s9::StringContains(tokens2[5],"V")){
-                         
-                          string verb = s9::ToLower(tokens2[0]);
-                          
+                        
+												if (s9::StringContains(tokens2[2],"VV")){
+                          string verb = s9::ToLower(tokens2[0]);			     
                           auto widx = dictionary_fast.find(verb);
+													
                           if (widx != dictionary_fast.end()){
-                            verb_subjects[widx->second].push_back(vidx->second);
+                            #pragma omp critical
+														{
+															verb_subjects[widx->second].push_back(vidx->second);
+														}
                             target = 0; // Just record the one direct verb 
                           }
                         }
+												
                       } else {
                         // We got a duff line so quit
-                        target = 0;
-                      }
+												break;
+											}
                     }
                   } 
                 }
               }
             }         
-            str = "";
           }
+			
           mem++;
+          progress +=1;
 
-          // Progress output to console
-          //#pragma omp critical
-          //{
-          //  progress +=1;
-          //  cout << "Progress " << static_cast<float>(progress) / static_cast<float>(size) << '\r';
-          //}
+					/*#pragma omp master
+					{
+						if ( progress % 1000 == 0){
+							// Progress output to console
+							int pp = static_cast<int>((static_cast<float>(progress * omp_get_num_threads()) / static_cast<float>(size)) * 10.0);
+							std::cout << std::setw(20);
+							cout << "Progress: ";
+							for (int l=0; l < pp; l++){
+								cout << "#"; 
+							}
+
+							for (int l=pp; l < 10; l++){
+								cout << "_";
+							}
+							cout << '\r';
+						}
+					}*/
         }
         // sub_file.close();
       }
@@ -612,6 +627,8 @@ int create_verb_subject(vector<string> filenames) {
       return 1;
     }
   }
+
+  cout << endl;
 
   // Write out the subject file as lines of numbers.
   // First number is the verb. All following numbers are the subjects
@@ -640,6 +657,8 @@ int main(int argc, char* argv[]) {
   string p(argc <= 1 ? "." : argv[1]);
   
   vector<string> filenames;
+	
+	//omp_set_dynamic(0);
 
   // Scan directory for the files
   if (is_directory(p)) {

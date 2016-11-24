@@ -79,6 +79,22 @@ namespace s9 {
     return true;
   }
 
+	template<class T> std::string ToPrecision(T num, int n) {
+
+    if(num == 0) {
+      return "0";
+    }
+
+    T d = std::ceil(std::log10(num < 0 ? -num : num));
+    int power = n - (int)d;
+    T magnitude = std::pow(10., power);
+    long shifted = ::round(num*magnitude);
+
+    std::ostringstream oss;
+    oss << shifted/magnitude;
+    return oss.str();
+	}
+
 
   /**
   * String tokenize with STL

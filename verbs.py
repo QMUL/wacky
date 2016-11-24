@@ -41,10 +41,10 @@ if __name__ == "__main__" :
 
   # TODO - replace with a proper path
   vec_data = np.load("final_embeddings.npy")
-  VEC_SIZE = vec.data.shape(1)
+  VEC_SIZE = vec_data.shape[1]
 
   unique_verbs = []
-  for v in verbs:
+  for v in verbs_to_check:
     if v[0] not in unique_verbs:
       unique_verbs.append(v[0])
     if v[1] not in unique_verbs:
@@ -53,34 +53,39 @@ if __name__ == "__main__" :
   # Allocate our vectors give 
   verb_vectors = {}
   for v in unique_verbs:
-    verb_vectors[v] = [i for i in range(0:VEC_SIZE)]
+    verb_vectors[v] = [i for i in range(0,VEC_SIZE)]
 
   print("Reading Dictionary")
   with open(BASE_DIR + "/" + DICT_FILE,'r') as f:
-    for line in f.readlines():
+    for line in f.readlines()[1:]:
       dictionary.append( line.replace("\n",""))
 
   print("Reading Subjects")
   with open(BASE_DIR + "/" + VERB_FILE, 'r') as f:
     for line in f.readlines():
       tokens = line.split(" ")
-      verb = dictionary[int(tokens[0])]
-      
-      print(verb,":")
+      if (len(tokens) > 2):
+        verb = dictionary[int(tokens[0])]
+        
+        #if verb in unique_verbs:
+        
+        if verb == "disappear": 
+          print(verb,":")
+          sub_vector = np.zeros((1,VEC_SIZE))
 
-      if verb in unique_verbs:
-      
-        sub_vector = np.zeros((1,VEC_SIZE))
+          for sbj in tokens[1:]:
+            try:
+              sbj_idx = int(sbj)
+              print (" -", dictionary[sbj_idx])
 
-        for sbj in tokens[1:]:
-          sbj_idx = int(sbj)
-          print (" -", dictionary[sbj_idx])
+              # Now find the subject vectors
+              vv = vec_data[sbj_idx]
+              sub_vector = np.add(sub_vector,vv)
 
-          # Now find the subject vectors
-          vv = vec_data[sbj_idx]
-          np.add(sub_vector,vv)
+            except:
+              pass
 
-        print (" ->", sub_vector)
-
+            #print (" ->", sub_vector)
+          print(sub_vector)
 
 

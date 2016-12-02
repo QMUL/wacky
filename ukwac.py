@@ -58,7 +58,7 @@ if __name__ == "__main__" :
   print(count[:100]) 
 
   batch_size = 256
-  embedding_size = 768  # Dimension of the embedding vector.
+  embedding_size = 256  # Dimension of the embedding vector.
   skip_window = 5       # How many words to consider left and right.
   num_skips = 4         # How many times to reuse an input to generate a label.
   num_steps = 15000000  # Roughly 8 million steps to cover all of ukWaC
@@ -125,7 +125,10 @@ if __name__ == "__main__" :
       normalized_embeddings = embeddings / norm
       valid_embeddings = tf.nn.embedding_lookup(normalized_embeddings, valid_dataset)
       similarity = tf.matmul(valid_embeddings, normalized_embeddings, transpose_b=True, name="similarity")
- 
+
+      # Global step variable
+      global_step =  tf.Variable(0, name="global_step")
+
       saver = tf.train.Saver()
       
       # Add variable initializer.
@@ -137,17 +140,20 @@ if __name__ == "__main__" :
     # We must initialize all variables before we use them.
     init.run()
     print("Initialized")
+    
+    step = 0
 
     ckpt = tf.train.get_checkpoint_state(BASE_DIR + CHECKPOINT_DIR)
     if ckpt and ckpt.model_checkpoint_path:
       print(ckpt.model_checkpoint_path)
       saver.restore(session,ckpt.model_checkpoint_path) 
       print ("reloaded session")
+      step = global_step.eval(session)
     else:
       print ("Could not loaded checkpoint for some reason")
 
     average_loss = 0
-    for step in xrange(num_steps):
+    while step < num_steps:
       batch_inputs, batch_labels = generate_batch( batch_size, num_skips, skip_window)
       feed_dict = {train_inputs : batch_inputs, train_labels : batch_labels}
 
@@ -183,9 +189,11 @@ if __name__ == "__main__" :
       if step % 10000 == 0:
         path = saver.save(session, checkpoint_prefix, global_step=step)
         print("Saved model checkpoint to {}\n".format(path))
+      
+      step += 1
 
     final_embeddings = normalized_embeddings.eval()
 
-    np.save("final_embeddings", final_embeddings)
+    np.save(BASE_DIR + "/final_embeddings", final_embeddings)
 
 

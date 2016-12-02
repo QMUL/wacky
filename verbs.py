@@ -7,7 +7,7 @@ verbs
 '''
 
 import numpy as np
-import os, sys, math
+import os, sys, math, struct
 
 BASE_DIR = ""
 DICT_FILE = "dictionary.txt"
@@ -40,11 +40,19 @@ verbs_to_check = [
     ('type', 'scrub'),
     ('program','scratch'),
     ('murder', 'love'),
-    ('wander', 'burn')
+    ('wander', 'burn'),
+    ('read', 'write'),
+    ('read', 're-read'),
+    ('read', 'see')
   ]
-
+'''
+verbs_to_check = [
+    ('sleep', 'snooze'), 
+  ] 
+'''
 # Read in the basic dictionary file
-def read_dictionary() : 
+def read_dictionary() :
+  global dictionary
   print("Reading Dictionary")
   with open(BASE_DIR + "/" + DICT_FILE,'r') as f:
     for line in f.readlines()[1:]:
@@ -55,6 +63,10 @@ def read_dictionary() :
 # First number is the verb, all following are the subjects
 
 def read_subjects() :
+  global dictionary
+  global vec_data
+  global VEC_SIZE
+
   verb_add = {}
   verb_multiply = {}
   verb_sublength = {}
@@ -69,6 +81,8 @@ def read_subjects() :
       tokens = line.split(" ")
       if (len(tokens) > 2):
         verb = dictionary[int(tokens[0])]
+        
+        print(verb)
         
         if verb in unique_verbs:
         
@@ -89,12 +103,14 @@ def read_subjects() :
               mul_vector = mul_vector * vv
               sl += 1
             except Exception as e:
-              pass 
-              # print("Exception occured",e)
+              pass
+              #print("Exception occured",e)
               # Mostly just tokens not parsing properly
 
             #print (" ->", sub_vector)
-
+          if verb == "giggle":
+            print(verb,sl,add_vector[0],mul_vector[0])
+            
           # Work out the cosine distances
           #print(add_vector)
           #print(mul_vector)
@@ -122,38 +138,131 @@ def cosine_distance(verb0, verb1, verb_vec) :
   v1 = verb_vec[verb1]
   v1 = v1.reshape((VEC_SIZE,1))
   
-  n = np.dot(v0,v1)
+  n = np.dot(v0, v1)[0]
   n0 = np.linalg.norm(v0)
   n1 = np.linalg.norm(v1)
   d = n0 * n1
+
+  #print ("n over d",n,d,n/d)
 
   if (d != 0):
     sim = n / d
     dist = math.acos(sim) / math.pi
   
-  return dist
+  return 1.0 - dist
 
 # Return a vector divided by the number of subjects (an average basically)
 
-def centroid (verb, verb_vec, verb_sl) : 
-  return verb_vec[verb] / verb_sl[verb]
+def centroid (verb, verb_vec, verb_sl) :
+  return verb_vec[verb] / float(verb_sl[verb])
+
+# Read the binary file from word2vec, returning a numpy array
+# we use the dictionary created by tensorflow, because all the integer
+# files, dictionarys and verb/subject lookups are based on that/
+
+def read_binary(filepath):
+
+  vectors = []
+  dlookup = {}
+  global dictionary
+  global VEC_SIZE
+  
+  # As the tensorflow dict is different to the word2vec
+  # create a quick lookup table
+  for i in range(0,len(dictionary)):
+    dlookup[dictionary[i]] = i
+
+  with open(filepath,'rb') as f:
+    nums = []
+    byte = f.read(1)
+    char = byte.decode("ascii")
+    nums.append(char)
+    
+    while (char != '\n'):
+      byte = f.read(1)
+      char = byte.decode("ascii")
+      nums.append(char)
+
+    tt = ''.join(nums).split(" ") 
+    words = int( tt[0] ) # long long int?
+    VEC_SIZE = int( tt[1] )
+
+    for i in range(0,len(dictionary)):
+      vectors.append( np.zeros(VEC_SIZE) )
+
+    print("Loading vectors.bin with", words, "words with", VEC_SIZE, "vec size")
+
+    # TODO - for some reason this explodes memory (the numbers bit at the end) even though
+    # the C version copes fine. I suspect we must be duplicating something? 
+    # regardless we need to figure out why that is or restrict to top 50,000 words :/
+
+    widx = 0
+    while(widx < words):
+    
+      word = ""
+      while (True):
+        byte = f.read(1)
+        try:
+          char = byte.decode("ascii")
+        
+          if char == " ":
+           break
+          word += char
+        except :
+          pass
+
+      word = word.replace("\n","")
+      #dictionary.append(word)
+      
+      # Lookup the word using the dictonary we generated with tensorflow
+      pidx = -1
+      if word in dlookup.keys():
+        pidx = dlookup[word]
+
+      # Now read the numbers, should be VEC_SIZE of them (4 bytes probably)
+      tidx = 0
+      for i in range(0,VEC_SIZE):
+        byte = f.read(4)
+        num = struct.unpack('f',byte)
+
+        if pidx != -1: 
+          vectors[pidx].itemset(tidx, num[0])
+
+        tidx += 1
+      
+      widx += 1
+
+  vectors = np.vstack(vectors)
+  print(vectors.shape)
+  #return dictionary, vectors
+  return vectors
 
 # Main function
 
 if __name__ == "__main__" :
   BASE_DIR = sys.argv[1]
 
-  # TODO - replace with a proper path
-  vec_data = np.load("final_embeddings.npy")
-  VEC_SIZE = vec_data.shape[1]
+  binversion = False
+  if len(sys.argv) > 2:
+    if sys.argv[2] == '-b':
+      binversion = True
+
+  vec_data = []
+  read_dictionary()
+
+  if binversion:
+    vec_data = read_binary(BASE_DIR + "/vectors.bin")
+  else:
+    # TODO - replace with a proper path
+    vec_data = np.load(BASE_DIR + "/final_embeddings.npy")
+    VEC_SIZE = vec_data.shape[1]
+    print("Vec Size", VEC_SIZE)
 
   for v in verbs_to_check:
     if v[0] not in unique_verbs:
       unique_verbs.append(v[0])
     if v[1] not in unique_verbs:
       unique_verbs.append(v[1])
-
-  read_dictionary()
 
   verb_add, verb_mul, verb_sl = read_subjects()
 
@@ -166,36 +275,39 @@ if __name__ == "__main__" :
       verb_vrb[v] = vec_data[idx,:]
 
   for verb0, verb1 in verbs_to_check:
-    if verb0 in dictionary and verb1 in dictionary:
+    if verb0 in dictionary and verb1 in dictionary and verb0 in verb_sl and verb1 in verb_sl:
       dist_vrb = cosine_distance(verb0, verb1, verb_vrb)
       dist_add = cosine_distance(verb0, verb1, verb_add)
       dist_mul = cosine_distance(verb0, verb1, verb_mul) 
       print ("-----------------")
 
       print (verb0, verb1, dist_vrb, dist_add, dist_mul, verb_sl[verb0], verb_sl[verb1])
-      print ("centroid",verb0,"add")
-      print (centroid(verb0, verb_add, verb_sl))
-      print ("centroid",verb0,"mul")
-      print (centroid(verb0, verb_mul, verb_sl))
-      print ("centroid",verb1,"add")
-      print (centroid(verb1, verb_add, verb_sl))
-      print ("centroid",verb1,"mul")
-      print (centroid(verb1, verb_mul, verb_sl))
-      print ("cosine centroid", verb0,verb1, "add")
+      #print ("centroid",verb0,"add")
+      #print (centroid(verb0, verb_add, verb_sl))
+      #print ("centroid",verb0,"mul")
+      #print (centroid(verb0, verb_mul, verb_sl))
+      #print ("centroid",verb1,"add")
+      #print (centroid(verb1, verb_add, verb_sl))
+      #print ("centroid",verb1,"mul")
+      #print (centroid(verb1, verb_mul, verb_sl))
+      #print ("cosine centroid", verb0,verb1, "add")
       
       tt = {}
-      tt[verb0] = centroid(verb0,verb_add, verb_sl)
-      tt[verb1] = centroid(verb1,verb_add,verb_sl)
+      tt[verb0] = centroid(verb0, verb_add, verb_sl)
+      tt[verb1] = centroid(verb1, verb_add, verb_sl)
 
-      print (verb0, verb1, cosine_distance(verb0,verb1, tt))
+      #print ("centroid add", tt[verb0])
+      #print ("normal add", verb_add[verb0])
+
+      print ("cosine centroid add",verb0, verb1, cosine_distance(verb0,verb1,tt))
     
-      print ("cosine centroid", verb0,verb1, "mul")
+      #print ("cosine centroid", verb0,verb1, "mul")
       tt = {}
-      tt[verb0] = centroid(verb0,verb_mul, verb_sl)
-      tt[verb1] = centroid(verb1,verb_mul, verb_sl)
+      tt[verb0] = centroid(verb0, verb_mul, verb_sl)
+      tt[verb1] = centroid(verb1, verb_mul, verb_sl)
 
-      print (verb0, verb1, cosine_distance(verb0,verb1, tt))
+      print ("consine centroid mul", verb0, verb1, cosine_distance(verb0,verb1,tt))
       print ("")
     else :
-      print (verb0, "and/or", verb1, "not in dictionary")
+      print (verb0, "and/or", verb1, "not in dictionary or subject matter.")
 

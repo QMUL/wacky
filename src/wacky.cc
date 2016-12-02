@@ -43,7 +43,8 @@ map<string,int> dictionary_fast {};
 vector<string> dictionary {};
 vector< vector<int> > verb_subjects;
 
-const size_t VOCAB_SIZE = 50000; // Really more of a max
+size_t VOCAB_SIZE = 500000; // Really more of a max
+string OUTPUT_DIR = ".";
 
 vector<string>::iterator find_in_dictionary(string s){
 
@@ -59,7 +60,6 @@ vector<string>::iterator find_in_dictionary(string s){
     }
   }
   return it;
-
 }
 
 
@@ -67,7 +67,7 @@ bool sort_freq (pair<string,size_t> i, pair<string, size_t> j) { return (i.secon
 
 // Create a dictionary by flipping the freq around, taking the top VOCAB_SIZE 
 // and then sorting into alphabetical order
-
+// TODO - should make the global refs more explicit
 int create_dictionary(){
   cout << "Creating Dictionary File" << endl;
 
@@ -91,7 +91,7 @@ int create_dictionary(){
 
   dictionary.push_back(string("UNK"));
   idx = 0;
-  std::ofstream dictionary_file ("dictionary.txt");
+  std::ofstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
   dictionary_file << s9::ToString(dictionary.size()) << endl;
   for (auto it : dictionary){
     dictionary_file << it << endl;
@@ -140,7 +140,7 @@ int create_freq(vector<string> filenames) {
       size_t size = region.get_size();
   
 #ifdef _WRITE_WORDS  
-      string filename = "words_" + s9::FilenameFromPath(filepath) + ".txt";
+      string filename = OUTPUT_DIR + "/words_" + s9::FilenameFromPath(filepath) + ".txt";
       std::ofstream words_file (filename);
 #endif
 
@@ -244,7 +244,7 @@ int create_freq(vector<string> filenames) {
     // remove memory map ?
   }
 
-  std::ofstream freq_file ("freq.txt");
+  std::ofstream freq_file (OUTPUT_DIR + "/freq.txt");
   if (freq_file.is_open()) {
     freq_file << s9::ToString(freq.size()) << endl;
     for (auto it = freq.begin(); it != freq.end(); ++it) {
@@ -348,7 +348,7 @@ int create_integers(vector<string> filenames) {
         size_t file_count = 0;
         std::string str;
 
-        string filename = "integers_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
+        string filename = OUTPUT_DIR + "/integers_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
         
         std::ofstream int_file (filename);
 
@@ -383,7 +383,7 @@ int create_integers(vector<string> filenames) {
         int_file.flush();
         int_file.close();
 
-        filename = "size_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
+        filename = OUTPUT_DIR + "/size_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
         std::ofstream size_file (filename);
         size_file << s9::ToString(file_count) << endl;
         size_file.close();
@@ -397,7 +397,7 @@ int create_integers(vector<string> filenames) {
     }
   }
 
-  std::ofstream unk_file ("unk_count.txt");
+  std::ofstream unk_file (OUTPUT_DIR + "/unk_count.txt");
   if (unk_file.is_open()) {
     unk_file << s9::ToString(unk_count) << endl;
     unk_file.close();
@@ -406,7 +406,7 @@ int create_integers(vector<string> filenames) {
     return 1;
   }
 
-  std::ofstream total_file ("total_count.txt");
+  std::ofstream total_file (OUTPUT_DIR + "/total_count.txt");
   if (total_file.is_open()) {
     total_file << s9::ToString(total_count) << endl;
     total_file.close();
@@ -632,7 +632,7 @@ int create_verb_subject(vector<string> filenames) {
 
   // Write out the subject file as lines of numbers.
   // First number is the verb. All following numbers are the subjects
-  string filename = "subjects.txt";
+  string filename = OUTPUT_DIR + "/subjects.txt";
   std::ofstream sub_file (filename);
   int idv = 0;
   for (vector<int> verbs : verb_subjects){
@@ -655,9 +655,16 @@ int create_verb_subject(vector<string> filenames) {
 int main(int argc, char* argv[]) {
 
   string p(argc <= 1 ? "." : argv[1]);
-  
   vector<string> filenames;
-	
+
+  if (argc >= 3){
+    OUTPUT_DIR = string(argv[2]);
+  }
+
+  if (argc == 4){
+    VOCAB_SIZE = s9::FromString<int>(argv[3]);
+  }
+
 	//omp_set_dynamic(0);
 
   // Scan directory for the files
@@ -688,10 +695,9 @@ int main(int argc, char* argv[]) {
     verb_subjects.push_back( vector<int>() );
   }
 
-
   if (create_freq(filenames) != 0) { return 1; }
   if (create_dictionary() != 0) { return 1; }
   if (create_verb_subject(filenames) != 0) { return 1; }
-  //if (create_integers(filenames) != 0) { return 1; }
+  if (create_integers(filenames) != 0) { return 1; }
   return 0;
 }

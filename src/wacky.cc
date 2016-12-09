@@ -2,10 +2,10 @@
  * A small program that pre-processes the ukWaC dataset for reading in python
  * 
  * It creates 5 sets of files from ukWaC
- * 1) A Vocab / Frequency file that lists the frequency of all tokens - word, freq\n - freq.txt
- * 2) A dictionary of VOCAB_SIZE words in alphabetical order - word\n - dictionary.txt
+ * 1) A Vocab / Frequency file that lists the FREQuency of all tokens - word, FREQ\n - FREQ.txt
+ * 2) A DICTIONARY of VOCAB_SIZE words in alphabetical order - word\n - DICTIONARY.txt
  * 3) A set of files that form the sentences, one word per line
- * 4) A set of files that form the sentences with integer lookups into the dictionary 
+ * 4) A set of files that form the sentences with integer lookups into the DICTIONARY 
  * 5) A relationship file that lists the subjects of every verb
  * We remove any characters outside the ascii range. I believe ukWaC uses an annoying windows codec?
  *
@@ -36,12 +36,12 @@ using namespace boost::filesystem;
 using namespace boost::interprocess;
 
 // Our master map and set
-map<string, size_t> freq {};
-vector< pair<string,size_t> > freq_flipped {};
-set<string> word_ignores {",","-",".","<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
-map<string,int> dictionary_fast {};
-vector<string> dictionary {};
-vector< vector<int> > verb_subjects;
+map<string, size_t> FREQ {};
+vector< pair<string,size_t> > FREQ_FLIPPED {};
+set<string> WORD_IGNORES {",","-",".","<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
+map<string,int> DICTIONARY_FAST {};
+vector<string> DICTIONARY {};
+vector< vector<int> > VERB_SUBJECTS;
 
 size_t VOCAB_SIZE = 500000; // Really more of a max
 string OUTPUT_DIR = ".";
@@ -50,13 +50,13 @@ vector<string>::iterator find_in_dictionary(string s){
 
   vector<string>::iterator it;
 
-  for (it = dictionary.begin(); it != dictionary.end(); ++it){
+  for (it = DICTIONARY.begin(); it != DICTIONARY.end(); ++it){
     if (it->compare(s) == 0){
       break;
     }
     // Quit early due to alphabetic order
     if (it->compare(s) > 0){
-      return dictionary.end();
+      return DICTIONARY.end();
     }
   }
   return it;
@@ -65,7 +65,7 @@ vector<string>::iterator find_in_dictionary(string s){
 
 bool sort_freq (pair<string,size_t> i, pair<string, size_t> j) { return (i.second > j.second); }
 
-// Create a dictionary by flipping the freq around, taking the top VOCAB_SIZE 
+// Create a DICTIONARY by flipping the FREQ around, taking the top VOCAB_SIZE 
 // and then sorting into alphabetical order
 // TODO - should make the global refs more explicit
 int create_dictionary(){
@@ -73,29 +73,29 @@ int create_dictionary(){
 
   size_t idx = 0; 
 
-  for (auto it = freq.begin(); it != freq.end(); it++){
-    freq_flipped.push_back(*it);
+  for (auto it = FREQ.begin(); it != FREQ.end(); it++){
+    FREQ_FLIPPED.push_back(*it);
   }
 
-  std::sort(freq_flipped.begin(), freq_flipped.end(), sort_freq);
+  std::sort(FREQ_FLIPPED.begin(), FREQ_FLIPPED.end(), sort_freq);
 
-  for (auto it = freq_flipped.begin(); it != freq_flipped.end(); it++) {
-    dictionary.push_back(it->first);
+  for (auto it = FREQ_FLIPPED.begin(); it != FREQ_FLIPPED.end(); it++) {
+    DICTIONARY.push_back(it->first);
     idx++;
     if (idx >= VOCAB_SIZE){
       break;
     }  
   }
  
-  std::sort(dictionary.begin(), dictionary.end());
+  std::sort(DICTIONARY.begin(), DICTIONARY.end());
 
-  dictionary.push_back(string("UNK"));
+  DICTIONARY.push_back(string("UNK"));
   idx = 0;
   std::ofstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
-  dictionary_file << s9::ToString(dictionary.size()) << endl;
-  for (auto it : dictionary){
+  dictionary_file << s9::ToString(DICTIONARY.size()) << endl;
+  for (auto it : DICTIONARY){
     dictionary_file << it << endl;
-    dictionary_fast[it] = idx;
+    DICTIONARY_FAST[it] = idx;
     idx++;
   }
   dictionary_file.flush();
@@ -104,10 +104,23 @@ int create_dictionary(){
   return 0;
 }
 
+// If we've already generated a dictionary read it in
+int read_dictionary(){
+  std::ifstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
+  string line;
+  size_t idx = 0;
+  while ( getline (dictionary_file,line) ) {
+    string word = s9::RemoveChar(line,'\n'); 
+    if (idx != 0){
+      DICTIONARY.push_back(word);
+      DICTIONARY_FAST[word] = idx-1;
+    } 
+    idx+=1;
+  }
+}
 
-// Create the intial freq frequency map
+// Create the intial FREQ FREQuency map
 int create_freq(vector<string> filenames) {
-
   // Scan directory for the files
   for (string filepath : filenames){
 
@@ -152,7 +165,7 @@ int create_freq(vector<string> filenames) {
       // will be the smallest
       
       std::string ssm = "0000";
-
+      
       block_pointer[0] = static_cast<char*>(addr);
       char *mem = static_cast<char*>(addr);
       for (int i=1; i < num_blocks; ++i) {
@@ -200,26 +213,26 @@ int create_freq(vector<string> filenames) {
           if (data != '\n' && data != '\r'){
             str += data;
           } else {
-            // Can now look at the string and work on our freq
+            // Can now look at the string and work on our FREQ
             vector<string> tokens = s9::SplitStringWhitespace(str);  
             if (tokens.size() > 0) {
               string val = s9::ToLower(tokens[0]);
               if (s9::IsAsciiPrintableString(val)){
-                if (word_ignores.find(val) == word_ignores.end()){  
+                if (WORD_IGNORES.find(val) == WORD_IGNORES.end()){  
 
 #ifdef _WRITE_WORDS
                   #pragma omp critical
                   words_file << val << " ";
 #endif
-                  auto result = freq.find(val); 
-                  if (result == freq.end()){
+                  auto result = FREQ.find(val); 
+                  if (result == FREQ.end()){
                     #pragma omp critical
                     { 
-                      freq[val] = 1;
+                      FREQ[val] = 1;
                     }
                   }  else {
                     #pragma omp atomic 
-                    freq[val] = freq[val] + 1;
+                    FREQ[val] = FREQ[val] + 1;
                   }
                 }
               }
@@ -244,26 +257,44 @@ int create_freq(vector<string> filenames) {
     // remove memory map ?
   }
 
-  std::ofstream freq_file (OUTPUT_DIR + "/freq.txt");
+  std::ofstream freq_file (OUTPUT_DIR + "/FREQ.txt");
   if (freq_file.is_open()) {
-    freq_file << s9::ToString(freq.size()) << endl;
-    for (auto it = freq.begin(); it != freq.end(); ++it) {
+    freq_file << s9::ToString(FREQ.size()) << endl;
+    for (auto it = FREQ.begin(); it != FREQ.end(); ++it) {
       freq_file << it->first << ", " << it->second << endl;
     }
     freq_file.close();
   } else {
-    cout << "Unable to open freq file for writing" << endl;
+    cout << "Unable to open FREQ file for writing" << endl;
     return 1;
   }
   
-  cout << "Finished writing freq file" << endl;
+  cout << "Finished writing FREQ file" << endl;
 
   return 0;
 
 }
 
+// If we've already generated a frequency read it in
+int read_freq(){
+  std::ifstream freq_file (OUTPUT_DIR + "/freq.txt");
+  string line;
+  size_t idx = 0;
+  while ( getline (freq_file,line) ) {
+    line = s9::RemoveChar(line,'\n');
+    vector<string> tokens = s9::SplitStringString(line, ", ");
+    if (idx != 0){
+      FREQ[tokens[0]] = s9::FromString<size_t>(tokens[1]); 
+    } 
+    idx+=1;
+  }
+}
+
+
+
+
 // Create integer versions of all the strings
-// I suspect this is the one that takes the time as the dictionary lookup will be slow :/
+// I suspect this is the one that takes the time as the DICTIONARY lookup will be slow :/
 int create_integers(vector<string> filenames) {
 
   cout << "Creating Integer Files" << endl;
@@ -361,16 +392,16 @@ int create_integers(vector<string> filenames) {
           if (data != '\n' && data != '\r'){
             str += data;
           } else {       
-            // Can now look at the string and work on our freq
+            // Can now look at the string and work on our FREQ
             vector<string> tokens = s9::SplitStringWhitespace(str);  
             if (tokens.size() > 0) {
               string val = s9::ToLower(tokens[0]);
               
-              if (dictionary_fast.find(val) == dictionary_fast.end()){
+              if (DICTIONARY_FAST.find(val) == DICTIONARY_FAST.end()){
                 int_file << s9::ToString(VOCAB_SIZE) << endl;
                 unk_count++; 
               } else {
-                int_file << s9::ToString( dictionary_fast[val] ) << endl;
+                int_file << s9::ToString( DICTIONARY_FAST[val] ) << endl;
                 #pragma omp critical
                 total_count++;
                 file_count++;
@@ -421,7 +452,7 @@ int create_integers(vector<string> filenames) {
 }
 
 // This function will read everything within the sentence tags, creating a file that links 
-// verbs to objects via the dictionary
+// verbs to objects via the DICTIONARY
 int create_verb_subject(vector<string> filenames) {
   cout << "Creating Verb Subject" << endl;
 
@@ -545,9 +576,9 @@ int create_verb_subject(vector<string> filenames) {
                  
                   int target = s9::FromString<int>(tokens[4]);
                   string sbj = s9::ToLower(tokens[0]);
-                  auto vidx = dictionary_fast.find(sbj); 
+                  auto vidx = DICTIONARY_FAST.find(sbj); 
 														
-                  if (vidx != dictionary_fast.end()){
+                  if (vidx != DICTIONARY_FAST.end()){
                     // Walk up the tree adding verbs till we get to root
 
                     while (target != 0){
@@ -574,13 +605,16 @@ int create_verb_subject(vector<string> filenames) {
                         target = s9::FromString<int>(tokens2[4]);
                         
 												if (s9::StringContains(tokens2[2],"VV")){
-                          string verb = s9::ToLower(tokens2[0]);			     
-                          auto widx = dictionary_fast.find(verb);
+                          // Do we use the actual root verb or the conjugated
+                          //string verb = s9::ToLower(tokens2[0]);
+                          string verb = s9::ToLower(tokens2[1]);
+
+                          auto widx = DICTIONARY_FAST.find(verb);
 													
-                          if (widx != dictionary_fast.end()){
+                          if (widx != DICTIONARY_FAST.end()){
                             #pragma omp critical
 														{
-															verb_subjects[widx->second].push_back(vidx->second);
+															VERB_SUBJECTS[widx->second].push_back(vidx->second);
 														}
                             target = 0; // Just record the one direct verb 
                           }
@@ -635,7 +669,7 @@ int create_verb_subject(vector<string> filenames) {
   string filename = OUTPUT_DIR + "/subjects.txt";
   std::ofstream sub_file (filename);
   int idv = 0;
-  for (vector<int> verbs : verb_subjects){
+  for (vector<int> verbs : VERB_SUBJECTS){
     if (verbs.size() > 0 ){
       sub_file << s9::ToString(idv) << " ";
       for (int sb : verbs){
@@ -692,12 +726,14 @@ int main(int argc, char* argv[]) {
 
   // Initialise our verb to subject map
   for (int i = 0; i <= VOCAB_SIZE; ++i) {
-    verb_subjects.push_back( vector<int>() );
+    VERB_SUBJECTS.push_back( vector<int>() );
   }
 
-  if (create_freq(filenames) != 0) { return 1; }
-  if (create_dictionary() != 0) { return 1; }
+  //if (create_freq(filenames) != 0) { return 1; }
+  //if (create_dictionary() != 0) { return 1; }
+  read_dictionary();
+  read_freq();
   if (create_verb_subject(filenames) != 0) { return 1; }
-  if (create_integers(filenames) != 0) { return 1; }
+  //if (create_integers(filenames) != 0) { return 1; }
   return 0;
 }

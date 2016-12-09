@@ -125,7 +125,7 @@ namespace s9 {
     while (end < input.length()) {
          
       if (start != end && w(input.at(end))){
-        tokens.push_back(input.substr( start, end ));
+        tokens.push_back(input.substr( start, end-start ));
         start = end;
       }
 
@@ -136,7 +136,7 @@ namespace s9 {
     }
     
     if (start != end) {
-      tokens.push_back(input.substr( start, end ));
+      tokens.push_back(input.substr( start, end-start ));
     }
    
     return tokens;

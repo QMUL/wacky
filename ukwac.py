@@ -7,7 +7,11 @@ https://raw.githubusercontent.com/tensorflow/tensorflow/r0.11/tensorflow/example
 
 Set the various directories correctly and this program should just run
 
-'''
+* Notes *
+
+This looks like fun : http://projector.tensorflow.org/
+
+nary'''
 
 import collections
 import math
@@ -16,17 +20,22 @@ import random
 import zipfile
 import sys
 import numpy as np
+import signal
+import sys
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
-
 
 import tensorflow as tf
 
 from data_buffer import read_dictionary, find_integer_files, set_integer_files, read_freq, read_unk_count, generate_batch, read_total_size   
 
+import data_buffer
+
 from visualize import plot_with_labels
 
 # Options and config
+# Naughty globals!
+
 DICTIONARY_FILE     = "dictionary.txt"
 FREQ_FILE           = "freq.txt"
 INTEGER_DIR         = "."
@@ -34,19 +43,47 @@ UNKNOWN_FILE        = "unk_count.txt"
 TOTAL_FILE          = "total_count.txt"
 OUT_DIR             = "."
 CHECKPOINT_DIR      = "checkpoints"
+LEARNING_RATE       = 1.0
+BATCH_SIZE          = 512
+EMBEDDING_SIZE      = 512       # Dimension of the embedding vector.
+SKIP_WINDOW         = 3         # How many words to consider left and right.
+NUM_SKIPS           = 2         # How many times to reuse an input to generate a label.
+NUM_STEPS           = 5000000   # Rough guess at the maximum number of steps
+
+NORMALIZED_EMBEDDINGS = []
+STANDARD_EMBEDDINGS = []
+
+
+def save_data():
+  final_NORMALIZED_EMBEDDINGS = NORMALIZED_EMBEDDINGS.eval()
+  np.save(BASE_DIR + "/final_normalized_embeddings", final_NORMALIZED_EMBEDDINGS)
+
+  final_STANDARD_EMBEDDINGS = STANDARD_EMBEDDINGS.eval()
+  np.save(BASE_DIR + "/final_standard_embeddings", final_STANDARD_EMBEDDINGS)
+
+
+def signal_handler(signal, frame):
+  print('You pressed Ctrl+C!')
+  save_data()
+  sys.exit(0)
+ 
 
 if __name__ == "__main__" :
 
+  signal.signal(signal.SIGINT, signal_handler)
+
   BASE_DIR = sys.argv[1] + "/"
-  print(BASE_DIR)
+  print("Running from base_dir:", BASE_DIR)
 
   # Read all the config options and perform setup
 
   print("Reading dictionary")
   dictionary, reverse_dictionary, vocabulary_size = read_dictionary(BASE_DIR + DICTIONARY_FILE) 
   data_files, size_files = find_integer_files(BASE_DIR + INTEGER_DIR)
-  count = read_freq(BASE_DIR + FREQ_FILE, vocabulary_size)
-  count[0][1] = read_unk_count(BASE_DIR + UNKNOWN_FILE)
+  count, count_order = read_freq(BASE_DIR + FREQ_FILE, vocabulary_size)
+  count["UNK"] = read_unk_count(BASE_DIR + UNKNOWN_FILE)
+
+  print("Vocabularly of size", vocabulary_size)
 
   print("Reading integer data files")
   set_integer_files(data_files, size_files)
@@ -54,49 +91,45 @@ if __name__ == "__main__" :
   print("Reading total data size")
   data_size = read_total_size(BASE_DIR + TOTAL_FILE)
 
-  print("Top 100 words")
-  print(count[:100]) 
+  valid_size = 32       # Random set of words to evaluate similarity on.
+  valid_window = 2000   # Only pick dev samples in the head of the distribution.
+  valid_examples = []
+  for i in np.random.choice(valid_window, valid_size, replace=False):
+    valid_examples.append(dictionary[count_order[i]])
 
-  batch_size = 256
-  embedding_size = 256  # Dimension of the embedding vector.
-  skip_window = 5       # How many words to consider left and right.
-  num_skips = 4         # How many times to reuse an input to generate a label.
-  num_steps = 15000000  # Roughly 8 million steps to cover all of ukWaC
-   
-  #num_steps = 1000  # Roughly 8 million steps to cover all of ukWaC
-  # We pick a random validation set to sample nearest neighbors. Here we limit the
-  # validation samples to the words that have a low numeric ID, which by
-  # construction are also the most frequent.
-  valid_size = 32     # Random set of words to evaluate similarity on.
-  valid_window = 2000  # Only pick dev samples in the head of the distribution.
-  valid_examples = np.random.choice(valid_window, valid_size, replace=False)
-  num_sampled = 128    # Number of negative examples to sample.
+  print("Valid examples - first 20. Drawn from top 2000 most frequent words")
+  for i in range(20):
+    print(reverse_dictionary[valid_examples[i]])
+
+
+  num_sampled = 256     # Number of negative examples to sample.
 
   # Begin the Tensorflow Setup
-
-  batch, labels = generate_batch(batch_size, num_skips, skip_window)
-  
-  for i in range(8):
+  # Generate a batch and print it
+  batch, labels, valid_batch = generate_batch(BATCH_SIZE, NUM_SKIPS, SKIP_WINDOW)  
+  for i in range(16):
     try:
       print(batch[i], reverse_dictionary[batch[i]], '->', labels[i, 0], reverse_dictionary[labels[i, 0]])
     except:
       print(labels[i])
 
+  # Begin graph creation
   graph = tf.Graph()
 
   checkpoint_file = tf.train.latest_checkpoint(BASE_DIR + CHECKPOINT_DIR)
+  
   # Setup the Tensorflow Graph itself
 
   with graph.as_default():
     # Input data.
-    train_inputs = tf.placeholder(tf.int32, shape=[batch_size], name="inputs")
-    train_labels = tf.placeholder(tf.int32, shape=[batch_size, 1], name="labels")
+    train_inputs = tf.placeholder(tf.int32, shape=[BATCH_SIZE], name="inputs")
+    train_labels = tf.placeholder(tf.int32, shape=[BATCH_SIZE, 1], name="labels")
     valid_dataset = tf.constant(valid_examples, dtype=tf.int32, name="valid_dataset")
 
     with tf.device("/cpu:0"):
-      # Look up embeddings for inputs.
-      embeddings = tf.Variable(tf.random_uniform([vocabulary_size, embedding_size], -1.0, 1.0), name="embeddings")
-      embed = tf.nn.embedding_lookup(embeddings, train_inputs)
+      # Look up STANDARD_EMBEDDINGS for inputs.
+      STANDARD_EMBEDDINGS = tf.Variable(tf.random_uniform([vocabulary_size, EMBEDDING_SIZE], -1.0, 1.0), name="STANDARD_EMBEDDINGS")
+      embed = tf.nn.embedding_lookup(STANDARD_EMBEDDINGS, train_inputs)
       
       # Save progress
       checkpoint_dir = os.path.abspath(os.path.join(BASE_DIR + OUT_DIR, "checkpoints"))
@@ -106,25 +139,25 @@ if __name__ == "__main__" :
         os.makedirs(checkpoint_dir)
 
       # Construct the variables for the NCE loss
-      nce_weights = tf.Variable(tf.truncated_normal([vocabulary_size, embedding_size],stddev=1.0 / math.sqrt(embedding_size)))
+      nce_weights = tf.Variable(tf.truncated_normal([vocabulary_size, EMBEDDING_SIZE],stddev=1.0 / math.sqrt(EMBEDDING_SIZE)))
       nce_biases = tf.Variable(tf.zeros([vocabulary_size]),name="biases")
 
       # Compute the average NCE loss for the batch.
       # tf.nce_loss automatically draws a new sample of the negative labels each
       # time we evaluate the loss.
 
-      loss = tf.reduce_mean(tf.nn.sampled_softmax_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size), name="loss")
+      #loss = tf.reduce_mean(tf.nn.sampled_softmax_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size), name="loss")
 
-      #loss = tf.reduce_mean(tf.nn.nce_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size))
+      loss = tf.reduce_mean(tf.nn.nce_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size))
       
       # Construct the SGD optimizer using a learning rate of 1.0.
-      optimizer = tf.train.GradientDescentOptimizer(1.0, name='optimizer').minimize(loss)
+      optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE, name='optimizer').minimize(loss)
 
-      # Compute the cosine similarity between minibatch examples and all embeddings.
-      norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
-      normalized_embeddings = embeddings / norm
-      valid_embeddings = tf.nn.embedding_lookup(normalized_embeddings, valid_dataset)
-      similarity = tf.matmul(valid_embeddings, normalized_embeddings, transpose_b=True, name="similarity")
+      # Compute the cosine similarity between minibatch examples and all STANDARD_EMBEDDINGS.
+      norm = tf.sqrt(tf.reduce_sum(tf.square(STANDARD_EMBEDDINGS), 1, keep_dims=True))
+      NORMALIZED_EMBEDDINGS = STANDARD_EMBEDDINGS / norm
+      valid_standard_embeddings = tf.nn.embedding_lookup(NORMALIZED_EMBEDDINGS, valid_dataset)
+      similarity = tf.matmul(valid_standard_embeddings, NORMALIZED_EMBEDDINGS, transpose_b=True, name="similarity")
 
       # Global step variable
       global_step =  tf.Variable(0, name="global_step")
@@ -148,13 +181,22 @@ if __name__ == "__main__" :
       print(ckpt.model_checkpoint_path)
       saver.restore(session,ckpt.model_checkpoint_path) 
       print ("reloaded session")
-      step = global_step.eval(session)
+      # this doesnt work which is really annoying
+      #step = global_step.eval(session)
+
     else:
       print ("Could not loaded checkpoint for some reason")
 
     average_loss = 0
-    while step < num_steps:
-      batch_inputs, batch_labels = generate_batch( batch_size, num_skips, skip_window)
+    while step < NUM_STEPS:
+      batch_inputs, batch_labels, valid_batch = generate_batch( BATCH_SIZE, NUM_SKIPS, SKIP_WINDOW)
+      
+      # If its not a valid batch then I suspect we need to stop before the noise contrastive explodes
+      if not valid_batch:
+        print ("Finished after",step,"steps")
+        save_data()
+        sys.exit()
+      
       feed_dict = {train_inputs : batch_inputs, train_labels : batch_labels}
 
       # We perform one update step by evaluating the optimizer op (including it
@@ -167,7 +209,7 @@ if __name__ == "__main__" :
           average_loss /= 2000
         
         # The average loss is an estimate of the loss over the last 2000 batches.
-        print("Average loss at step ", step, ": ", average_loss)
+        print("Average loss at step ", step, ": ", average_loss, "Block:", data_buffer._current_block)
         average_loss = 0
 
       # Note that this is expensive (~20% slowdown if computed every 500 steps)
@@ -192,8 +234,4 @@ if __name__ == "__main__" :
       
       step += 1
 
-    final_embeddings = normalized_embeddings.eval()
-
-    np.save(BASE_DIR + "/final_embeddings", final_embeddings)
-
-
+    save_data() 

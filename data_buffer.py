@@ -18,6 +18,8 @@ _data_offset = 0
 _current_block = 0
 
 # Move to the next data block and set offsets
+# My suspicion is that for some reason, noise contrastive explodes
+# if this loops around so we need to signal when we've set at all the data I think
 def new_data_block():
   global _current_block
   global _current_data_block
@@ -25,6 +27,9 @@ def new_data_block():
   global _data_barriers
   global _data_offset
   global _data_index
+  
+  # I wonder, should we add a del somewher to keep mem usage down? Virtual mem is 
+  # really high
 
   _current_block = _current_block + 1
   
@@ -32,9 +37,11 @@ def new_data_block():
   if _current_block >= len(_integer_files):
     _current_block = 0
     _data_offset = 0
+    return False
   else:
     _data_offset = _data_barriers[_current_block]
     read_integer_file(_integer_files[_current_block])
+  return True
 
 # Called by Tensorflow to grab some more data
 def generate_batch( batch_size, num_skips, skip_window):
@@ -51,10 +58,14 @@ def generate_batch( batch_size, num_skips, skip_window):
   span = 2 * skip_window + 1 # [ skip_window target skip_window ]
   bbuffer = collections.deque(maxlen=span)
   
+  valid_batch = True # or looping over data again
+
   for _ in range(span):
     offset = _data_index-_data_offset
     if offset >= len(_current_data_block) or offset < 0:
-      new_data_block()
+      # Quit if we reached the end of the datablock
+      if not new_data_block():
+        valid_batch = False
       offset = _data_index-_data_offset
 
     bbuffer.append(_current_data_block[offset])
@@ -73,13 +84,15 @@ def generate_batch( batch_size, num_skips, skip_window):
   
     offset = _data_index -_data_offset
     if offset >= len(_current_data_block) or offset < 0:
-      new_data_block()
+      # Quit if we reached the end of the datablock
+      if not new_data_block():
+        valid_batch=False
       offset = _data_index-_data_offset
 
     bbuffer.append(_current_data_block[offset])
     _data_index = (_data_index + 1) % _total_size
 
-  return batch, labels
+  return batch, labels, valid_batch
 
 
 # Read the dictionary file
@@ -146,27 +159,30 @@ def set_integer_files(integer_files, size_files):
   read_integer_file(integer_files[0])
 
 # Read in the frequency file
+# We return a dictionary of the various frequences and an ordering 
+# from most to least
 def read_freq(freq_file, dict_size):
   errors = 0
-  c = collections.Counter()
-  
+  count = {}
+  order = []
+
   with open(freq_file,'r') as f:
     for line in f.readlines()[1:]:      
       tokens = line.split(", ")
 
       if len(tokens) == 2:
         key = tokens[0].replace(" ","")
-        count  = int(tokens[1])
-        c[key] = count
+        freq  = int(tokens[1])
+        count[key] = freq
       else:
         errors +=1
 
-  print("Frequency Table Errors: ", errors)
+  count['UNK'] =-1
 
-  count = [['UNK', -1]]
-  count.extend(c.most_common(dict_size))
-  
-  return count
+  count_order = [pair[0] for pair in sorted(count.items(), key=lambda item: item[1])]
+  count_order = count_order[::-1]
+
+  return count, count_order
 
 # Read the number of unknowns we have
 def read_unk_count(unk_file):

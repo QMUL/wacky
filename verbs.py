@@ -82,11 +82,9 @@ def read_subjects() :
       if (len(tokens) > 2):
         verb = dictionary[int(tokens[0])]
         
-        print(verb)
-        
         if verb in unique_verbs:
         
-          #print(verb,":")
+          print(verb,":")
           add_vector = np.zeros((1,VEC_SIZE))
           mul_vector = np.ones((1,VEC_SIZE))
           sl = 0
@@ -99,7 +97,7 @@ def read_subjects() :
               # Now find the subject vectors
               vv = vec_data[sbj_idx]
               add_vector = np.add(add_vector,vv)
-              #print(np.linalg.norm(mul_vector))
+              print(np.linalg.norm(mul_vector))
               mul_vector = mul_vector * vv
               sl += 1
             except Exception as e:
@@ -108,14 +106,13 @@ def read_subjects() :
               # Mostly just tokens not parsing properly
 
             #print (" ->", sub_vector)
-          if verb == "giggle":
-            print(verb,sl,add_vector[0],mul_vector[0])
             
           # Work out the cosine distances
           #print(add_vector)
           #print(mul_vector)
           verb_add[verb] = add_vector[0]
           verb_multiply[verb] = mul_vector[0]
+          #print(mul_vector)
           verb_sublength[verb] = sl
 
   return verb_add, verb_multiply, verb_sublength
@@ -254,7 +251,7 @@ if __name__ == "__main__" :
     vec_data = read_binary(BASE_DIR + "/vectors.bin")
   else:
     # TODO - replace with a proper path
-    vec_data = np.load(BASE_DIR + "/final_embeddings.npy")
+    vec_data = np.load(BASE_DIR + "/final_standard_embeddings.npy")
     VEC_SIZE = vec_data.shape[1]
     print("Vec Size", VEC_SIZE)
 
@@ -280,8 +277,8 @@ if __name__ == "__main__" :
       dist_add = cosine_distance(verb0, verb1, verb_add)
       dist_mul = cosine_distance(verb0, verb1, verb_mul) 
       print ("-----------------")
-
       print (verb0, verb1, dist_vrb, dist_add, dist_mul, verb_sl[verb0], verb_sl[verb1])
+    
       #print ("centroid",verb0,"add")
       #print (centroid(verb0, verb_add, verb_sl))
       #print ("centroid",verb0,"mul")

@@ -1,5 +1,7 @@
 import numpy as np
-import os, sys
+import os, sys, math
+
+from random import randint
 
 BASE_DIR = "./build"
 DICT_FILE = "dictionary.txt"
@@ -15,14 +17,31 @@ def read_dictionary() :
 
 if __name__ == "__main__" :
 
-  data = np.load("final_embeddings.npy")
-
   if len(sys.argv) > 1:
     BASE_DIR = sys.argv[1]
+
+  data = np.load(BASE_DIR + "/final_standard_embeddings.npy")
 
   read_dictionary()
 
   print("Data sizes: ", data.size, data.shape, data.ndim)
   subset = data[500:512]
   print(subset)
-  print(dictionary[1])
+  ri = randint(0,len(dictionary)-1)
+  print(dictionary[ri])
+  vv = 0
+  for i in data[ri]:
+    vv += i*i
+
+  vv = math.sqrt(vv)
+  print("Vector Length",vv)
+
+  data = np.load(BASE_DIR + "/final_normalized_embeddings.npy")
+  vv = 0
+  for i in data[ri]:
+    vv += i*i
+
+  vv = math.sqrt(vv)
+  print("Normal Vector Length",vv)
+
+

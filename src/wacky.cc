@@ -43,7 +43,7 @@ map<string,int> DICTIONARY_FAST {};
 vector<string> DICTIONARY {};
 vector< vector<int> > VERB_SUBJECTS;
 
-size_t VOCAB_SIZE = 500000; // Really more of a max
+size_t VOCAB_SIZE = 50000; // Really more of a max
 string OUTPUT_DIR = ".";
 
 vector<string>::iterator find_in_dictionary(string s){
@@ -729,11 +729,11 @@ int main(int argc, char* argv[]) {
     VERB_SUBJECTS.push_back( vector<int>() );
   }
 
-  //if (create_freq(filenames) != 0) { return 1; }
-  //if (create_dictionary() != 0) { return 1; }
-  read_dictionary();
-  read_freq();
+  if (create_freq(filenames) != 0) { return 1; }
+  if (create_dictionary() != 0) { return 1; }
+  //read_dictionary();
+  //read_freq();
   if (create_verb_subject(filenames) != 0) { return 1; }
-  //if (create_integers(filenames) != 0) { return 1; }
+  if (create_integers(filenames) != 0) { return 1; }
   return 0;
 }

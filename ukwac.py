@@ -11,7 +11,12 @@ Set the various directories correctly and this program should just run
 
 This looks like fun : http://projector.tensorflow.org/
 
-nary'''
+Issues with overshooting could be related to this? https://stackoverflow.com/questions/33641799/why-does-tensorflow-example-fail-when-increasing-batch-size
+
+I've replaced the standard gradient descent with an adapative as things are exploding a bit too much
+https://stackoverflow.com/questions/33919948/how-to-set-adaptive-learning-rate-for-gradientdescentoptimizer
+
+'''
 
 import collections
 import math
@@ -44,11 +49,11 @@ TOTAL_FILE          = "total_count.txt"
 OUT_DIR             = "."
 CHECKPOINT_DIR      = "checkpoints"
 LEARNING_RATE       = 1.0
-BATCH_SIZE          = 512
-EMBEDDING_SIZE      = 512       # Dimension of the embedding vector.
-SKIP_WINDOW         = 3         # How many words to consider left and right.
+BATCH_SIZE          = 256
+EMBEDDING_SIZE      = 256       # Dimension of the embedding vector.
+SKIP_WINDOW         = 5         # How many words to consider left and right.
 NUM_SKIPS           = 2         # How many times to reuse an input to generate a label.
-NUM_STEPS           = 5000000   # Rough guess at the maximum number of steps
+NUM_STEPS           = 15000000  # Rough guess at the maximum number of steps
 
 NORMALIZED_EMBEDDINGS = []
 STANDARD_EMBEDDINGS = []
@@ -102,7 +107,7 @@ if __name__ == "__main__" :
     print(reverse_dictionary[valid_examples[i]])
 
 
-  num_sampled = 256     # Number of negative examples to sample.
+  num_sampled = 128     # Number of negative examples to sample.
 
   # Begin the Tensorflow Setup
   # Generate a batch and print it
@@ -150,8 +155,10 @@ if __name__ == "__main__" :
 
       loss = tf.reduce_mean(tf.nn.nce_loss(nce_weights, nce_biases, embed, train_labels, num_sampled, vocabulary_size))
       
-      # Construct the SGD optimizer using a learning rate of 1.0.
-      optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE, name='optimizer').minimize(loss)
+      # Construct the an optimizer that works proper like
+      #optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE, name='optimizer').minimize(loss)
+
+      optimizer = tf.train.AdagradOptimizer(LEARNING_RATE, name='optimizer').minimize(loss)
 
       # Compute the cosine similarity between minibatch examples and all STANDARD_EMBEDDINGS.
       norm = tf.sqrt(tf.reduce_sum(tf.square(STANDARD_EMBEDDINGS), 1, keep_dims=True))
@@ -207,7 +214,14 @@ if __name__ == "__main__" :
       if step % 2000 == 0:
         if step > 0:
           average_loss /= 2000
-        
+        if average_loss < 0.4 :
+          print("Loss below 0.4. Quitting")
+          break
+
+        if average_loss > 50000:
+          print("loss is exploding")
+          sys.exit()
+ 
         # The average loss is an estimate of the loss over the last 2000 batches.
         print("Average loss at step ", step, ": ", average_loss, "Block:", data_buffer._current_block)
         average_loss = 0

@@ -86,6 +86,10 @@ if __name__ == "__main__" :
   dictionary, reverse_dictionary, vocabulary_size = read_dictionary(BASE_DIR + DICTIONARY_FILE) 
   data_files, size_files = find_integer_files(BASE_DIR + INTEGER_DIR)
   count, count_order = read_freq(BASE_DIR + FREQ_FILE, vocabulary_size)
+
+  # Wacky removes the most 100 common so we adjust the count_order accordingly
+  count_order = count_order[100:]
+
   count["UNK"] = read_unk_count(BASE_DIR + UNKNOWN_FILE)
 
   print("Vocabularly of size", vocabulary_size)
@@ -105,7 +109,6 @@ if __name__ == "__main__" :
   print("Valid examples - first 20. Drawn from top 2000 most frequent words")
   for i in range(20):
     print(reverse_dictionary[valid_examples[i]])
-
 
   num_sampled = 128     # Number of negative examples to sample.
 

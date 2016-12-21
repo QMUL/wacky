@@ -57,7 +57,7 @@ if __name__ == "__main__":
     except:
       print("exception")
 
-  print(useful_embeddings)
+  #print(useful_embeddings)
 
   low_dim_embs = tsne.fit_transform(useful_embeddings)
   plot_with_labels( low_dim_embs, labels, filename=BASE_DIR + "tsne.png")

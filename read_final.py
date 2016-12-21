@@ -3,8 +3,11 @@ import os, sys, math
 
 from random import randint
 
+from data_buffer import read_freq
+
 BASE_DIR = "./build"
 DICT_FILE = "dictionary.txt"
+FREQ_FILE = "freq.txt"
 
 dictionary = []
 
@@ -23,6 +26,12 @@ if __name__ == "__main__" :
   data = np.load(BASE_DIR + "/final_standard_embeddings.npy")
 
   read_dictionary()
+
+  count, count_order = read_freq(BASE_DIR + "/" + FREQ_FILE, len(dictionary))
+  
+  for i in range(0,200):
+    print(count_order[i])
+
 
   print("Data sizes: ", data.size, data.shape, data.ndim)
   subset = data[500:512]

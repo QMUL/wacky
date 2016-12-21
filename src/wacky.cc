@@ -23,6 +23,7 @@
 #include <set>
 #include <dirent.h>
 #include <omp.h>
+#include <deque>
 
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/mapped_region.hpp>
@@ -38,13 +39,20 @@ using namespace boost::interprocess;
 // Our master map and set
 map<string, size_t> FREQ {};
 vector< pair<string,size_t> > FREQ_FLIPPED {};
-set<string> WORD_IGNORES {",","-",".","<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
+set<string> WORD_IGNORES {",","-",".","@card@", "<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
 map<string,int> DICTIONARY_FAST {};
 vector<string> DICTIONARY {};
 vector< vector<int> > VERB_SUBJECTS;
+vector< vector<int> > WORD_VECTORS;
+vector<int> BASIS_VECTOR;
 
-size_t VOCAB_SIZE = 50000; // Really more of a max
+
+size_t VOCAB_SIZE = 50000;  // Really more of a max
+size_t BASIS_SIZE = 5000;   // When creating the WORD_VECTORS how large are these vectors?
 string OUTPUT_DIR = ".";
+bool  LEMMA_TIME = true;   // Use the lemma or stem of the word
+size_t IGNORE_WINDOW = 100; // How many most frequent words do we ignore completely in the basis?
+size_t WINDOW_SIZE = 5;			// Our sliding window size, either side of the chosen word
 
 vector<string>::iterator find_in_dictionary(string s){
 
@@ -64,6 +72,34 @@ vector<string>::iterator find_in_dictionary(string s){
 
 
 bool sort_freq (pair<string,size_t> i, pair<string, size_t> j) { return (i.second > j.second); }
+
+// For word vectors, we take a subset of the vocab - the basis
+void _create_basis() {
+  // At this point we can also create the basis vector as the top of the dictionary
+  // We write this out too
+  // We dont add UNK to the basis
+  int idx = 0;
+
+  for (auto it = FREQ_FLIPPED.begin(); it != FREQ_FLIPPED.end(); it++) {
+    if (!s9::StringContains(it->first,"UNK")){ 
+      if (idx > IGNORE_WINDOW) {
+        BASIS_VECTOR.push_back(DICTIONARY_FAST[it->first]);
+      }
+      idx++;
+      if (idx >= BASIS_SIZE + IGNORE_WINDOW){
+        break;
+      }
+    }   
+  }
+  
+  std::ofstream basis_file (OUTPUT_DIR + "/basis.txt");
+  for (auto it : BASIS_VECTOR){
+    basis_file << it << endl;
+  }
+  basis_file.flush();
+  basis_file.close();
+
+}
 
 // Create a DICTIONARY by flipping the FREQ around, taking the top VOCAB_SIZE 
 // and then sorting into alphabetical order
@@ -89,6 +125,7 @@ int create_dictionary(){
  
   std::sort(DICTIONARY.begin(), DICTIONARY.end());
 
+  // I suspect we dont actually need the total count
   DICTIONARY.push_back(string("UNK"));
   idx = 0;
   std::ofstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
@@ -101,12 +138,15 @@ int create_dictionary(){
   dictionary_file.flush();
   dictionary_file.close();
 
+  _create_basis();
+
   return 0;
 }
 
 // If we've already generated a dictionary read it in
 int read_dictionary(){
-  std::ifstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
+
+   std::ifstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
   string line;
   size_t idx = 0;
   while ( getline (dictionary_file,line) ) {
@@ -117,6 +157,7 @@ int read_dictionary(){
     } 
     idx+=1;
   }
+  _create_basis();
 }
 
 // Create the intial FREQ FREQuency map
@@ -215,8 +256,12 @@ int create_freq(vector<string> filenames) {
           } else {
             // Can now look at the string and work on our FREQ
             vector<string> tokens = s9::SplitStringWhitespace(str);  
-            if (tokens.size() > 0) {
+            if (tokens.size() > 1) {
               string val = s9::ToLower(tokens[0]);
+              if (LEMMA_TIME) {
+                val = s9::ToLower(tokens[1]); // Use the canonical form of the word
+              }
+
               if (s9::IsAsciiPrintableString(val)){
                 if (WORD_IGNORES.find(val) == WORD_IGNORES.end()){  
 
@@ -257,7 +302,7 @@ int create_freq(vector<string> filenames) {
     // remove memory map ?
   }
 
-  std::ofstream freq_file (OUTPUT_DIR + "/FREQ.txt");
+  std::ofstream freq_file (OUTPUT_DIR + "/freq.txt");
   if (freq_file.is_open()) {
     freq_file << s9::ToString(FREQ.size()) << endl;
     for (auto it = FREQ.begin(); it != FREQ.end(); ++it) {
@@ -288,9 +333,234 @@ int read_freq(){
     } 
     idx+=1;
   }
+
+  for (auto it = FREQ.begin(); it != FREQ.end(); it++){
+    FREQ_FLIPPED.push_back(*it);
+  }
+
+  std::sort(FREQ_FLIPPED.begin(), FREQ_FLIPPED.end(), sort_freq);
+
+  return 0;
+}
+
+// Breakup our files into blocks 
+
+int _breakup ( char ** block_pointer, size_t * block_size, file_mapping &m_file, mapped_region &region) {
+  // Scan directory for the files
+	int num_blocks =1; 
+		
+	#pragma omp parallel
+	{
+		num_blocks = omp_get_num_threads();
+	}
+
+	cout << "Num Blocks: " << num_blocks << endl;
+
+	// Problem with memory-mapped files is we need the number of line
+	// endings in order to split the file for OpenMP processing on the same
+	// file. Using one thread per file is probably easier. 
+	//
+	// OR we could just move the pointers within the file backwards till we hit
+	// a newline and set it there. That would probably be quite easy
+
+	try {
+
+		void * addr = region.get_address();
+		size_t size = region.get_size();
+
+		size_t step = size / num_blocks;
+		cout << "Step Size " << step <<endl;
+
+		// Set the starting positions and the sizes, by finding the nearest newline
+		// that occurs after the guessed block border. This likely means the last block
+		// will be the smallest
+		std::string ssm = "0000";
+
+		block_pointer[0] = static_cast<char*>(addr);
+		char *mem = static_cast<char*>(addr);
+		for (int i=1; i < num_blocks; ++i) {
+			mem += step;
+			while (ssm.compare("</s>") != 0){
+				ssm[0] = ssm[1];
+				ssm[1] = ssm[2];
+				ssm[2] = ssm[3];
+				ssm[3] = *mem;
+				mem++;
+				
+			}
+			ssm = "0000"; 
+			block_pointer[i] = mem;
+		}
+
+		size_t csize = 0;
+		for (int i = 0; i < num_blocks-1; ++i) {
+			block_size[i] = block_pointer[i+1] - block_pointer[i];
+			csize += block_size[i];
+		}
+
+		if (num_blocks > 1){
+			block_size[num_blocks-1] = size - csize;
+		} else {
+			block_size[0] = size;
+		}
+
+		cout << "Block Sizes: " << endl;
+		for (int i = 0; i < num_blocks; ++i) {
+			cout << i << " " <<  block_size[i] << endl;
+		}
+
+	} catch (interprocess_exception &ex) {
+		fprintf(stderr, "Exception %s\n", ex.what());
+		fflush(stderr);
+		return 1;
+	}
+
+	return 0;
 }
 
 
+// Create a file of word vectors based on counts
+
+int create_word_vectors(vector<string> filenames) {
+	
+  cout << "Creating word vectors..." << endl;
+
+  int num_blocks =1; 
+		
+	#pragma omp parallel
+	{
+		num_blocks = omp_get_num_threads();
+	}
+
+	// Start by setting the counts - we add an extra 1 for the UNK value (but UNK does not occur in the basis)
+	for (int i =0; i < VOCAB_SIZE+1; ++i) {
+	  vector<int> ti; 	
+		ti.reserve(VOCAB_SIZE);
+		for (int j=0; j < BASIS_SIZE; ++j) {
+			ti.push_back(0);
+		}	
+		WORD_VECTORS.push_back(ti);
+	}
+
+  for( string filepath : filenames) {
+
+    char * block_pointer[num_blocks];
+    size_t block_size[num_blocks];
+
+    // Cant pass this into _breakup sadly
+		file_mapping m_file(filepath.c_str(), read_only);
+		mapped_region region(m_file, read_only);  
+
+		int result = _breakup(block_pointer, block_size, m_file, region );
+		if (result == -1){
+			return -1;
+		}	
+
+    cout << "Reading file " << filepath << endl;
+		
+		#pragma omp parallel
+		{   
+			int block_id = omp_get_thread_num();
+			char *mem = block_pointer[block_id];
+			size_t file_count = 0;
+			std::string str;
+			std::vector<int> sentence;
+      bool recording = false;
+
+			for(std::size_t i = 0; i < block_size[block_id]; ++i){
+				char data = *mem;
+				if (data != '\n' && data != '\r'){
+					str += data;
+				} else {
+            
+          //  Can now look at the string and work on our FREQ
+            
+          vector<string> tokens = s9::SplitStringWhitespace(str);  
+          // Essentially, we capture a sentence and then look at each word
+          // and the WINDOW_SIZE of words before and after it, and update a 
+          // count if that word occurs in the BASIS_VECTOR 
+
+          if (tokens.size() > 0){
+            string val = s9::ToLower(tokens[0]);
+            
+            if (s9::StringContains(val,"</s>")){
+              // Stop sentence
+              recording = false;
+              // Now update the counts
+              for (int idw = 0; idw < sentence.size(); ++idw){
+                
+                vector<int> tv = WORD_VECTORS[ sentence[idw] ]; 
+                // look below
+                for (int jdw = idw; jdw > idw - WINDOW_SIZE && jdw >= 0; --jdw){
+                  
+                  int ji = sentence[jdw];
+                  for (int bv = 0; bv < BASIS_SIZE; ++bv){
+                    if (BASIS_VECTOR[bv] == ji){
+                      // Probably could be faster here
+                      #pragma omp critical
+                      tv[bv] += 1;
+                    }
+                  }    
+                }
+
+                // look above
+                for (int jdw = idw; jdw > idw + WINDOW_SIZE && jdw < sentence.size(); ++jdw){
+                  int ji = sentence[jdw];
+                  for (int bv = 0; bv < BASIS_SIZE; ++bv){
+                    if (BASIS_VECTOR[bv] == ji){
+                      #pragma omp critical
+                      tv[bv] += 1;
+                    }
+                  }    
+                } 
+              }
+              sentence.clear(); 
+
+            } else if (s9::StringContains(val,"<s>")){
+              // start sentence
+              recording = true;
+            } else if (recording) {
+
+              if (tokens.size() > 1) {
+                string lemma = val;
+              
+                if (LEMMA_TIME) {
+                  lemma = s9::ToLower(tokens[1]);
+                }
+
+                if (DICTIONARY_FAST.find(lemma) == DICTIONARY_FAST.end()){
+                  sentence.push_back(VOCAB_SIZE);
+                } else {
+                  sentence.push_back(DICTIONARY_FAST[lemma] );
+                }
+              }
+            }
+          } 
+          str = "";
+				}
+				mem++;
+			}    
+		} // end parallel bit
+	}
+
+	// Finished all the files, now quit
+  std::ofstream wv_file (OUTPUT_DIR + "/word_vectors.txt");
+  if (wv_file.is_open()) {
+		size_t idx = 0;
+		for (vector<int> tv : WORD_VECTORS){
+			for (int ti : tv){
+    		wv_file << s9::ToString(ti) << " ";
+			}
+			wv_file << endl;
+		}
+  	wv_file.close();
+  } else {
+    cout << "Unable to open word_vec file for writing" << endl;
+    return 1;
+  }
+
+	return 0;
+}
 
 
 // Create integer versions of all the strings
@@ -354,7 +624,6 @@ int create_integers(vector<string> filenames) {
         block_pointer[i] = mem;
       }
 
-
       size_t csize = 0;
       for (int i = 0; i < num_blocks-1; ++i) {
         block_size[i] = block_pointer[i+1] - block_pointer[i];
@@ -394,9 +663,13 @@ int create_integers(vector<string> filenames) {
           } else {       
             // Can now look at the string and work on our FREQ
             vector<string> tokens = s9::SplitStringWhitespace(str);  
-            if (tokens.size() > 0) {
+            if (tokens.size() > 1) {
               string val = s9::ToLower(tokens[0]);
               
+              if (LEMMA_TIME) {
+                val = s9::ToLower(tokens[1]);
+              }
+
               if (DICTIONARY_FAST.find(val) == DICTIONARY_FAST.end()){
                 int_file << s9::ToString(VOCAB_SIZE) << endl;
                 unk_count++; 
@@ -445,8 +718,6 @@ int create_integers(vector<string> filenames) {
     cout << "Unable to open total file for writing" << endl;
     return 1;
   }
-
-
 
   return 0;
 }
@@ -576,6 +847,11 @@ int create_verb_subject(vector<string> filenames) {
                  
                   int target = s9::FromString<int>(tokens[4]);
                   string sbj = s9::ToLower(tokens[0]);
+                  // Not sure if we want lemma time here?
+                  if (LEMMA_TIME){
+                    sbj = s9::ToLower(tokens[1]);
+                  }
+                  
                   auto vidx = DICTIONARY_FAST.find(sbj); 
 														
                   if (vidx != DICTIONARY_FAST.end()){
@@ -606,15 +882,21 @@ int create_verb_subject(vector<string> filenames) {
                         
 												if (s9::StringContains(tokens2[2],"VV")){
                           // Do we use the actual root verb or the conjugated
-                          //string verb = s9::ToLower(tokens2[0]);
-                          string verb = s9::ToLower(tokens2[1]);
+                          string verb = s9::ToLower(tokens2[0]);
+                          if (LEMMA_TIME){
+                            verb = s9::ToLower(tokens2[1]);
+                          }
 
                           auto widx = DICTIONARY_FAST.find(verb);
 													
                           if (widx != DICTIONARY_FAST.end()){
-                            #pragma omp critical
-														{
-															VERB_SUBJECTS[widx->second].push_back(vidx->second);
+														
+														// We record unique instances only
+														if (std::find(VERB_SUBJECTS[widx->second].begin(), VERB_SUBJECTS[widx->second].end(), vidx->second) == VERB_SUBJECTS[widx->second].end()) {
+                            	#pragma omp critical
+															{
+																VERB_SUBJECTS[widx->second].push_back(vidx->second);
+															}
 														}
                             target = 0; // Just record the one direct verb 
                           }
@@ -695,11 +977,18 @@ int main(int argc, char* argv[]) {
     OUTPUT_DIR = string(argv[2]);
   }
 
-  if (argc == 4){
+  if (argc >= 4 && strcmp(argv[argc-1],"-c") != 0){
     VOCAB_SIZE = s9::FromString<int>(argv[3]);
   }
 
-	//omp_set_dynamic(0);
+  if (strcmp(argv[argc-1],"-c") == 0) {
+    LEMMA_TIME = true;
+    cout << "Using Lemma forms of words" << endl;
+  }
+
+  cout << "Vocab Max Size: " << VOCAB_SIZE << endl; 
+  
+  //omp_set_dynamic(0);
 
   // Scan directory for the files
   if (is_directory(p)) {
@@ -728,12 +1017,13 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i <= VOCAB_SIZE; ++i) {
     VERB_SUBJECTS.push_back( vector<int>() );
   }
-
+  
+  //read_freq();
   if (create_freq(filenames) != 0) { return 1; }
   if (create_dictionary() != 0) { return 1; }
   //read_dictionary();
-  //read_freq();
   if (create_verb_subject(filenames) != 0) { return 1; }
   if (create_integers(filenames) != 0) { return 1; }
-  return 0;
+  if (create_word_vectors(filenames) != 0) { return 1; }
+	return 0;
 }

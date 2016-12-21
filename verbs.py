@@ -43,7 +43,7 @@ verbs_to_check = [
     ('wander', 'burn'),
     ('read', 'write'),
     ('read', 're-read'),
-    ('read', 'see')
+    ('sleep', 'feel'),
   ]
 '''
 verbs_to_check = [
@@ -69,6 +69,8 @@ def read_subjects() :
 
   verb_add = {}
   verb_multiply = {}
+  verb_kronecker = {}
+  verb_kronecker_mm = {}
   verb_sublength = {}
 
   for v in unique_verbs:
@@ -84,9 +86,12 @@ def read_subjects() :
         
         if verb in unique_verbs:
         
-          print(verb,":")
+          #print(verb,":")
           add_vector = np.zeros((1,VEC_SIZE))
           mul_vector = np.ones((1,VEC_SIZE))
+          krn_vector = np.zeros((1,VEC_SIZE * VEC_SIZE))
+          kmm_vector = np.ones((1,VEC_SIZE * VEC_SIZE))
+
           sl = 0
 
           for sbj in tokens[1:]:
@@ -97,8 +102,12 @@ def read_subjects() :
               # Now find the subject vectors
               vv = vec_data[sbj_idx]
               add_vector = np.add(add_vector,vv)
-              print(np.linalg.norm(mul_vector))
+              #print(np.linalg.norm(mul_vector))
               mul_vector = mul_vector * vv
+              # Kronecker product - we have add and mul versions
+              krn_vector = np.kron(vv, vv) + krn_vector
+              kmm_vector = np.kron(vv, vv) * kmm_vector
+
               sl += 1
             except Exception as e:
               pass
@@ -112,10 +121,12 @@ def read_subjects() :
           #print(mul_vector)
           verb_add[verb] = add_vector[0]
           verb_multiply[verb] = mul_vector[0]
+          verb_kronecker[verb] = krn_vector
+          verb_kronecker_mm[verb] = kmm_vector
           #print(mul_vector)
           verb_sublength[verb] = sl
 
-  return verb_add, verb_multiply, verb_sublength
+  return verb_add, verb_multiply, verb_kronecker, verb_kronecker_mm, verb_sublength
 
 # Determine the cosine distance
 # https://en.wikipedia.org/wiki/Cosine_similarity#Angular_distance_and_similarity
@@ -147,6 +158,14 @@ def cosine_distance(verb0, verb1, verb_vec) :
     dist = math.acos(sim) / math.pi
   
   return 1.0 - dist
+
+# Return the Kronecker product, converted to a cosine distance for the subjects of the verbs
+
+def kron_distance(verb0, verb1, verb_vec):
+  # For now, just return the matrices
+
+  return (verb_vec[verb0], verb_vec[verb1])
+
 
 # Return a vector divided by the number of subjects (an average basically)
 
@@ -230,7 +249,7 @@ def read_binary(filepath):
       widx += 1
 
   vectors = np.vstack(vectors)
-  print(vectors.shape)
+  #print(vectors.shape)
   #return dictionary, vectors
   return vectors
 
@@ -261,11 +280,11 @@ if __name__ == "__main__" :
     if v[1] not in unique_verbs:
       unique_verbs.append(v[1])
 
-  verb_add, verb_mul, verb_sl = read_subjects()
+  verb_add, verb_mul, verb_krn, verb_kmm,  verb_sl = read_subjects()
 
   # Create our verb to verb vector dictionary
   verb_vrb = {}
-   
+
   for idx in range(0,vec_data.shape[0]-1):
     v = dictionary[idx]
     if v in unique_verbs:
@@ -276,9 +295,17 @@ if __name__ == "__main__" :
       dist_vrb = cosine_distance(verb0, verb1, verb_vrb)
       dist_add = cosine_distance(verb0, verb1, verb_add)
       dist_mul = cosine_distance(verb0, verb1, verb_mul) 
+      dist_krn = kron_distance(verb0, verb1, verb_krn)
+      dist_kmm = kron_distance(verb0, verb1, verb_kmm)
       print ("-----------------")
-      print (verb0, verb1, dist_vrb, dist_add, dist_mul, verb_sl[verb0], verb_sl[verb1])
-    
+      print (verb0, "&", verb1)
+      print ("cosine distance between verbs:", dist_vrb)
+      print ("cosine distance between verb subjects added:",dist_add)
+      print ("cosine distance between verb subjects multiplied:", dist_mul)
+      print ("# of subjects for verb0 & verb1:", verb_sl[verb0], verb_sl[verb1])
+      print ("kronecker add:", dist_krn)
+      print ("kronecker mul:", dist_kmm)
+
       #print ("centroid",verb0,"add")
       #print (centroid(verb0, verb_add, verb_sl))
       #print ("centroid",verb0,"mul")
@@ -303,7 +330,7 @@ if __name__ == "__main__" :
       tt[verb0] = centroid(verb0, verb_mul, verb_sl)
       tt[verb1] = centroid(verb1, verb_mul, verb_sl)
 
-      print ("consine centroid mul", verb0, verb1, cosine_distance(verb0,verb1,tt))
+      print ("cosine centroid mul", verb0, verb1, cosine_distance(verb0,verb1,tt))
       print ("")
     else :
       print (verb0, "and/or", verb1, "not in dictionary or subject matter.")

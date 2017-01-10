@@ -7,15 +7,16 @@ verbs
 '''
 
 import numpy as np
-import os, sys, math, struct
+import os, sys, math, struct, codecs
 
 BASE_DIR = ""
-DICT_FILE = "DICTIONARY.txt"
+DICT_FILE = "dictionary.txt"
 VERB_FILE = "subjects.txt"
+W2V_DICT_FILE = "vocab.txt"
 VEC_FILE = ""
 VEC_SIZE = 768
-VEC_DATA = [
 DICTIONARY = []
+W2V_DICTIONARY = []
 
 unique_verbs = []
 
@@ -51,6 +52,7 @@ verbs_to_check = [
   ] 
 '''
 # Read in the basic DICTIONARY file
+# This is the one we generate basically
 def read_dictionary() :
   #print("Reading Dictionary")
   with open(BASE_DIR + "/" + DICT_FILE,'r') as f:
@@ -58,10 +60,34 @@ def read_dictionary() :
       DICTIONARY.append( line.replace("\n",""))
 
 
+def read_w2v_dictionary():
+  # This could be better :/
+  tt = {}
+  with open(BASE_DIR + "/" + W2V_DICT_FILE,'rb') as f:
+    f_decoded = codecs.getreader("ISO-8859-15")(f)
+    for line in f_decoded.readlines():
+      tokens = line.split(" ")
+      if len(tokens) > 1:
+        word = tokens[0]
+        idx = int(tokens[1])
+        tt[idx] = word
+      else:
+        print(line, "causes issues")
+
+  for i in range(0,len(tt)-1):
+    W2V_DICTIONARY[i] = "t"
+  
+  for i in tt.keys():
+    W2V_DICTIONARY[i] = tt[i]
+  
+
 # Read the subject file - each line is a verb subject list of numbers - indices into the DICTIONARY
 # First number is the verb, all following are the subjects
 
 def read_subjects() :
+  global DICTIONARY
+  global vec_data
+  global VEC_SIZE
 
   verb_add = {}
   verb_multiply = {}
@@ -100,7 +126,7 @@ def read_subjects() :
               #print (" -", DICTIONARY[sbj_idx])
 
               # Now find the subject vectors
-              vv = VEC_DATA[sbj_idx]
+              vv = vec_data[sbj_idx]
               add_vector = np.add(add_vector,vv)
               #print(np.linalg.norm(mul_vector))
               mul_vector = mul_vector * vv
@@ -202,28 +228,106 @@ def kron_distance(verb0, verb1, verb_vec):
   except:
     return -1.0
 
+
 # Return a vector divided by the number of subjects (an average basically)
 
 def centroid (verb, verb_vec, verb_sl) :
   return verb_vec[verb] / float(verb_sl[verb])
+
+# Read the binary file from word2vec, returning a numpy array
+# we use the DICTIONARY created by tensorflow, because all the integer
+# files, DICTIONARYs and verb/subject lookups are based on that/
+
+def read_binary(filepath):
+
+  vectors = []
+  dlookup = {}
+  global DICTIONARY
+  global VEC_SIZE
+  
+  # As the tensorflow dict is different to the word2vec
+  # create a quick lookup table
+  for i in range(0,len(DICTIONARY)):
+    dlookup[DICTIONARY[i]] = i
+
+  with open(filepath,'rb') as f:
+    nums = []
+    byte = f.read(1)
+    char = byte.decode("ascii")
+    nums.append(char)
+    
+    while (char != '\n'):
+      byte = f.read(1)
+      char = byte.decode("ascii")
+      nums.append(char)
+
+    tt = ''.join(nums).split(" ") 
+    words = int( tt[0] ) # long long int?
+    VEC_SIZE = int( tt[1] )
+
+    for i in range(0,len(DICTIONARY)):
+      vectors.append( np.zeros(VEC_SIZE) )
+
+    #print("Loading vectors.bin with", words, "words with", VEC_SIZE, "vec size")
+
+    # TODO - for some reason this explodes memory (the numbers bit at the end) even though
+    # the C version copes fine. I suspect we must be duplicating something? 
+    # regardless we need to figure out why that is or restrict to top 50,000 words :/
+
+    widx = 0
+    while(widx < words):
+    
+      word = ""
+      while (True):
+        byte = f.read(1)
+        try:
+          char = byte.decode("ascii")
+        
+          if char == " ":
+           break
+          word += char
+        except :
+          pass
+
+      word = word.replace("\n","")
+      #DICTIONARY.append(word)
+      
+      # Lookup the word using the dictonary we generated with tensorflow
+      pidx = -1
+      if word in dlookup.keys():
+        pidx = dlookup[word]
+
+      # Now read the numbers, should be VEC_SIZE of them (4 bytes probably)
+      tidx = 0
+      for i in range(0,VEC_SIZE):
+        byte = f.read(4)
+        num = struct.unpack('f',byte)
+
+        if pidx != -1: 
+          vectors[pidx].itemset(tidx, num[0])
+
+        tidx += 1
+      
+      widx += 1
+
+  #vectors = np.vstack(vectors)
+  #print(vectors.shape)
+  #return DICTIONARY, vectors
+  return vectors
 
 # Main function
 
 if __name__ == "__main__" :
   BASE_DIR = sys.argv[1]
 
-  if len(sys.argv) > 2:
-    if sys.argv[2] == '-b':
-      BINVERSION = True
-
+  vec_data = []
   read_dictionary()
+  read_w2v_dictionary()
 
-  # TODO - replace with a proper path
-  VEC_DATA = np.load(BASE_DIR + "/final_standard_embeddings.npy")
-  VEC_SIZE = VEC_DATA.shape[1]
+  sys.exit()
   
-  #print("Vec Size", VEC_SIZE)
-
+  vec_data = read_binary(BASE_DIR + "/vectors.bin")
+  
   for v in verbs_to_check:
     if v[0] not in unique_verbs:
       unique_verbs.append(v[0])
@@ -237,12 +341,13 @@ if __name__ == "__main__" :
 
   print ("verb0,verb1,verb_dist,sub_add_dist,sub_mul_dist,num_sub_v0,num_sub_v1,kron_add_dist,kron_mul_dist,min_sub_dist,max_sub_dist")
 
-  for idx in range(0,VEC_DATA.shape[0]-1):
+  for idx in range(0,vec_data.shape[0]-1):
     v = DICTIONARY[idx]
     if v in unique_verbs:
-      verb_vrb[v] = VEC_DATA[idx,:]
+      verb_vrb[v] = vec_data[idx,:]
 
   for verb0, verb1 in verbs_to_check:
+
     if verb0 in DICTIONARY and verb1 in DICTIONARY and verb0 in verb_sl and verb1 in verb_sl:
       dist_vrb = cosine_distance(verb0, verb1, verb_vrb)
       dist_add = cosine_distance(verb0, verb1, verb_add)

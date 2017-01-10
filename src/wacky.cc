@@ -428,8 +428,6 @@ int _breakup ( char ** block_pointer, size_t * block_size, file_mapping &m_file,
 
 int create_word_vectors(vector<string> filenames) {
 	
-  cout << "Creating word vectors..." << endl;
-
   int num_blocks =1; 
 		
 	#pragma omp parallel
@@ -476,45 +474,45 @@ int create_word_vectors(vector<string> filenames) {
 				char data = *mem;
 				if (data != '\n' && data != '\r'){
 					str += data;
-				} else {
-            
+				} else {  
           //  Can now look at the string and work on our FREQ
-            
           vector<string> tokens = s9::SplitStringWhitespace(str);  
+          
           // Essentially, we capture a sentence and then look at each word
           // and the WINDOW_SIZE of words before and after it, and update a 
           // count if that word occurs in the BASIS_VECTOR 
 
           if (tokens.size() > 0){
             string val = s9::ToLower(tokens[0]);
-            
+
             if (s9::StringContains(val,"</s>")){
               // Stop sentence
               recording = false;
               // Now update the counts
               for (int idw = 0; idw < sentence.size(); ++idw){
-                
-                vector<int> tv = WORD_VECTORS[ sentence[idw] ]; 
                 // look below
                 for (int jdw = idw-1; jdw > idw - WINDOW_SIZE && jdw >= 0; --jdw){
                   int ji = sentence[jdw];
+
                   for (int bv = 0; bv < BASIS_SIZE; ++bv){
                     if (BASIS_VECTOR[bv] == ji){
                       // Probably could be faster here
-                      #pragma omp critical
-                      tv[bv] += 1;
+                      #pragma omp atomic
+                      WORD_VECTORS[ sentence[idw] ][bv] +=1;
                       break;
                     }
                   }    
                 }
 
                 // look above
-                for (int jdw = idw+1; jdw > idw + WINDOW_SIZE && jdw < sentence.size(); ++jdw){
+                for (int jdw = idw+1; jdw < idw + WINDOW_SIZE && jdw < sentence.size(); ++jdw){
+
                   int ji = sentence[jdw];
                   for (int bv = 0; bv < BASIS_SIZE; ++bv){
+
                     if (BASIS_VECTOR[bv] == ji){
-                      #pragma omp critical
-                      tv[bv] += 1;
+                      #pragma omp atomic
+                      WORD_VECTORS[ sentence[idw] ][bv] +=1;
                       break;
                     }
                   }    
@@ -674,6 +672,28 @@ int create_integers(vector<string> filenames) {
 
   return 0;
 }
+
+int combine_ukwac(vector<string> filenames, string outpath) {
+
+  std::ofstream combine_file (outpath);
+  
+  // Scan directory for the files
+  for( string filepath : filenames) {
+    std::ifstream infile (filepath); 
+    string line;
+    
+    while (std::getline(infile, line)){
+      vector<string> tokens = s9::SplitStringWhitespace(line);
+      if (tokens.size() > 5 ){
+        combine_file << tokens[0] << " ";
+      }
+    }
+    infile.close();
+  }
+  combine_file.close();
+
+}
+
 
 // This function will read everything within the sentence tags, creating a file that links 
 // verbs to objects via the DICTIONARY
@@ -1072,14 +1092,16 @@ int main(int argc, char* argv[]) {
 
   string ukdir;
   string simverb_file;
+  string combine_file;
   vector<string> filenames;
   bool read_in = false;
   bool verb_subject = false;
   bool integers = false;
   bool word_vectors = false;
   bool sim_verbs = false;
+  bool combine = false;
 
-  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rbiwn?")) != -1) {
+  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:biwn?")) != -1) {
   	int this_option_optind = optind ? optind : 1;
   	switch (c) {
       case 0 :
@@ -1118,6 +1140,10 @@ int main(int argc, char* argv[]) {
       case '?':
         std::cout << "wackyvec -u <path to ukwac> -o <output directory>" << std::endl;
         break;
+      case 'c':
+        combine_file = string(optarg);
+        combine = true;
+        break;
       default:
         std::cout << "?? getopt returned character code" << c << std::endl;
     }
@@ -1154,6 +1180,12 @@ int main(int argc, char* argv[]) {
     VERB_SUBJECTS.push_back( vector<int>() );
   }
   
+  if (combine) {
+    cout << "Combining ukwac into a large file of text" << endl;
+    combine_ukwac(filenames, combine_file);
+    return 0;
+  }
+
   if (read_in){
     cout << "Reading in dictionary and frequency data" << endl;
     read_freq();

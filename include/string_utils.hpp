@@ -85,9 +85,9 @@ namespace s9 {
       return "0";
     }
 
-    T d = std::ceil(std::log10(num < 0 ? -num : num));
+    T d = ceil(log10(num < 0 ? -num : num));
     int power = n - (int)d;
-    T magnitude = std::pow(10., power);
+    T magnitude = pow(10., power);
     long shifted = ::round(num*magnitude);
 
     std::ostringstream oss;
@@ -192,6 +192,21 @@ namespace s9 {
     std::string str (s);
     str.erase (std::remove(str.begin(), str.end(), c), str.end());
     return str;
+  }
+
+  /**
+   * Remove a string from another string, returning a copy
+   */
+
+  static inline std::string StringRemove (const std::string s, const std::string r) {
+    std::string b(s);
+    size_t found = s.find(r);
+    
+    if (found != std::string::npos && found == 0){
+      b.replace(found, found + r.length(),"");  
+    }
+
+    return b;
   }
 
   /*

@@ -37,13 +37,16 @@ using namespace std;
 using namespace boost::filesystem;
 using namespace boost::interprocess;
 
-// Our master map and set
+// Our naughty naughty globals! Tsk, tsk!
+// Most of these are global options or the big memory holders for all the vocab etc
 map<string, size_t> FREQ {};
 vector< pair<string,size_t> > FREQ_FLIPPED {};
 set<string> WORD_IGNORES {",","-",".","@card@", "<text","<s>xt","</s>SENT", "<s>>SENT", "<s>", "</s>", "<text>", "</text>"};
 map<string,int> DICTIONARY_FAST {};
 vector<string> DICTIONARY {};
+set<string> ALLOWED_BASIS_WORDS;
 vector< vector<int> > VERB_SUBJECTS;
+vector< vector<int> > VERB_OBJECTS;
 vector< vector<int> > WORD_VECTORS;
 vector<int> BASIS_VECTOR;
 vector<string> SIMVERBS;
@@ -57,7 +60,9 @@ size_t BASIS_SIZE = 5000;   // When creating the WORD_VECTORS how large are thes
 string OUTPUT_DIR = ".";
 bool  LEMMA_TIME = true;   // Use the lemma or stem of the word
 size_t IGNORE_WINDOW = 100; // How many most frequent words do we ignore completely in the basis?
-size_t WINDOW_SIZE = 5;			// Our sliding window size, either side of the chosen word
+size_t WINDOW_SIZE = 3;			// Our sliding window size, either side of the chosen word
+bool  UNIQUE_SUBJECTS = false;
+bool  UNIQUE_OBJECTS = false;
 
 vector<string>::iterator find_in_dictionary(string s){
 
@@ -85,12 +90,17 @@ void _create_basis() {
   // We dont add UNK to the basis
   int idx = 0;
 
+
   for (auto it = FREQ_FLIPPED.begin(); it != FREQ_FLIPPED.end(); it++) {
     if (!s9::StringContains(it->first,"UNK")){ 
       if (idx > IGNORE_WINDOW) {
-        BASIS_VECTOR.push_back(DICTIONARY_FAST[it->first]);
+        if (ALLOWED_BASIS_WORDS.find(it->first) != ALLOWED_BASIS_WORDS.end()) {
+          BASIS_VECTOR.push_back(DICTIONARY_FAST[it->first]);
+          idx++;
+        }
+      } else{ 
+        idx++;
       }
-      idx++;
       if (idx >= BASIS_SIZE + IGNORE_WINDOW){
         break;
       }
@@ -166,6 +176,7 @@ int read_dictionary(){
 }
 
 // Create the intial FREQ FREQuency map
+// In addition this creates a special file that records the type of the word (VV, NN etc)
 int create_freq(vector<string> filenames) {
   // Scan directory for the files
   for (string filepath : filenames){
@@ -261,7 +272,7 @@ int create_freq(vector<string> filenames) {
           } else {
             // Can now look at the string and work on our FREQ
             vector<string> tokens = s9::SplitStringWhitespace(str);  
-            if (tokens.size() > 1) {
+            if (tokens.size() > 2) {
               string val = s9::ToLower(tokens[0]);
               if (LEMMA_TIME) {
                 val = s9::ToLower(tokens[1]); // Use the canonical form of the word
@@ -279,7 +290,14 @@ int create_freq(vector<string> filenames) {
                     #pragma omp critical
                     { 
                       FREQ[val] = 1;
+                      if ( s9::StringContains(tokens[2],"NN") ||
+                            s9::StringContains(tokens[2],"JJ") ||
+                            s9::StringContains(tokens[2],"VV") ||
+                            s9::StringContains(tokens[2],"RB")){
+                        ALLOWED_BASIS_WORDS.insert(val);  
+                      }
                     }
+                   
                   }  else {
                     #pragma omp atomic 
                     FREQ[val] = FREQ[val] + 1;
@@ -306,7 +324,9 @@ int create_freq(vector<string> filenames) {
     }
     // remove memory map ?
   }
+  
 
+  // Write out the final frequency file
   std::ofstream freq_file (OUTPUT_DIR + "/freq.txt");
   if (freq_file.is_open()) {
     freq_file << s9::ToString(FREQ.size()) << endl;
@@ -321,11 +341,26 @@ int create_freq(vector<string> filenames) {
   
   cout << "Finished writing FREQ file" << endl;
 
+  // Write out the allowed basis words file
+  std::ofstream allowed_file (OUTPUT_DIR + "/allowed.txt");
+  if (allowed_file.is_open()) {
+    for (auto it = ALLOWED_BASIS_WORDS.begin(); it != ALLOWED_BASIS_WORDS.end(); ++it) {
+      allowed_file << *it << endl;
+    }
+    allowed_file.close();
+  } else {
+    cout << "Unable to open allowed.txt file for writing" << endl;
+    return 1;
+  }
+  
+  cout << "Finished writing ALLOWED file" << endl;
+
   return 0;
 
 }
 
 // If we've already generated a frequency read it in
+// along with the allowed words
 int read_freq(){
   std::ifstream freq_file (OUTPUT_DIR + "/freq.txt");
   string line;
@@ -344,6 +379,15 @@ int read_freq(){
   }
 
   std::sort(FREQ_FLIPPED.begin(), FREQ_FLIPPED.end(), sort_freq);
+  freq_file.close();
+
+  // Read the allowed file too
+  std::ifstream allowed_file (OUTPUT_DIR + "/allowed.txt");
+  while ( getline (allowed_file,line) ) {
+    line = s9::RemoveChar(line,'\n');
+    ALLOWED_BASIS_WORDS.insert(line);
+  }
+  allowed_file.close();
 
   return 0;
 }
@@ -694,10 +738,183 @@ int combine_ukwac(vector<string> filenames, string outpath) {
 
 }
 
+// internal function to create a objects for a verb
+void _create_verb_objects(string str_buffer) {
+  vector<string> lines = s9::SplitStringNewline(str_buffer);
+  
+  for (int k = 0; k < lines.size(); ++k){
+    vector<string> tokens = s9::SplitStringWhitespace(lines[k]);  
+  
+    if (tokens.size() > 5) {  
+      // Find the Subjects
+      if (s9::StringContains(tokens[5],"OBJ") 
+           && ( s9::StringContains(tokens[2],"NN") || 
+              s9::StringContains(tokens[2],"JJ"))) {
+      //if (s9::StringContains(tokens[5],"SBJ")){
+        // Follow the chain to the root, stopping when we hit a verb
+       
+        int target = s9::FromString<int>(tokens[4]);
+        string sbj = s9::ToLower(tokens[0]);
+        // Not sure if we want lemma time here?
+        if (LEMMA_TIME){
+          sbj = s9::ToLower(tokens[1]);
+        }
+        
+        auto vidx = DICTIONARY_FAST.find(sbj); 
+                  
+        if (vidx != DICTIONARY_FAST.end()){
+          // Walk up the tree adding verbs till we get to root
+          while (target != 0){
+            // find the next line (we cant assume the indexing is perfect)
+            int tt = -1;
+            for (int j = 0; j < lines.size(); ++j){
+              vector<string> ttokens = s9::SplitStringWhitespace(lines[j]);
+              if (ttokens.size() > 5){
+                if (s9::FromString<int>(ttokens[3]) == target){
+                  tt = j;
+                  break;
+                }
+              }
+            }
+            
+            if (tt == -1){
+              break;
+            }
+
+            vector<string> tokens2 = s9::SplitStringWhitespace(lines[tt]); 
+            
+            if (tokens2.size() > 5) {
+              target = s9::FromString<int>(tokens2[4]);
+              
+              if (s9::StringContains(tokens2[2],"VV")){
+                // Do we use the actual root verb or the conjugated
+                string verb = s9::ToLower(tokens2[0]);
+                
+                if (LEMMA_TIME){
+                  verb = s9::ToLower(tokens2[1]);
+                }
+
+                auto widx = DICTIONARY_FAST.find(verb);
+                
+                if (widx != DICTIONARY_FAST.end()){  
+                  // We choose between unique or otherwise
+                  if (UNIQUE_OBJECTS){
+                    if (std::find(VERB_OBJECTS[widx->second].begin(), VERB_OBJECTS[widx->second].end(), vidx->second) == VERB_OBJECTS[widx->second].end()) {
+                      #pragma omp critical
+                      {
+                        VERB_OBJECTS[widx->second].push_back(vidx->second);
+                      }
+                    }
+                  } else {
+                    #pragma omp critical
+                    {
+                      VERB_OBJECTS[widx->second].push_back(vidx->second);
+                    }
+                  }
+                  target = 0; // Just record the one direct verb 
+                }
+              }
+            } else {
+              // We got a duff line so quit
+              break;
+            }
+          }
+        } 
+      }
+    }
+  }
+}
+
+// Given a buffer, setup the subjects for a verb
+void _create_verb_subjects(string str_buffer) {
+  vector<string> lines = s9::SplitStringNewline(str_buffer);
+  
+  for (int k = 0; k < lines.size(); ++k){
+    vector<string> tokens = s9::SplitStringWhitespace(lines[k]);  
+  
+    if (tokens.size() > 5) {  
+      // Find the Subjects
+      if (s9::StringContains(tokens[5],"SBJ")  && (
+            s9::StringContains(tokens[2],"NN") || 
+            s9::StringContains(tokens[2],"JJ"))){
+      //if (s9::StringContains(tokens[5],"SBJ")){
+        // Follow the chain to the root, stopping when we hit a verb
+       
+        int target = s9::FromString<int>(tokens[4]);
+        string sbj = s9::ToLower(tokens[0]);
+        // Not sure if we want lemma time here?
+        if (LEMMA_TIME){
+          sbj = s9::ToLower(tokens[1]);
+        }
+        
+        auto vidx = DICTIONARY_FAST.find(sbj); 
+                  
+        if (vidx != DICTIONARY_FAST.end()){
+          // Walk up the tree adding verbs till we get to root
+          while (target != 0){
+            // find the next line (we cant assume the indexing is perfect)
+            int tt = -1;
+            for (int j = 0; j < lines.size(); ++j){
+              vector<string> ttokens = s9::SplitStringWhitespace(lines[j]);
+              if (ttokens.size() > 5){
+                if (s9::FromString<int>(ttokens[3]) == target){
+                  tt = j;
+                  break;
+                }
+              }
+            }
+            
+            if (tt == -1){
+              break;
+            }
+
+            vector<string> tokens2 = s9::SplitStringWhitespace(lines[tt]); 
+            
+            if (tokens2.size() > 5) {
+              target = s9::FromString<int>(tokens2[4]);
+              
+              if (s9::StringContains(tokens2[2],"VV")){
+                // Do we use the actual root verb or the conjugated
+                string verb = s9::ToLower(tokens2[0]);
+                
+                if (LEMMA_TIME){
+                  verb = s9::ToLower(tokens2[1]);
+                }
+
+                auto widx = DICTIONARY_FAST.find(verb);
+                
+                if (widx != DICTIONARY_FAST.end()){  
+                  // We choose between unique or otherwise
+                  if (UNIQUE_SUBJECTS){
+                    if (std::find(VERB_SUBJECTS[widx->second].begin(), VERB_SUBJECTS[widx->second].end(), vidx->second) == VERB_SUBJECTS[widx->second].end()) {
+                      #pragma omp critical
+                      {
+                        VERB_SUBJECTS[widx->second].push_back(vidx->second);
+                      }
+                    }
+                  } else {
+                    #pragma omp critical
+                    {
+                      VERB_SUBJECTS[widx->second].push_back(vidx->second);
+                    }
+                  }
+                  target = 0; // Just record the one direct verb 
+                }
+              }
+            } else {
+              // We got a duff line so quit
+              break;
+            }
+          }
+        } 
+      }
+    }
+  }
+}
 
 // This function will read everything within the sentence tags, creating a file that links 
 // verbs to objects via the DICTIONARY
-int create_verb_subject(vector<string> filenames) {
+int create_verb_subject_object(vector<string> filenames) {
   cout << "Creating Verb Subject" << endl;
 
   size_t unk_count = 0;
@@ -760,85 +977,10 @@ int create_verb_subject(vector<string> filenames) {
           // Can now look at the sentence, derive its structure and find the bits we need
           ssmt = "0000";
 
-          vector<string> lines = s9::SplitStringNewline(str_buffer);
-          
+          _create_verb_subjects(str_buffer);
+          _create_verb_objects(str_buffer);
+
           str_buffer = "";
-
-          for (int k = 0; k < lines.size(); ++k){
-            vector<string> tokens = s9::SplitStringWhitespace(lines[k]);  
-            if (tokens.size() > 5) {
-            
-              // Find the Subjects
-              if (s9::StringContains(tokens[5],"SBJ")  && s9::StringContains(tokens[2],"NN")){
-              //if (s9::StringContains(tokens[5],"SBJ")){
-                // Follow the chain to the root, stopping when we hit a verb
-               
-                int target = s9::FromString<int>(tokens[4]);
-                string sbj = s9::ToLower(tokens[0]);
-                // Not sure if we want lemma time here?
-                if (LEMMA_TIME){
-                  sbj = s9::ToLower(tokens[1]);
-                }
-                
-                auto vidx = DICTIONARY_FAST.find(sbj); 
-                          
-                if (vidx != DICTIONARY_FAST.end()){
-                  // Walk up the tree adding verbs till we get to root
-
-                  while (target != 0){
-                   
-                    // find the next line (we cant assume the indexing is perfect)
-                    int tt = -1;
-                    for (int j = 0; j < lines.size(); ++j){
-                      vector<string> ttokens = s9::SplitStringWhitespace(lines[j]);
-                      if (ttokens.size() > 5){
-                        if (s9::FromString<int>(ttokens[3]) == target){
-                          tt = j;
-                          break;
-                        }
-                      }
-                    }
-                    
-                    if (tt == -1){
-                      break;
-                    }
-
-                    vector<string> tokens2 = s9::SplitStringWhitespace(lines[tt]); 
-                    
-                    if (tokens2.size() > 5) {
-                      target = s9::FromString<int>(tokens2[4]);
-                      
-                      if (s9::StringContains(tokens2[2],"VV")){
-                        // Do we use the actual root verb or the conjugated
-                        string verb = s9::ToLower(tokens2[0]);
-                        if (LEMMA_TIME){
-                          verb = s9::ToLower(tokens2[1]);
-                        }
-
-                        auto widx = DICTIONARY_FAST.find(verb);
-                        
-                        if (widx != DICTIONARY_FAST.end()){
-                          
-                          // We record unique instances only
-                          if (std::find(VERB_SUBJECTS[widx->second].begin(), VERB_SUBJECTS[widx->second].end(), vidx->second) == VERB_SUBJECTS[widx->second].end()) {
-                            #pragma omp critical
-                            {
-                              VERB_SUBJECTS[widx->second].push_back(vidx->second);
-                            }
-                          }
-                          target = 0; // Just record the one direct verb 
-                        }
-                      }
-                      
-                    } else {
-                      // We got a duff line so quit
-                      break;
-                    }
-                  }
-                } 
-              }
-            }
-          }         
         }
     
         mem++;
@@ -871,7 +1013,7 @@ int create_verb_subject(vector<string> filenames) {
 
   // Write out the subject file as lines of numbers.
   // First number is the verb. All following numbers are the subjects
-  string filename = OUTPUT_DIR + "/subjects.txt";
+  string filename = OUTPUT_DIR + "/verb_subjects.txt";
   std::ofstream sub_file (filename);
   int idv = 0;
   for (vector<int> verbs : VERB_SUBJECTS){
@@ -887,11 +1029,26 @@ int create_verb_subject(vector<string> filenames) {
   
   sub_file.close();
 
+  filename = OUTPUT_DIR + "/verb_objects.txt";
+  std::ofstream obj_file (filename);
+  idv = 0;
+  for (vector<int> verbs : VERB_OBJECTS){
+    if (verbs.size() > 0 ){
+      obj_file << s9::ToString(idv) << " ";
+      for (int sb : verbs){
+        obj_file << s9::ToString(sb) << " ";
+      }
+      obj_file << endl;
+    }
+    idv++;
+  }
+  
+  obj_file.close();
+
   return 0;
 }
 
-// Create integer versions of all the strings
-// I suspect this is the one that takes the time as the DICTIONARY lookup will be slow :/
+// Create counts of how many times a verb has an object
 int create_simverbs(vector<string> filenames, string simverb_path) {
 
   size_t unk_count = 0;
@@ -971,9 +1128,7 @@ int create_simverbs(vector<string> filenames, string simverb_path) {
           // Can now look at the sentence, derive its structure and find the bits we need
           ssmt = "0000";
           vector<string> lines = s9::SplitStringNewline(str_buffer);
-          
-          str_buffer = "";
-
+        
           vector<bool> verb_hit;
           vector<string> verbs;
           vector<int> sim_indices;
@@ -1012,23 +1167,25 @@ int create_simverbs(vector<string> filenames, string simverb_path) {
 
           for (int k : object_indices){
             vector<string> tokens = s9::SplitStringWhitespace(lines[k]);
-            
             int target = s9::FromString<int>(tokens[4]);
             int start = target;
 
             while (target > 0){ 
               // find the next line (we cant assume the indexing is perfect)
-              for (int j = 0; j < lines.size(); ++j){
+              for (int j = 0; j < lines.size(); ++j) {
                 vector<string> target_tokens = s9::SplitStringWhitespace(lines[j]);
-                if (target_tokens.size() > 5){
+                
+                if (target_tokens.size() > 5) {
                   int st = s9::FromString<int>(target_tokens[3]); 
+                  
                   if (st == target){
                     target = st;
-
+                    
                     if (target_tokens.size() > 5) {
-                
+                    
                       if (s9::StringContains(target_tokens[2],"VV")){
                         string verb = s9::ToLower(target_tokens[0]);
+                      
                         if (LEMMA_TIME){
                           verb = s9::ToLower(target_tokens[1]);
                         }
@@ -1038,17 +1195,23 @@ int create_simverbs(vector<string> filenames, string simverb_path) {
                             verb_hit[iv] = true;
                           }
                         }
-                      }
+                        // Stop here, we've found the direct verb
+                        target = 0;
+                        break;
+                      }             
                     }
                   }
                 }
               }
+
               if (target == start){
+                target = 0;
                 break;
-              }
-                    
+              } 
             }
           }
+
+          str_buffer = "";
 
           // should be done with our sentence now so do some counting
           // TODO - as these are just increments we could go a little better with OpenMP
@@ -1101,7 +1264,7 @@ int main(int argc, char* argv[]) {
   bool sim_verbs = false;
   bool combine = false;
 
-  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:biwn?")) != -1) {
+  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:j:biwnyz?")) != -1) {
   	int this_option_optind = optind ? optind : 1;
   	switch (c) {
       case 0 :
@@ -1109,6 +1272,13 @@ int main(int argc, char* argv[]) {
       case 'u' :
         ukdir = std::string(optarg);
         break;
+      case 'y' :
+        UNIQUE_SUBJECTS = true;
+        break;
+      case 'z' :
+        UNIQUE_OBJECTS = true;
+        break;
+
       case 'o' :
         OUTPUT_DIR = string(optarg);
         break;
@@ -1124,6 +1294,9 @@ int main(int argc, char* argv[]) {
       case 'l' :
         LEMMA_TIME = true;
         cout << "Using Lemma forms of words" << endl;
+        break;
+      case 'j':
+        WINDOW_SIZE = s9::FromString<int>(optarg);
         break;
       case 'r':
         read_in = true;
@@ -1180,6 +1353,10 @@ int main(int argc, char* argv[]) {
     VERB_SUBJECTS.push_back( vector<int>() );
   }
   
+  for (int i = 0; i <= VOCAB_SIZE; ++i) {
+    VERB_OBJECTS.push_back( vector<int>() );
+  }
+
   if (combine) {
     cout << "Combining ukwac into a large file of text" << endl;
     combine_ukwac(filenames, combine_file);
@@ -1197,8 +1374,8 @@ int main(int argc, char* argv[]) {
   }
   
   if (verb_subject) {
-    cout << "Create verb subject" << endl; 
-    if (create_verb_subject(filenames) != 0)  { return 1; }
+    cout << "Create verb subjects and objects" << endl; 
+    if (create_verb_subject_object(filenames) != 0)  { return 1; }
   }
   
   if (integers){

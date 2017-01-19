@@ -14,7 +14,7 @@ DICT_FILE = "DICTIONARY.txt"
 VERB_FILE = "subjects.txt"
 VEC_FILE = ""
 VEC_SIZE = 768
-VEC_DATA = [
+VEC_DATA = []
 DICTIONARY = []
 
 unique_verbs = []

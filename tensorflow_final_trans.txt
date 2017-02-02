@@ -1,0 +1,11 @@
+#!/bin/bash
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/00 -t > ~/Projects/WackyResults/tensorflow/00/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/01 -t > ~/Projects/WackyResults/tensorflow/01/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/02 -t > ~/Projects/WackyResults/tensorflow/02/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/03 -t > ~/Projects/WackyResults/tensorflow/03/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/04 -t > ~/Projects/WackyResults/tensorflow/04/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/05 -t > ~/Projects/WackyResults/tensorflow/05/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/06 -t > ~/Projects/WackyResults/tensorflow/06/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/07 -t > ~/Projects/WackyResults/tensorflow/07/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/08 -t > ~/Projects/WackyResults/tensorflow/08/results_trans.txt
+python3 verbs_binary.py ~/Projects/WackyResults/tensorflow/09 -t > ~/Projects/WackyResults/tensorflow/09/results_trans.txt

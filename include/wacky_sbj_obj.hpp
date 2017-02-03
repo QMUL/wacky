@@ -20,16 +20,12 @@
 #include <boost/numeric/ublas/io.hpp>
 
 #include "string_utils.hpp"
+#include "wacky_math.hpp"
+#include "wacky_misc.hpp"
 
-struct VerbPair {
-  string v0;
-  string v1;
-  float s;
-};
-
-void read_subjects(std::string verb, std::map<string,int> & DICTIONARY_FAST,
-    std::vector< vector<int> > & VERB_SUBJECTS,
-    std::vector< vector<float> > & WORD_VECTORS,
+void read_subjects(std::string verb, std::map<std::string,int> & DICTIONARY_FAST,
+    std::vector< std::vector<int> > & VERB_SUBJECTS,
+    std::vector< std::vector<float> > & WORD_VECTORS,
     int BASIS_SIZE,
     boost::numeric::ublas::vector<float> & base_vector,
     boost::numeric::ublas::vector<float> & add_vector,
@@ -46,12 +42,12 @@ void read_subjects(std::string verb, std::map<string,int> & DICTIONARY_FAST,
     boost::numeric::ublas::vector<float> & krn_base_mul_vector );
 
 void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
-  std::set<string> & VERB_TRANSITIVE,
-  std::set<string> & VERB_INTRANSITIVE,
+  std::set<std::string> & VERB_TRANSITIVE,
+  std::set<std::string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,
-  std::map<string,int> & DICTIONARY_FAST,
-  std::vector< vector<int> > & VERB_SUBJECTS,
-  std::vector< vector<float> > & WORD_VECTORS);
+  std::map<std::string,int> & DICTIONARY_FAST,
+  std::vector< std::vector<int> > & VERB_SUBJECTS,
+  std::vector< std::vector<float> > & WORD_VECTORS);
  
 
 #endif

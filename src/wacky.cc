@@ -26,23 +26,16 @@
 #include <deque>
 #include <getopt.h>
 
-#include <boost/interprocess/file_mapping.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/managed_mapped_file.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
 
 #include "string_utils.hpp"
-
 #include "wacky_sbj_obj.hpp"
+#include "wacky_create.hpp"
 #include "wacky_read.hpp"
 #include "wacky_verb.hpp"
 
 using namespace std;
 using namespace boost::filesystem;
-using namespace boost::interprocess;
 
 // Our naughty naughty globals! Tsk, tsk!
 // Most of these are global options or the big memory holders for all the vocab etc
@@ -76,25 +69,6 @@ size_t IGNORE_WINDOW = 100; // How many most frequent words do we ignore complet
 size_t WINDOW_SIZE = 3;			// Our sliding window size, either side of the chosen word
 bool  UNIQUE_SUBJECTS = false;
 bool  UNIQUE_OBJECTS = false;
-
-vector<string>::iterator find_in_dictionary(string s){
-
-  vector<string>::iterator it;
-
-  for (it = DICTIONARY.begin(); it != DICTIONARY.end(); ++it){
-    if (it->compare(s) == 0){
-      break;
-    }
-    // Quit early due to alphabetic order
-    if (it->compare(s) > 0){
-      return DICTIONARY.end();
-    }
-  }
-  return it;
-}
-
-
-bool sort_freq (pair<string,size_t> i, pair<string, size_t> j) { return (i.second > j.second); }
 
 
 int combine_ukwac(vector<string> filenames, string outpath) {
@@ -203,12 +177,12 @@ int main(int argc, char* argv[]) {
     cout << "Reading in dictionary and frequency data" << endl;
     read_freq(OUTPUT_DIR, FREQ, FREQ_FLIPPED, ALLOWED_BASIS_WORDS);
     read_dictionary(OUTPUT_DIR, DICTIONARY_FAST, DICTIONARY,VOCAB_SIZE);
-    create_basis(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, BASIS_SIZE IGNORE_WINDOW);
+    create_basis(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, BASIS_SIZE, IGNORE_WINDOW);
 
   } else {
     cout << "Creating frequency and dictionary" << endl;
-    if (create_freq(filenames, OUTPUT_DIR,FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, WORD_IGNORES ALLOWED_BASIS_WORDS,LEMMA_TIME) != 0)  { return 1; }    
-    if (create_dictionary(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY) != 0) { return 1; }
+    if (create_freq(filenames, OUTPUT_DIR,FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, WORD_IGNORES, ALLOWED_BASIS_WORDS,LEMMA_TIME) != 0)  { return 1; }    
+    if (create_dictionary(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, VOCAB_SIZE) != 0) { return 1; }
   }
  
   // Initialise our verb to subject/object maps
@@ -231,11 +205,11 @@ int main(int argc, char* argv[]) {
       cout << "Reading in dictionary and frequency data" << endl;
       read_total_file(OUTPUT_DIR, TOTAL_COUNT);
       read_unk_file(OUTPUT_DIR, UNK_COUNT);
-      read_sim_file(OUTPUT_DIR, VERB_TO_CHECK);
+      read_sim_file(OUTPUT_DIR, VERBS_TO_CHECK);
       read_sim_stats(OUTPUT_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE);
       read_subject_file(OUTPUT_DIR, VERB_SUBJECTS); 
       read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT);
-      intrans_count();
+      intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
     } else {
       cout << "You must pass -r and -s along with -p" << endl;
     }
@@ -263,34 +237,31 @@ int main(int argc, char* argv[]) {
     cout << "Incorrect command line argument for directory" << endl;
     return 1;
   }
-
  
   if (combine) {
     cout << "Combining ukwac into a large file of text" << endl;
     combine_ukwac(filenames, combine_file);
     return 0;
   }
-
-  
-  
+ 
   if (verb_subject) {
     cout << "Create verb subjects and objects" << endl; 
-    if (create_verb_subject_object(filenames) != 0)  { return 1; }
+    if (create_verb_subject_object(filenames, OUTPUT_DIR, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, UNIQUE_OBJECTS, UNIQUE_SUBJECTS, LEMMA_TIME ) != 0)  { return 1; }
   }
   
-  if (integers){
+  if (integers) {
     cout << "Create integer files" << endl;
-    if (create_integers(filenames) != 0)      { return 1; }
+    if (create_integers(filenames, OUTPUT_DIR, DICTIONARY_FAST, VOCAB_SIZE, LEMMA_TIME) != 0) { return 1; }
   }
   
   if (word_vectors){
     cout << "Creating word vectors" << endl;
-    if (create_word_vectors(filenames) != 0)  { return 1; }
+    if (create_word_vectors(filenames, OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, BASIS_VECTOR, WORD_IGNORES, WORD_VECTORS, ALLOWED_BASIS_WORDS, VOCAB_SIZE, BASIS_SIZE, WINDOW_SIZE, LEMMA_TIME) != 0)  { return 1; }
   }
   
   if (sim_verbs) {
     cout << "Creating simverbs" << endl;
-    if (create_simverbs(filenames,simverb_file) !=0)  { return 1; }
+    if (create_simverbs(filenames,simverb_file, OUTPUT_DIR, SIMVERBS, SIMVERBS_COUNT, SIMVERBS_OBJECTS, SIMVERBS_ALONE, LEMMA_TIME ) !=0)  { return 1; }
   }
 
   return 0;

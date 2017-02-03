@@ -1,6 +1,8 @@
 #include "wacky_sbj_obj.hpp"
 
 using namespace boost::numeric;
+using namespace std;
+
 
 // Create the vectors we want from a verb's subjects
 void read_subjects(string verb, map<string,int> & DICTIONARY_FAST,
@@ -24,12 +26,9 @@ void read_subjects(string verb, map<string,int> & DICTIONARY_FAST,
   int vidx = DICTIONARY_FAST[verb];
   vector<int> subjects = VERB_SUBJECTS[vidx];
 
-  using namespace boost::numeric;
-  
   for (int i=0; i < BASIS_SIZE; ++i){
     base_vector[i] = WORD_VECTORS[vidx][i];
   } 
- 
  
   for (int i=0; i < BASIS_SIZE; ++i){
     add_vector[i] = 0.0f;
@@ -41,7 +40,6 @@ void read_subjects(string verb, map<string,int> & DICTIONARY_FAST,
     }
   }
 
-  
   for (int i : subjects) {
     ublas::vector<float> sbj_vector (BASIS_SIZE);
   
@@ -50,7 +48,7 @@ void read_subjects(string verb, map<string,int> & DICTIONARY_FAST,
     }
 
     add_vector = add_vector + sbj_vector;
-    ublas::vector<float> tk  = _krn_mul(sbj_vector, sbj_vector);
+    ublas::vector<float> tk  = krn_mul(sbj_vector, sbj_vector);
       
     krn_vector = krn_vector + tk;
 
@@ -66,21 +64,20 @@ void read_subjects(string verb, map<string,int> & DICTIONARY_FAST,
 
   // Now we can perform the last step in our equation
   
-  
   add_base_add_vector = add_vector + base_vector;
-  add_base_mul_vector = _mul_vec(add_vector,base_vector);
+  add_base_mul_vector = mul_vec(add_vector,base_vector);
   min_base_add_vector = min_vector + base_vector;
-  min_base_mul_vector = _mul_vec(min_vector, base_vector);
+  min_base_mul_vector = mul_vec(min_vector, base_vector);
   max_base_add_vector = max_vector + base_vector;
-  max_base_mul_vector = _mul_vec(max_vector, base_vector);
-  ublas::vector<float> td = _krn_mul(base_vector, base_vector);
+  max_base_mul_vector = mul_vec(max_vector, base_vector);
+  ublas::vector<float> td = krn_mul(base_vector, base_vector);
   krn_base_add_vector = krn_vector + td;
-  krn_base_mul_vector = _mul_vec(krn_vector,td);
+  krn_base_mul_vector = mul_vec(krn_vector,td);
 
 }
 
 
-void intrans_count( vector<VerbPair> & VERBS_TO_CHECK,
+void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   set<string> & VERB_TRANSITIVE,
   set<string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,

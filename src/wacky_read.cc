@@ -1,8 +1,9 @@
-
 #include "wacky_read.hpp"
 
+using namespace std;
+
 // If we've already generated a dictionary read it in
-int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector<string> & DICTIONARY, int & VOCAB_SIZE){
+int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector<string> & DICTIONARY, size_t & VOCAB_SIZE){
 
   std::ifstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
   string line;
@@ -21,7 +22,7 @@ int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector
 
 // Read the unkown count if we havent already
 
-int read_unk_file(string OUTPUT_DIR, int & UNK_COUNT) {
+int read_unk_file(string OUTPUT_DIR, size_t & UNK_COUNT) {
 
   std::ifstream unk_file (OUTPUT_DIR + "/unk_count.txt");
   string line;
@@ -59,7 +60,7 @@ void read_subject_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SUBJECTS)
 
 
 // Read the total count if we havent already
-int read_total_file(string OUTPUT_DIR, int & TOTAL_COUNT ) {
+int read_total_file(string OUTPUT_DIR, size_t & TOTAL_COUNT ) {
 
   std::ifstream total_file (OUTPUT_DIR + "/total_count.txt");
   string line;
@@ -76,7 +77,7 @@ int read_total_file(string OUTPUT_DIR, int & TOTAL_COUNT ) {
 }
 
 // read the sim stats file we have generated
-void read_sim_stats(string OUTPUT_DIR, vector<string> & VERB_TRANSITIVE, vector<string> & VERB_INTRANSITIVE ) {
+void read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string> & VERB_INTRANSITIVE ) {
 
   std::ifstream total_file (OUTPUT_DIR + "/sim_stats.txt");
   string line;
@@ -99,7 +100,7 @@ void read_sim_stats(string OUTPUT_DIR, vector<string> & VERB_TRANSITIVE, vector<
 }
 
 // read the sim file
-void read_sim_file(string OUTPUT_DIR, vector<VerbPair> & VERB_TO_CHECK) {
+void read_sim_file(string OUTPUT_DIR, vector<VerbPair> & VERBS_TO_CHECK) {
    
   std::ifstream total_file (OUTPUT_DIR + "/SimVerb-500-dev.txt");
   string line;
@@ -154,7 +155,7 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
 }
 
 // Read vector count
-void read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, int TOTAL_COUNT) {
+void read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT) {
   cout << "Reading the word_vectors count" << endl;
   std::ifstream count_file (OUTPUT_DIR + "/word_vectors.txt");
   string line;

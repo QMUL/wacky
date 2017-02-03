@@ -1,6 +1,10 @@
 #include "wacky_verb.hpp"
 
-void  create_verb_objects(string str_buffer, vector<int> & verb_obj_pairs,
+using namespace boost::filesystem;
+using namespace boost::interprocess;
+using namespace std;
+
+void create_verb_objects(string str_buffer, vector<int> & verb_obj_pairs,
     map<string,int> & DICTIONARY_FAST,
     vector< vector<int> > & VERB_OBJECTS,
     bool UNIQUE_OBJECTS,
@@ -206,6 +210,7 @@ int create_verb_subject_object(vector<string> filenames,
     vector< vector<int> > & VERB_SBJ_OBJ,
     vector< vector<int> > & VERB_SUBJECTS,
     vector< vector<int> > & VERB_OBJECTS,
+    bool UNIQUE_OBJECTS,
     bool UNIQUE_SUBJECTS,
     bool LEMMA_TIME ) {
 
@@ -232,7 +237,7 @@ int create_verb_subject_object(vector<string> filenames,
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = _breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region );
 		if (result == -1){
 			return -1;
 		}	
@@ -274,8 +279,8 @@ int create_verb_subject_object(vector<string> filenames,
           vector<int> verb_obj_pairs;
           vector<int> verb_sbj_pairs;
 
-          create_verb_subjects(str_buffer, verb_sbj_pairs);
-          create_verb_objects(str_buffer, verb_obj_pairs);
+          create_verb_subjects(str_buffer, verb_sbj_pairs, DICTIONARY_FAST, VERB_SUBJECTS, UNIQUE_SUBJECTS, LEMMA_TIME);
+          create_verb_objects(str_buffer, verb_obj_pairs, DICTIONARY_FAST, VERB_OBJECTS, UNIQUE_OBJECTS,LEMMA_TIME );
       
           // We now need to match the objects and subjects to the same verb if it appears
           // Each vector has verb,id,word, verb,id,word... indices into the dictionary
@@ -380,6 +385,7 @@ int create_verb_subject_object(vector<string> filenames,
 
 // Create counts of how many times a verb has an object
 int create_simverbs(vector<string> filenames, string simverb_path,
+    string OUTPUT_DIR,
     vector<string> & SIMVERBS,
     vector<int> & SIMVERBS_COUNT,
     vector<int> & SIMVERBS_OBJECTS,
@@ -435,7 +441,7 @@ int create_simverbs(vector<string> filenames, string simverb_path,
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = _breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region );
 		if (result == -1){
 			return -1;
 		}	

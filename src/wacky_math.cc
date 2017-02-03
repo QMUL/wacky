@@ -3,7 +3,7 @@
 
 using namespace boost::numeric;
 
-ublas::vector<float> _mul_vec( ublas::vector<float> & v0, ublas::vector<float> & v1) {
+ublas::vector<float> mul_vec( ublas::vector<float> & v0, ublas::vector<float> & v1) {
     
   ublas::vector<float> r  (v0.size());
   for (int i = 0; i < v0.size(); ++i){
@@ -13,7 +13,7 @@ ublas::vector<float> _mul_vec( ublas::vector<float> & v0, ublas::vector<float> &
 }
  
 // Special case of the Kronecker product for single vectors
-ublas::vector<float> _krn_mul( ublas::vector<float> & a, ublas::vector<float> & b) {
+ublas::vector<float> krn_mul( ublas::vector<float> & a, ublas::vector<float> & b) {
   
   ublas::vector<float> r ( a.size() * a.size());
 
@@ -33,7 +33,7 @@ float cosine_sim(ublas::vector<float> & v0, ublas::vector<float> & v1) {
   float dot = 0;
   float l0 = 0;
   float l1 = 0;
-  for (int i =0 ; i< BASIS_SIZE; ++i){
+  for (int i =0 ; i < v0.size(); ++i){
     dot += v0[i] * v1[i];
     l0 += v0[i] * v0[i];
     l1 += v1[i] * v1[i];

@@ -1,80 +1,24 @@
+#include "wacky_create.hpp"
 
-// Breakup our files into blocks 
+using namespace boost::filesystem;
+using namespace boost::interprocess;
+using namespace std;
 
-int _breakup ( char ** block_pointer, size_t * block_size, file_mapping &m_file, mapped_region &region) {
-  // Scan directory for the files
-	int num_blocks =1; 
-		
-	#pragma omp parallel
-	{
-		num_blocks = omp_get_num_threads();
-	}
+vector<string>::iterator find_in_dictionary(vector<string> & DICTIONARY, string s){
 
-	cout << "Num Blocks: " << num_blocks << endl;
+  vector<string>::iterator it;
 
-	// Problem with memory-mapped files is we need the number of line
-	// endings in order to split the file for OpenMP processing on the same
-	// file. Using one thread per file is probably easier. 
-	//
-	// OR we could just move the pointers within the file backwards till we hit
-	// a newline and set it there. That would probably be quite easy
-
-	try {
-
-		void * addr = region.get_address();
-		size_t size = region.get_size();
-
-		size_t step = size / num_blocks;
-		cout << "Step Size " << step <<endl;
-
-		// Set the starting positions and the sizes, by finding the nearest newline
-		// that occurs after the guessed block border. This likely means the last block
-		// will be the smallest
-		std::string ssm = "0000";
-
-		block_pointer[0] = static_cast<char*>(addr);
-		char *mem = static_cast<char*>(addr);
-		for (int i=1; i < num_blocks; ++i) {
-			mem += step;
-			while (ssm.compare("</s>") != 0){
-				ssm[0] = ssm[1];
-				ssm[1] = ssm[2];
-				ssm[2] = ssm[3];
-				ssm[3] = *mem;
-				mem++;
-				
-			}
-			ssm = "0000"; 
-			block_pointer[i] = mem;
-		}
-
-		size_t csize = 0;
-		for (int i = 0; i < num_blocks-1; ++i) {
-			block_size[i] = block_pointer[i+1] - block_pointer[i];
-			csize += block_size[i];
-		}
-
-		if (num_blocks > 1){
-			block_size[num_blocks-1] = size - csize;
-		} else {
-			block_size[0] = size;
-		}
-
-		cout << "Block Sizes: " << endl;
-		for (int i = 0; i < num_blocks; ++i) {
-			cout << i << " " <<  block_size[i] << endl;
-		}
-
-	} catch (interprocess_exception &ex) {
-		fprintf(stderr, "Exception %s\n", ex.what());
-		fflush(stderr);
-		return 1;
-	}
-
-	return 0;
+  for (it = DICTIONARY.begin(); it != DICTIONARY.end(); ++it){
+    if (it->compare(s) == 0){
+      break;
+    }
+    // Quit early due to alphabetic order
+    if (it->compare(s) > 0){
+      return DICTIONARY.end();
+    }
+  }
+  return it;
 }
-
-
 
 // Create a DICTIONARY by flipping the FREQ around, taking the top VOCAB_SIZE 
 // and then sorting into alphabetical order
@@ -84,7 +28,8 @@ int create_dictionary(string OUTPUT_DIR,
     map<string, size_t> & FREQ, 
     vector< pair<string,size_t> > & FREQ_FLIPPED,
     map<string,int> & DICTIONARY_FAST,
-    vector<string> & DICTIONARY) {
+    vector<string> & DICTIONARY,
+    size_t VOCAB_SIZE) {
 
   cout << "Creating Dictionary File" << endl;
 
@@ -130,8 +75,8 @@ void create_basis(string OUTPUT_DIR,
     map<string,int> & DICTIONARY_FAST,
     vector<int> & BASIS_VECTOR,
     set<string> & ALLOWED_BASIS_WORDS,
-    int BASIS_SIZE,
-    int IGNORE_WINDOW ) {
+    size_t BASIS_SIZE,
+    size_t IGNORE_WINDOW ) {
 
   // At this point we can also create the basis vector as the top of the dictionary
   // We write this out too
@@ -170,7 +115,7 @@ int create_freq(vector<string> filenames,
     map<string, size_t> & FREQ, 
     vector< pair<string,size_t> > & FREQ_FLIPPED,
     map<string,int> & DICTIONARY_FAST,
-    vector<string> & DICTIONARY
+    vector<string> & DICTIONARY,
     set<string> & WORD_IGNORES,
     set<string> & ALLOWED_BASIS_WORDS,
     bool LEMMA_TIME) {
@@ -364,14 +309,14 @@ int create_word_vectors(vector<string> filenames,
     map<string, size_t> & FREQ, 
     vector< pair<string,size_t> > & FREQ_FLIPPED,
     map<string,int> & DICTIONARY_FAST,
-    vector<string> & DICTIONARY 
+    vector<string> & DICTIONARY, 
     vector<int> & BASIS_VECTOR,
     set<string> & WORD_IGNORES,
     vector< vector<float> > & WORD_VECTORS,
     set<string> & ALLOWED_BASIS_WORDS,
-    int VOCAB_SIZE,
-    int BASIS_SIZE,
-    int WINDOW_SIZE,
+    size_t VOCAB_SIZE,
+    size_t BASIS_SIZE,
+    size_t WINDOW_SIZE,
     bool LEMMA_TIME) {
 	
   int num_blocks =1; 
@@ -400,7 +345,7 @@ int create_word_vectors(vector<string> filenames,
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = _breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region );
 		if (result == -1){
 			return -1;
 		}	
@@ -519,7 +464,7 @@ int create_word_vectors(vector<string> filenames,
 int create_integers(vector<string> filenames,
     string OUTPUT_DIR,
     map<string,int> & DICTIONARY_FAST,
-    int VOCAB_SIZE,
+    size_t VOCAB_SIZE,
     bool LEMMA_TIME) {
 
   cout << "Creating Integer Files" << endl;
@@ -543,7 +488,7 @@ int create_integers(vector<string> filenames,
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = _breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region );
 		if (result == -1){
 			return -1;
 		}	

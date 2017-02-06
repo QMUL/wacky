@@ -1,17 +1,10 @@
 /**
- * A small program that pre-processes the ukWaC dataset for reading in python
- * 
- * It creates 5 sets of files from ukWaC
- * 1) A Vocab / Frequency file that lists the FREQuency of all tokens - word, FREQ\n - FREQ.txt
- * 2) A DICTIONARY of VOCAB_SIZE words in alphabetical order - word\n - DICTIONARY.txt
- * 3) A set of files that form the sentences, one word per line
- * 4) A set of files that form the sentences with integer lookups into the DICTIONARY 
- * 5) A relationship file that lists the subjects of every verb
- * We remove any characters outside the ascii range. I believe ukWaC uses an annoying windows codec?
- *
- *
- */
-
+* @brief Main entry point for our wacky program
+* @file wacky.cc
+* @author Benjamin Blundell <oni@section9.co.uk>
+* @date 01/02/2017
+*
+*/
 
 // http://www.boost.org/doc/libs/1_58_0/doc/html/interprocess/sharedmemorybetweenprocesses.html#interprocess.sharedmemorybetweenprocesses.mapped_file
 
@@ -110,8 +103,9 @@ int main(int argc, char* argv[]) {
   bool sim_verbs = false;
   bool combine = false;
   bool count = false;
+  bool intransitive = false;
 
-  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:j:biwnyzp?")) != -1) {
+  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:j:biwnyzpa?")) != -1) {
   	int this_option_optind = optind ? optind : 1;
   	switch (c) {
       case 0 :
@@ -133,6 +127,9 @@ int main(int argc, char* argv[]) {
         break;
       case 'b':
         verb_subject = true;
+        break;
+      case 'a':
+        intransitive = true;
         break;
       case 'i':
         integers = true;
@@ -181,7 +178,7 @@ int main(int argc, char* argv[]) {
 
   } else {
     cout << "Creating frequency and dictionary" << endl;
-    if (create_freq(filenames, OUTPUT_DIR,FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, WORD_IGNORES, ALLOWED_BASIS_WORDS,LEMMA_TIME) != 0)  { return 1; }    
+    if (create_freq(filenames, OUTPUT_DIR,FREQ, FREQ_FLIPPED, WORD_IGNORES, ALLOWED_BASIS_WORDS,LEMMA_TIME) != 0)  { return 1; }    
     if (create_dictionary(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, VOCAB_SIZE) != 0) { return 1; }
   }
  
@@ -209,7 +206,13 @@ int main(int argc, char* argv[]) {
       read_sim_stats(OUTPUT_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE);
       read_subject_file(OUTPUT_DIR, VERB_SUBJECTS); 
       read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT);
-      intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
+      if (intransitive){
+        intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
+      } else {
+        read_subject_object_file(OUTPUT_DIR, VERB_SBJ_OBJ);
+        trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
+      } 
+
     } else {
       cout << "You must pass -r and -s along with -p" << endl;
     }

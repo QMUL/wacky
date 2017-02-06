@@ -572,7 +572,6 @@ def read_binary(filepath):
 
 def trans(word2vec=False):
 
-# Intransitive Verb output
   print ("verb0,verb1,base_sim,sbj_obj_sim,sbj_obj_add,sbj_obj_mul,sum_sbj_obj,sum_sbj_obj_mul,sum_sbj_obj_add, human_sim")
 
   cc = []

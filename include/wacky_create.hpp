@@ -28,6 +28,7 @@
 
 std::vector<std::string>::iterator find_in_dictionary(std::vector<std::string> & DICTIONARY, std::string s);
 
+//! create a dictionary
 int create_dictionary(std::string OUTPUT_DIR,
     std::map<std::string, size_t> & FREQ, 
     std::vector< std::pair<std::string,size_t> > & FREQ_FLIPPED,
@@ -35,7 +36,7 @@ int create_dictionary(std::string OUTPUT_DIR,
     std::vector<std::string> & DICTIONARY,
     size_t VOCAB_SIZE);
 
-
+//! create our basis vector
 void create_basis(std::string OUTPUT_DIR,
     std::map<std::string, size_t> & FREQ, 
     std::vector< std::pair<std::string,size_t> > & FREQ_FLIPPED,
@@ -45,17 +46,16 @@ void create_basis(std::string OUTPUT_DIR,
     size_t BASIS_SIZE,
     size_t IGNORE_WINDOW );
 
+//! create a frequency of all the words in ukwac
 int create_freq(std::vector<std::string> filenames, 
     std::string OUTPUT_DIR,
     std::map<std::string, size_t> & FREQ, 
     std::vector< std::pair<std::string,size_t> > & FREQ_FLIPPED,
-    std::map<std::string,int> & DICTIONARY_FAST,
-    std::vector<std::string> & DICTIONARY,
     std::set<std::string> & WORD_IGNORES,
     std::set<std::string> & ALLOWED_BASIS_WORDS,
     bool LEMMA_TIME);
 
-
+//! create our word vectors for later testing
 int create_word_vectors(std::vector<std::string> filenames,
     std::string OUTPUT_DIR,
     std::map<std::string, size_t> & FREQ, 
@@ -71,6 +71,7 @@ int create_word_vectors(std::vector<std::string> filenames,
     size_t WINDOW_SIZE,
     bool LEMMA_TIME);
 
+//! create files of numbers for the tensorflow version
 int create_integers(std::vector<std::string> filenames,
     std::string OUTPUT_DIR,
     std::map<std::string,int> & DICTIONARY_FAST,

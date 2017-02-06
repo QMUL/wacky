@@ -1,8 +1,27 @@
+/**
+* @brief Functions that work on the subjects and objects of verbs
+* @file wacky_verb.cc
+* @author Benjamin Blundell <oni@section9.co.uk>
+* @date 01/02/2017
+*
+*/
+
 #include "wacky_verb.hpp"
 
 using namespace boost::filesystem;
 using namespace boost::interprocess;
 using namespace std;
+
+
+/**
+ * Create a list of verb objects
+ * @param str_buffer the sentence we are looking at from ukwac
+ * @param verb_obj_pairs a list of verb object pairs
+ * @param DICTIONARY_FAST the fast dictionary
+ * @param VERB_OBJECTS the vector we will create
+ * @param UNIQUE_OBJECTS do we count only one instance of an object
+ * @param LEMMA_TIME are we using the lemmatized version of the words
+ */
 
 void create_verb_objects(string str_buffer, vector<int> & verb_obj_pairs,
     map<string,int> & DICTIONARY_FAST,
@@ -102,7 +121,16 @@ void create_verb_objects(string str_buffer, vector<int> & verb_obj_pairs,
   }
 }
 
-// Given a buffer, setup the subjects for a verb
+/**
+ * Create a list of verb subjects
+ * @param str_buffer the sentence we are looking at from ukwac
+ * @param verb_sbj_pairs a list of verb object pairs
+ * @param DICTIONARY_FAST the fast dictionary
+ * @param VERB_SUBJECTS the vector we will create
+ * @param UNIQUE_OBJECTS do we count only one instance of an object
+ * @param LEMMA_TIME are we using the lemmatized version of the words
+ */
+
 void create_verb_subjects(string str_buffer, vector<int> & verb_sbj_pairs,
     map<string,int> & DICTIONARY_FAST,
     vector< vector<int> > & VERB_SUBJECTS,
@@ -202,8 +230,20 @@ void create_verb_subjects(string str_buffer, vector<int> & verb_sbj_pairs,
   }
 }
 
-// This function will read everything within the sentence tags, creating a file that links 
-// verbs to objects via the DICTIONARY
+
+/**
+ * Create a list of verb objects
+ * @param str_buffer the sentence we are looking at from ukwac
+ * @param verb_obj_pairs a list of verb object pairs
+ * @param DICTIONARY_FAST the fast dictionary
+ * @param VERB_SBJ_OBJ a vector of vectors of word pairs
+ * @param VERB_OBJECTS the vector we will create
+ * @param VERB_SUBJECTS the vector we will create
+ * @param UNIQUE_OBJECTS do we count only one instance of an object
+ * @param UNIQUE_SUBJECTS do we count only one instance of an subject
+ * @param LEMMA_TIME are we using the lemmatized version of the words
+ */
+
 int create_verb_subject_object(vector<string> filenames,
     string OUTPUT_DIR, 
     map<string,int> & DICTIONARY_FAST,
@@ -383,7 +423,17 @@ int create_verb_subject_object(vector<string> filenames,
   return 0;
 }
 
-// Create counts of how many times a verb has an object
+/**
+ * Create a list of verb objects
+ * @param filenames  the list of ukwac files
+ * @param simverb_path the path to the simverbs file
+ * @param SIMVERBS our vector of verbs we shall create
+ * @param SIMVERBS_COUNT the number of times this verb appears
+ * @param SIMVERBS_OBJECTS verbs that have more objects and subjects than just subjects
+ * @param SIMVERBS_SUBJECTS verbs that have more subjects than both subjects and objects
+ * @param LEMMA_TIME are we using the lemmatized version of the words
+ */
+
 int create_simverbs(vector<string> filenames, string simverb_path,
     string OUTPUT_DIR,
     vector<string> & SIMVERBS,

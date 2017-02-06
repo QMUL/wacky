@@ -23,6 +23,7 @@
 #include "wacky_math.hpp"
 #include "wacky_misc.hpp"
 
+//! given a verb, peform the statistics on its subjects
 void read_subjects(std::string verb, std::map<std::string,int> & DICTIONARY_FAST,
     std::vector< std::vector<int> > & VERB_SUBJECTS,
     std::vector< std::vector<float> > & WORD_VECTORS,
@@ -41,6 +42,7 @@ void read_subjects(std::string verb, std::map<std::string,int> & DICTIONARY_FAST
     boost::numeric::ublas::vector<float> & krn_base_add_vector,
     boost::numeric::ublas::vector<float> & krn_base_mul_vector );
 
+//! return all the intranstive stats
 void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   std::set<std::string> & VERB_TRANSITIVE,
   std::set<std::string> & VERB_INTRANSITIVE,
@@ -49,5 +51,13 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   std::vector< std::vector<int> > & VERB_SUBJECTS,
   std::vector< std::vector<float> > & WORD_VECTORS);
  
-
+//! return the transitive stats
+void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
+  std::set<std::string> & VERB_TRANSITIVE,
+  std::set<std::string> & VERB_INTRANSITIVE,
+  int BASIS_SIZE,
+  std::map<std::string,int> & DICTIONARY_FAST,
+  std::vector< std::vector<int> > & VERB_SBJ_OBJ,
+  std::vector< std::vector<float> > & WORD_VECTORS);
+ 
 #endif

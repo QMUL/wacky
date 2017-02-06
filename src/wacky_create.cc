@@ -1,8 +1,23 @@
+/**
+* @brief Functions for creating the various wacky files
+* @file wacky_create.cc
+* @author Benjamin Blundell <oni@section9.co.uk>
+* @date 01/02/2017
+*
+*/
+
 #include "wacky_create.hpp"
 
 using namespace boost::filesystem;
 using namespace boost::interprocess;
 using namespace std;
+
+/**
+ * Find a word in our dictionary which we *assume* is sorted
+ * @param DICTIONARY the global vector of strings
+ * @param s a string
+ * @return a vector of strings
+ */
 
 vector<string>::iterator find_in_dictionary(vector<string> & DICTIONARY, string s){
 
@@ -20,9 +35,17 @@ vector<string>::iterator find_in_dictionary(vector<string> & DICTIONARY, string 
   return it;
 }
 
-// Create a DICTIONARY by flipping the FREQ around, taking the top VOCAB_SIZE 
-// and then sorting into alphabetical order
-// TODO - should make the global refs more explicit
+/**
+ * Create our dictionary and flipped frequency from a frequency set
+ * @param OUTPUT_DIR the output directory
+ * @param FREQ an existing frequency of words
+ * @param FREQ_FLIPPED an empty vector which this function will fill
+ * @param DICTIONARY_FAST an empty map which this function will fill
+ * @param DICTIONARY an empty vector that this function will fill
+ * @param VOCAB_SIZE a size_t for the maximum size of our dictionary
+ * @return int a value to say if we succeeded or not
+ */
+
 
 int create_dictionary(string OUTPUT_DIR,
     map<string, size_t> & FREQ, 
@@ -67,8 +90,19 @@ int create_dictionary(string OUTPUT_DIR,
   return 0;
 }
 
+/**
+ * When creating word count vectors, we must first create a basis
+ * @param OUTPUT_DIR the output directory
+ * @param FREQ an existing frequency of words
+ * @param FREQ_FLIPPED the frequency flipped
+ * @param DICTIONARY_FAST a lookup from string to position
+ * @param BASIS_VECTOR the vector this function will fill
+ * @param ALLOWED_BASIS_WORDS words we are actually allowed to use in the basis
+ * @param BASIS_SIZE how big should this basis be
+ * @param IGNORE_WINDOW how many of the most frequent words should we ignore
+ * @return int a value to say if we succeeded or not
+ */
 
-// For word vectors, we take a subset of the vocab - the basis
 void create_basis(string OUTPUT_DIR,
     map<string, size_t> & FREQ, 
     vector< pair<string,size_t> > & FREQ_FLIPPED,
@@ -108,14 +142,21 @@ void create_basis(string OUTPUT_DIR,
 
 }
 
-// Create the intial FREQ FREQuency map
-// In addition this creates a special file that records the type of the word (VV, NN etc)
+
+/**
+ * Create the frequency count of all the words
+ * @param OUTPUT_DIR the output directory
+ * @param FREQ this is the map we shall make
+ * @param FREQ_FLIPPED a vector we shall fill
+ * @param ALLOWED_BASIS_WORDS an empty vector we will fill with allowed words
+ * @param LEMMA_TIME are we using the lemmatized version of the word?
+ * @return int a value to say if we succeeded or not
+ */
+
 int create_freq(vector<string> filenames, 
     string OUTPUT_DIR,
     map<string, size_t> & FREQ, 
     vector< pair<string,size_t> > & FREQ_FLIPPED,
-    map<string,int> & DICTIONARY_FAST,
-    vector<string> & DICTIONARY,
     set<string> & WORD_IGNORES,
     set<string> & ALLOWED_BASIS_WORDS,
     bool LEMMA_TIME) {
@@ -301,8 +342,23 @@ int create_freq(vector<string> filenames,
 
 }
 
-
-// Create a file of word vectors based on counts
+/**
+ * Create our word vectors - the BIG function
+ * @param OUTPUT_DIR the output directory
+ * @param FREQ this is the map we shall make
+ * @param FREQ_FLIPPED a vector we shall fill
+ * @param DICTIONARY_FAST the fast dictionary
+ * @param DICTIONARY the original dictionary
+ * @param BASIS_VECTOR the words in the vector we are summing up
+ * @param WORD_IGNORES the nonsense words to ignore
+ * @param WORD_VECTORS the vector of vectors we are building
+ * @param ALLOWED_BASIS_WORDS an empty vector we will fill with allowed words
+ * @param VOCAB_SIZE how big is the dictionary
+ * @param BASIS_SIZE how big is our basis
+ * @param WINDOW_SIZE how many words either side will we consider
+ * @param LEMMA_TIME are we using the lemmatized version of the word?
+ * @return int a value to say if we succeeded or not
+ */
 
 int create_word_vectors(vector<string> filenames,
     string OUTPUT_DIR,
@@ -459,8 +515,16 @@ int create_word_vectors(vector<string> filenames,
 }
 
 
-// Create integer versions of all the strings
-// I suspect this is the one that takes the time as the DICTIONARY lookup will be slow :/
+/**
+ * Convert ukwac to numbers as indices into the dictionary. Useful for tensorflow
+ * @param filenames the vector of file paths to ukwac
+ * @param OUTPUT_DIR the output directory
+ * @param DICTIONARY_FAST the fast dictionary
+ * @param VOCAB_SIZE how big is the dictionary
+ * @param LEMMA_TIME are we using the lemmatized version of the word?
+ * @return int a value to say if we succeeded or not
+ */
+
 int create_integers(vector<string> filenames,
     string OUTPUT_DIR,
     map<string,int> & DICTIONARY_FAST,

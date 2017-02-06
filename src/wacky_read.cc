@@ -1,8 +1,24 @@
+/**
+* @brief Functions for reading in existing various wacky files
+* @file wacky_read.cc
+* @author Benjamin Blundell <oni@section9.co.uk>
+* @date 01/02/2017
+*
+*/
+
 #include "wacky_read.hpp"
 
 using namespace std;
 
-// If we've already generated a dictionary read it in
+/**
+ * Read in our dictionary from a file
+ * @param OUTPUT_DIR the output directory (in this case, where are we reading from?)
+ * @param DICTIONARY_FAST the fast dictionary
+ * @param DICTIONARY the original dictionary
+ * @param VOCAB_SIZE how big is the dictionary
+ * @return int a value to say if we succeeded or not
+ */
+
 int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector<string> & DICTIONARY, size_t & VOCAB_SIZE){
 
   std::ifstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
@@ -20,7 +36,14 @@ int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector
 }
 
 
-// Read the unkown count if we havent already
+
+/**
+ * Read the count of unknown words
+ * @param OUTPUT_DIR the output directory
+ * @param UNK_COUNT the number we are filling
+ * @return int a value to say if we succeeded or not
+ */
+
 
 int read_unk_file(string OUTPUT_DIR, size_t & UNK_COUNT) {
 
@@ -38,7 +61,13 @@ int read_unk_file(string OUTPUT_DIR, size_t & UNK_COUNT) {
   return 0;
 }
 
-// Read the subjects file
+
+/**
+ * Read in the file that contains verb subjects
+ * @param OUTPUT_DIR the output directory
+ * @param VERB_SUBJECTS a vector of vector of ints we shall file
+ */
+
 void read_subject_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SUBJECTS) {
   std::ifstream total_file (OUTPUT_DIR + "/verb_subjects.txt");
   string line;
@@ -58,8 +87,39 @@ void read_subject_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SUBJECTS)
   }
 }
 
+/**
+ * Read the subject object pairing file
+ * @param OUTPUT_DIR the output directory
+ * @param VERB_SBJ_OBJ a vector of vector of ints we shall file
+ */
 
-// Read the total count if we havent already
+void read_subject_object_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SBJ_OBJ) {
+  std::ifstream total_file (OUTPUT_DIR + "/verb_sbj_obj.txt");
+  string line;
+
+  cout << "Reading Subject Object File" << endl;
+
+  while ( getline (total_file,line) ) {
+    line = s9::RemoveChar(line,'\n');
+    vector<string> tokens =  s9::SplitStringWhitespace(line);
+
+    if (tokens.size() > 1) {
+      for (string sobj : tokens) {
+        int idx = s9::FromString<int>(sobj);
+        VERB_SBJ_OBJ[s9::FromString<int>(tokens[0])].push_back(idx);
+      }
+    }
+  }
+}
+
+
+/**
+ * Read how many words in total file
+ * @param OUTPUT_DIR the output directory
+ * @param TOTAL_COUNT the number we are reading into
+ * @return int to show if we succeeded
+ */
+
 int read_total_file(string OUTPUT_DIR, size_t & TOTAL_COUNT ) {
 
   std::ifstream total_file (OUTPUT_DIR + "/total_count.txt");
@@ -76,7 +136,14 @@ int read_total_file(string OUTPUT_DIR, size_t & TOTAL_COUNT ) {
   return 0;
 }
 
-// read the sim stats file we have generated
+
+/**
+ * Read in the file that contains the statistics of our verb subjects / objects
+ * @param OUTPUT_DIR the output directory
+ * @param VERB_TRANSITIVE a set of transitive verbs we shall fill
+ * @param VERB_INTRANSITIVE a set of intransitive verbs we shall fill
+ */
+
 void read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string> & VERB_INTRANSITIVE ) {
 
   std::ifstream total_file (OUTPUT_DIR + "/sim_stats.txt");
@@ -99,7 +166,12 @@ void read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string
   }
 }
 
-// read the sim file
+/**
+ * Read in the verb pair comparisons file
+ * @param OUTPUT_DIR the output directory
+ * @param VERBS_TO_CHECK a vector of VerbPairs that we shall fill
+ */
+
 void read_sim_file(string OUTPUT_DIR, vector<VerbPair> & VERBS_TO_CHECK) {
    
   std::ifstream total_file (OUTPUT_DIR + "/SimVerb-500-dev.txt");
@@ -121,8 +193,16 @@ void read_sim_file(string OUTPUT_DIR, vector<VerbPair> & VERBS_TO_CHECK) {
 
 }
 
-// If we've already generated a frequency read it in
-// along with the allowed words
+
+/**
+ * Read in the frequency file for all the words
+ * @param OUTPUT_DIR the output directory
+ * @param FREQ the map of frequency we shall fill
+ * @param FREQ_FLIPPED the flipped frequency we shall fill
+ * @param ALLOWED_BASIS_WORDS a set of allowed basis words we shall also read in
+ * @return an int to say if we succeeded.
+ */
+
 int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string,size_t> > & FREQ_FLIPPED, set<string> & ALLOWED_BASIS_WORDS) {
   std::ifstream freq_file (OUTPUT_DIR + "/freq.txt");
   string line;
@@ -154,7 +234,17 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
   return 0;
 }
 
-// Read vector count
+
+/**
+ * Read in the word vector counts for analysis. It converts the vectors to probabilities
+ * @param OUTPUT_DIR the output directory
+ * @param FREQ the map of frequency
+ * @param DICTIONARY the dictionary
+ * @param BASIS_VECTOR the vector of ints that represents the basis
+ * @param WORD_VECTORS the vector of vectors we shall fill
+ * @param TOTAL_COUNT the total count of all the words in ukwac
+ */
+
 void read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT) {
   cout << "Reading the word_vectors count" << endl;
   std::ifstream count_file (OUTPUT_DIR + "/word_vectors.txt");

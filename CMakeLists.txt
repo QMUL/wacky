@@ -6,7 +6,7 @@ PROJECT(wacky)
 include_directories( "include" )
 
 # Boost for Memory Mapping the big files
-FIND_PACKAGE( Boost 1.58 COMPONENTS program_options filesystem REQUIRED )
+FIND_PACKAGE( Boost 1.58 COMPONENTS program_options system filesystem REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 

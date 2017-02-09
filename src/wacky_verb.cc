@@ -192,19 +192,24 @@ void create_verb_subjects(string str_buffer, vector<int> & verb_sbj_pairs,
                 }
 
                 auto widx = DICTIONARY_FAST.find(verb);
-                
+              
+								if (verb == "pass"){
+									cout << str_buffer << endl;
+									cout << "---" << endl;
+								}							
+ 
                 if (widx != DICTIONARY_FAST.end()){  
                   // We choose between unique or otherwise
                   if (UNIQUE_SUBJECTS){
                     if (std::find(VERB_SUBJECTS[widx->second].begin(), VERB_SUBJECTS[widx->second].end(), vidx->second) == VERB_SUBJECTS[widx->second].end()) {
                       #pragma omp critical
                       {
-                        VERB_SUBJECTS[widx->second].push_back(vidx->second);
+                
+							        	VERB_SUBJECTS[widx->second].push_back(vidx->second);
                         verb_sbj_pairs.push_back(widx->second);
                         verb_sbj_pairs.push_back(s9::FromString<int>(tokens2[3]));
-                        verb_sbj_pairs.push_back(vidx->second);
-
-                      }
+                        verb_sbj_pairs.push_back(vidx->second);												
+											}
                     }
                   } else {
                     #pragma omp critical
@@ -282,7 +287,6 @@ int create_verb_subject_object(vector<string> filenames,
 			return -1;
 		}	
  
-   
     // Progress basically
     size_t progress = 0;
 
@@ -295,14 +299,12 @@ int create_verb_subject_object(vector<string> filenames,
       std::string ssmt = "0000";
 
       //string filename = "subjects_" + s9::FilenameFromPath(filepath) + "_" + s9::ToString(block_id) + ".txt";
-      
       //std::ofstream sub_file (filename);
-
       //if (!sub_file.is_open()) {
       //  cout << "ERROR: Unable to up " << filename << " for writing." << endl;
       //}
 
-      for(std::size_t i = 0; i < block_size[block_id]; ++i){
+			for(std::size_t i = 0; i < block_size[block_id]; ++i){
         char data = *mem;
         if (ssmt.compare("</s>") != 0){
           str_buffer += data;
@@ -321,12 +323,11 @@ int create_verb_subject_object(vector<string> filenames,
 
           create_verb_subjects(str_buffer, verb_sbj_pairs, DICTIONARY_FAST, VERB_SUBJECTS, UNIQUE_SUBJECTS, LEMMA_TIME);
           create_verb_objects(str_buffer, verb_obj_pairs, DICTIONARY_FAST, VERB_OBJECTS, UNIQUE_OBJECTS,LEMMA_TIME );
-      
+     
           // We now need to match the objects and subjects to the same verb if it appears
           // Each vector has verb,id,word, verb,id,word... indices into the dictionary
 
           for (std::size_t j = 0; j < verb_obj_pairs.size(); j+=3){
-          
             for (std::size_t k = 0; k < verb_sbj_pairs.size(); k+=3){
               if (verb_obj_pairs[j+1] == verb_sbj_pairs[k+1]){
                 #pragma omp critical
@@ -337,7 +338,6 @@ int create_verb_subject_object(vector<string> filenames,
               }
             }  
           } 
-            
           str_buffer = "";
         }
     
@@ -374,6 +374,7 @@ int create_verb_subject_object(vector<string> filenames,
   string filename = OUTPUT_DIR + "/verb_subjects.txt";
   std::ofstream sub_file (filename);
   int idv = 0;
+
   for (vector<int> verbs : VERB_SUBJECTS){
     if (verbs.size() > 0 ){
       sub_file << s9::ToString(idv) << " ";

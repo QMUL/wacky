@@ -26,10 +26,8 @@ int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector
   size_t idx = 0;
   while ( getline (dictionary_file,line) ) {
     string word = s9::RemoveChar(line,'\n'); 
-    if (idx != 0){
-      DICTIONARY.push_back(word);
-      DICTIONARY_FAST[word] = idx-1;
-    } 
+    DICTIONARY.push_back(word);
+    DICTIONARY_FAST[word] = idx;
     idx+=1;
   }
 	VOCAB_SIZE = DICTIONARY.size();
@@ -79,9 +77,10 @@ void read_subject_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SUBJECTS)
     vector<string> tokens =  s9::SplitStringWhitespace(line);
 
     if (tokens.size() > 1) {
-      for (string sbj : tokens) {
-        int sbj_idx = s9::FromString<int>(sbj);
-        VERB_SUBJECTS[s9::FromString<int>(tokens[0])].push_back(sbj_idx);
+			int idx = s9::FromString<int>(tokens[1]);
+      for (int i= 1; i < tokens.size(); ++i) {
+        int sbj_idx = s9::FromString<int>(tokens[i]);
+        VERB_SUBJECTS[idx].push_back(sbj_idx);
       }
     }
   }
@@ -104,8 +103,8 @@ void read_subject_object_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SB
     vector<string> tokens =  s9::SplitStringWhitespace(line);
 
     if (tokens.size() > 1) {
-      for (string sobj : tokens) {
-        int idx = s9::FromString<int>(sobj);
+      for (int i= 1; i < tokens.size(); ++i) {
+        int idx = s9::FromString<int>(tokens[i]);
         VERB_SBJ_OBJ[s9::FromString<int>(tokens[0])].push_back(idx);
       }
     }
@@ -167,10 +166,10 @@ void read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string
 }
 
 /**
- * Read in the verb pair comparisons file
- * @param OUTPUT_DIR the output directory
- * @param VERBS_TO_CHECK a vector of VerbPairs that we shall fill
- */
+* Read in the verb pair comparisons file
+* @param OUTPUT_DIR the output directory
+* @param VERBS_TO_CHECK a vector of VerbPairs that we shall fill
+*/
 
 void read_sim_file(string OUTPUT_DIR, vector<VerbPair> & VERBS_TO_CHECK) {
    
@@ -234,6 +233,42 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
   return 0;
 }
 
+void generate_words_to_check(set<int> & WORDS_TO_CHECK, vector< vector<int> > & VERB_SBJ_OBJ, vector< vector<int> > & VERB_SUBJECTS, vector< vector<int> > & VERB_OBJECTS, vector<VerbPair> & VERBS_TO_CHECK, map<string,int> DICTIONARY_FAST ) {
+
+	for (VerbPair vp : VERBS_TO_CHECK){
+		int idx0 = DICTIONARY_FAST[vp.v0];
+		int idx1 = DICTIONARY_FAST[vp.v1];
+
+		WORDS_TO_CHECK.insert(idx0);
+		WORDS_TO_CHECK.insert(idx1);
+
+		for (int j =0; j < VERB_SBJ_OBJ[idx0].size(); ++j){
+			WORDS_TO_CHECK.insert(VERB_SBJ_OBJ[idx0][j]);			
+		}
+
+		for (int j =0; j < VERB_SBJ_OBJ[idx1].size(); ++j){
+			WORDS_TO_CHECK.insert(VERB_SBJ_OBJ[idx1][j]);			
+		}
+		
+		for (int j =0; j < VERB_SUBJECTS[idx0].size(); ++j){
+			WORDS_TO_CHECK.insert(VERB_SUBJECTS[idx0][j]);			
+		}
+
+		for (int j =0; j < VERB_SUBJECTS[idx1].size(); ++j){
+			WORDS_TO_CHECK.insert(VERB_SUBJECTS[idx1][j]);			
+		}
+		
+		for (int j =0; j < VERB_OBJECTS[idx0].size(); ++j){
+			WORDS_TO_CHECK.insert(VERB_OBJECTS[idx0][j]);			
+		}
+
+		for (int j =0; j < VERB_OBJECTS[idx1].size(); ++j){
+			WORDS_TO_CHECK.insert(VERB_OBJECTS[idx1][j]);			
+		}	
+	}
+
+}
+
 
 /**
  * Read in the word vector counts for analysis. It converts the vectors to probabilities
@@ -245,31 +280,38 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
  * @param TOTAL_COUNT the total count of all the words in ukwac
  */
 
-void read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT) {
+void read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT, set<int> & WORDS_TO_CHECK) {
   cout << "Reading the word_vectors count" << endl;
   std::ifstream count_file (OUTPUT_DIR + "/word_vectors.txt");
   string line;
   size_t idx = 0;
-  while ( getline (count_file,line) ) {
+  while ( getline (count_file,line) && idx < DICTIONARY.size()) {
     line = s9::RemoveChar(line,'\n');
     vector<string> tokens = s9::SplitStringWhitespace(line);
    
     vector<float> tv; 
 
-    for (int i =0; i < tokens.size(); ++i) {
-      float ct = static_cast<float>(FREQ[DICTIONARY[BASIS_VECTOR[i]]]);
-      float cc = static_cast<float>(FREQ[DICTIONARY[idx]]);
-      float cct = s9::FromString<float>(tokens[i]);
+		if (WORDS_TO_CHECK.find(idx) != WORDS_TO_CHECK.end())	{
 
-      float pmi = 0;
-      if (cct != 0.0 && ct != 0.0 && cc != 0.0){
-        pmi = log( (cct/ ct) / (cc / static_cast<float>(TOTAL_COUNT)));
-      }
-      tv.push_back(pmi);
+			for (int i =0; i < tokens.size(); ++i) {
+				float ct = static_cast<float>(FREQ[DICTIONARY[BASIS_VECTOR[i]]]);
+				float pmi = 0;
 
-    }
+				if (ct != 0.0){					
+					float cc = static_cast<float>(FREQ[DICTIONARY[idx]]);
+					if (cc != 0.0) {
+						float cct = s9::FromString<float>(tokens[i]);
+						if (cct != 0.0) {
+							pmi = log( (cct/ ct) / (cc / static_cast<float>(TOTAL_COUNT)));
+						}
+					}
+				}
+				tv.push_back(pmi);
 
-    WORD_VECTORS.push_back(tv);
+			}
+		}
+
+		WORD_VECTORS.push_back(tv);
     idx++;
   }
 }

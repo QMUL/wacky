@@ -50,6 +50,7 @@ vector<int> SIMVERBS_ALONE;
 
 set<string> VERB_TRANSITIVE;
 set<string> VERB_INTRANSITIVE;
+set<int> WORDS_TO_CHECK;
 vector<VerbPair> VERBS_TO_CHECK;
 
 size_t UNK_COUNT = 0;
@@ -168,7 +169,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  cout << "Vocab Max Size: " << VOCAB_SIZE << endl; 
+
   
   if (read_in){
     cout << "Reading in dictionary and frequency data" << endl;
@@ -181,6 +182,8 @@ int main(int argc, char* argv[]) {
     if (create_freq(filenames, OUTPUT_DIR,FREQ, FREQ_FLIPPED, WORD_IGNORES, ALLOWED_BASIS_WORDS,LEMMA_TIME) != 0)  { return 1; }    
     if (create_dictionary(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, VOCAB_SIZE) != 0) { return 1; }
   }
+	
+  cout << "Vocab Size: " << VOCAB_SIZE << endl; 
  
   // Initialise our verb to subject/object maps
   for (int i = 0; i <= VOCAB_SIZE; ++i) {
@@ -205,11 +208,18 @@ int main(int argc, char* argv[]) {
       read_sim_file(OUTPUT_DIR, VERBS_TO_CHECK);
       read_sim_stats(OUTPUT_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE);
       read_subject_file(OUTPUT_DIR, VERB_SUBJECTS); 
-      read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT);
-      if (intransitive){
+    
+    	if (intransitive){
+				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+
+				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
+  
         intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
       } else {
         read_subject_object_file(OUTPUT_DIR, VERB_SBJ_OBJ);
+				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+
+				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
         trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
       } 
 

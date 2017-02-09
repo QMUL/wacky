@@ -39,9 +39,12 @@ void  read_sim_file(std::string OUTPUT_DIR, std::vector<VerbPair> & VERBS_TO_CHE
 int   read_freq(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, std::vector< std::pair<std::string,size_t> > & FREQ_FLIPPED, std::set<std::string> & ALLOWED_BASIS_WORDS);
 
 //! read in the count vectors
-void  read_count(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, std::vector<std::string> & DICTIONARY, std::vector<int>  & BASIS_VECTOR, std::vector< std::vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT);
+void  read_count(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, std::vector<std::string> & DICTIONARY, std::vector<int>  & BASIS_VECTOR, std::vector< std::vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT, std::set<int> & WORDS_TO_CHECK );
 
 //! read the subject object pairs for verbs
 void  read_subject_object_file(std::string OUTPUT_DIR, std::vector< std::vector<int> > & VERB_SBJ_OBJ);
+
+//! Read all the words in our verbs to check and their subjects objects to restrict the set for transitive
+void generate_words_to_check(std::set<int> & WORDS_TO_CHECK, std::vector< std::vector<int> > & VERB_SBJ_OBJ, std::vector< std::vector<int> > & VERB_SUBJECTS, std::vector< std::vector<int> > & VERB_OBJECTS, std::vector<VerbPair> & VERBS_TO_CHECK, std::map<std::string,int> DICTIONARY_FAST );
 
 #endif

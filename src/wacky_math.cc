@@ -21,7 +21,7 @@ ublas::vector<float> mul_vec( ublas::vector<float> & v0, ublas::vector<float> & 
     
   ublas::vector<float> r  (v0.size());
   for (int i = 0; i < v0.size(); ++i){
-    r[i] = v0[i] * v1[i];
+    r(i) = v0(i) * v1(i);
   }
   return r;
 }
@@ -39,7 +39,7 @@ ublas::vector<float> krn_mul( ublas::vector<float> & a, ublas::vector<float> & b
 
   for (int i=0; i < a.size(); ++i){
     for (int j=0; j < a.size(); ++j){
-      r[(i*a.size())+j] = a[i] * b[j];
+      r((i*a.size())+j) = a(i) * b(j);
     } 
   }
 
@@ -54,15 +54,15 @@ ublas::vector<float> krn_mul( ublas::vector<float> & a, ublas::vector<float> & b
  */
 
 float cosine_sim(ublas::vector<float> & v0, ublas::vector<float> & v1) {
-  float dist = -1.0;
-  
+  float dist = -1.0;  
   float dot = 0;
   float l0 = 0;
   float l1 = 0;
+
   for (int i =0; i < v0.size(); ++i){
-    dot += v0[i] * v1[i];
-    l0 += v0[i] * v0[i];
-    l1 += v1[i] * v1[i];
+    dot += v0(i) * v1(i);
+    l0 += v0(i) * v0(i);
+    l1 += v1(i) * v1(i);
   }
 
 	// I really dont like using exceptions but here is an (*arf*) exceptional case! :D 
@@ -72,7 +72,8 @@ float cosine_sim(ublas::vector<float> & v0, ublas::vector<float> & v1) {
 
   	float d = n0 * n1;
 
-  	if (std::abs(d) <= std::numeric_limits<float>::epsilon()) {
+		// I removed the epsilon check here but not sure if that was right to do
+  	if (d != 0.0f) {
     	float sim = dot / d;
     	dist = acos(sim) / M_PI;
   	}

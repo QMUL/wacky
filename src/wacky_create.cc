@@ -76,9 +76,9 @@ int create_dictionary(string OUTPUT_DIR,
 
   // I suspect we dont actually need the total count
   DICTIONARY.push_back(string("UNK"));
+
   idx = 0;
   std::ofstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
-  dictionary_file << s9::ToString(DICTIONARY.size()) << endl;
   for (auto it : DICTIONARY){
     dictionary_file << it << endl;
     DICTIONARY_FAST[it] = idx;

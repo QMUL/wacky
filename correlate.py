@@ -22,7 +22,7 @@ def read_csv_file(filepath):
     cc = []
     num_compares = len(titles) - 3
 
-    titles = titles[2:len(titles)-2]
+    titles = titles[2:len(titles)-1]
 
     for i in range(0,num_compares):
       cc.append([])
@@ -35,7 +35,7 @@ def read_csv_file(filepath):
       # check to see if there any mistakes
       # Basically, are any of our factors 2.0?
       for i in range(0,num_compares-1):
-        if float(tokens[2+i]) >= 2.0:
+        if float(tokens[2+i]) >= 2.0 or 'nan' in tokens[2+i] or float(tokens[2+i]) == 1.0:
           continue
 
       for i in range(0,num_compares):
@@ -51,26 +51,36 @@ if __name__ == "__main__" :
   
   rho = []
 
-  for title in titles:
+  rho_sort = []
+ 
+  for comp in cc:
+    rho.append(stats.spearmanr(comp,human))
+  
+  idx = 0
+  for r,pval in rho:
+    rho_sort.append((titles[idx],r,pval))
+    idx += 1
+
+  # Sort out Rho
+  rho_sort.sort(key=lambda tup: tup[1])
+  rho_sort = rho_sort[::-1]
+
+  for title,r,pval in rho_sort:
     sys.stdout.write("rho_" + title + ",")
 
   print("")
   
-  for comp in cc:
-    rho.append(stats.spearmanr(comp,human))
-
-  
-  for r,pval in rho:
+  for title,r,pval in rho_sort:
     sys.stdout.write(str(r) + ",")
 
   print("")
 
-  for title in titles:
+  for title,r,pval in rho_sort:
     sys.stdout.write("p_" + title + ",")
 
   print("")
   
-  for r,pval in rho:
+  for title,r,pval in rho_sort:
     sys.stdout.write(str(pval) + ",")
   print("")
 

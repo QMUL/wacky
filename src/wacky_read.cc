@@ -77,7 +77,7 @@ void read_subject_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SUBJECTS)
     vector<string> tokens =  s9::SplitStringWhitespace(line);
 
     if (tokens.size() > 1) {
-			int idx = s9::FromString<int>(tokens[1]);
+			int idx = s9::FromString<int>(tokens[0]);
       for (int i= 1; i < tokens.size(); ++i) {
         int sbj_idx = s9::FromString<int>(tokens[i]);
         VERB_SUBJECTS[idx].push_back(sbj_idx);

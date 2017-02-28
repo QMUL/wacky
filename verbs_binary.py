@@ -568,7 +568,7 @@ def read_binary(filepath):
   
   return vectors
 
- transitive verb output
+#transitive verb output
 
 def trans(word2vec=False):
 

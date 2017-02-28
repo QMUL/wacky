@@ -193,11 +193,7 @@ void create_verb_subjects(string str_buffer, vector<int> & verb_sbj_pairs,
 
                 auto widx = DICTIONARY_FAST.find(verb);
               
-								if (verb == "pass"){
-									cout << str_buffer << endl;
-									cout << "---" << endl;
-								}							
- 
+									 
                 if (widx != DICTIONARY_FAST.end()){  
                   // We choose between unique or otherwise
                   if (UNIQUE_SUBJECTS){

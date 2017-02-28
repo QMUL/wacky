@@ -9,6 +9,9 @@ include_directories( "include" )
 FIND_PACKAGE( Boost 1.58 COMPONENTS program_options system filesystem REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
+# CUDA details
+find_package(CUDA QUIET REQUIRED)
+option(USE_CUDA "Use CUDA for doing the math" NO)
 
 # Options (gcc mostly) 
 SET(CMAKE_CXX_FLAGS "-std=c++11 -static-libstdc++")
@@ -19,7 +22,18 @@ SET(CMAKE_C_FLAGS_PROFILE "-pg")
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
-ADD_EXECUTABLE(wacky src/wacky.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_sbj_obj.cc src/wacky_verb.cc src/wacky_breakup.cc)
 
-target_link_libraries(wacky ${Boost_LIBRARIES}) 
+if (USE_CUDA)
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_USE_CUDA")
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -D_FORCE_INLINES -O3 -gencode arch=compute_52,code=sm_52)
+  CUDA_ADD_EXECUTABLE(wacky src/wacky.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_sbj_obj.cc src/wacky_verb.cc src/wacky_breakup.cc src/cuda_verb.cu src/cuda_math.cu)
+  target_link_libraries(wacky ${Boost_LIBRARIES}) 
+else()
+  ADD_EXECUTABLE(wacky src/wacky.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_sbj_obj.cc src/wacky_verb.cc src/wacky_breakup.cc)
+  target_link_libraries(wacky ${Boost_LIBRARIES}) 
+  ADD_EXECUTABLE(wacky_bench src/wacky_bench.cc src/wacky_math.cc src/wacky_sbj_obj.cc src/wacky_breakup.cc)
+  target_link_libraries(wacky_bench ${Boost_LIBRARIES}) 
+endif()
+
+
 

@@ -27,6 +27,13 @@
 #include "wacky_read.hpp"
 #include "wacky_verb.hpp"
 
+#ifdef _USE_CUDA
+#include <cuda_runtime.h>
+#include <vector_types.h>
+#include "cuda_verb.hpp"
+#endif
+
+
 using namespace std;
 using namespace boost::filesystem;
 
@@ -105,8 +112,9 @@ int main(int argc, char* argv[]) {
   bool combine = false;
   bool count = false;
   bool intransitive = false;
+	bool transitive = false;
 
-  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:j:biwnyzpa?")) != -1) {
+  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:j:biwnyzpad?")) != -1) {
   	int this_option_optind = optind ? optind : 1;
   	switch (c) {
       case 0 :
@@ -131,6 +139,9 @@ int main(int argc, char* argv[]) {
         break;
       case 'a':
         intransitive = true;
+        break;
+			case 'd':
+        transitive = true;
         break;
       case 'i':
         integers = true;
@@ -215,13 +226,22 @@ int main(int argc, char* argv[]) {
 				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
   
         intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
-      } else {
+      } else if (transitive) {
         read_subject_object_file(OUTPUT_DIR, VERB_SBJ_OBJ);
 				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
 
 				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
         trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
-      } 
+      } else {
+     		read_subject_object_file(OUTPUT_DIR, VERB_SBJ_OBJ);
+				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
+#ifdef _USE_CUDA
+        all_count_cuda( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
+#else
+        all_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
+#endif
+      }
 
     } else {
       cout << "You must pass -r and -s along with -p" << endl;

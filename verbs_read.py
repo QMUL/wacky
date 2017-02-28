@@ -4,6 +4,7 @@ from wacky files
 '''
 
 import numpy as np
+import codecs, struct
 
 # Read the sim_stats to check for intransitive and transitive
 def read_sim_stats(BASE_DIR, STATS_FILE):
@@ -132,7 +133,10 @@ def read_subject_object(verb, BASE_DIR, DICTIONARY, SUBJECTS_FILE, OBJECT_FILE, 
             # Convert to the word2vec lookup
             verb_sbj = DICTIONARY[sbj_idx]
             if word2vec:
-              sbj_idx = W2V_REVERSE[verb_sbj]
+              if verb_sbj in W2V_REVERSE:
+                sbj_idx = W2V_REVERSE[verb_sbj]
+              else:
+                continue
 
             # Now find the subject vectors
             vv = VEC_DATA[sbj_idx]
@@ -155,7 +159,10 @@ def read_subject_object(verb, BASE_DIR, DICTIONARY, SUBJECTS_FILE, OBJECT_FILE, 
             # Convert to the word2vec lookup
             verb_obj = DICTIONARY[obj_idx]
             if word2vec:
-              obj_idx = W2V_REVERSE[verb_obj]
+              if verb_obj in W2V_REVERSE:
+                obj_idx = W2V_REVERSE[verb_obj]
+              else:
+                continue
 
             # Now find the subject vectors
             vv = VEC_DATA[obj_idx]
@@ -176,7 +183,7 @@ def read_tensorflow(filepath):
 # Read the binary file from word2vec, returning a numpy array
 # we use the DICTIONARY created by tensorflow, because all the integer
 # files, DICTIONARYs and verb/subject lookups are based on that/
-def read_binary(filepath, VEC_SIZE, W2V_DICTIONARY, W2V_REVEReE):
+def read_binary(filepath, VEC_SIZE, W2V_DICTIONARY, W2V_REVERSE):
 
   #print("Reading binary")
   vectors = []

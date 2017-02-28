@@ -36,7 +36,7 @@ VERBS_TO_CHECK = {}
 # We don't read the entire file - we scoot to the index for the verb given
 # Only called on intransitive verbs
 
-def sum_subjects(vidx, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE=[], word2vec=False) :
+def sum_subjects(vidx, verb, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE=[], word2vec=False) :
 
   if vidx >= 0 and vidx < len(VEC_DATA): 
 
@@ -73,7 +73,7 @@ def sum_subjects(vidx, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE=[],
   return (False,0)
 
 # Do the summing for the transitive verbs with both subjects and objects
-def sum_subjects_objects(vidx, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE=[], word2vec=False):
+def sum_subjects_objects(vidx, verb, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE=[], word2vec=False):
  
   if vidx >= 0 and vidx < len(VEC_DATA): 
 
@@ -153,20 +153,20 @@ def do_the_maff(VEC_SIZE, SUBJECTS, DICTIONARY, SBJ_OBJ, VEC_DATA, W2V_REVERSE, 
           found = True
 
     if v0t and v1t:
-      r0 = sum_subjects_objects(vidx0, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
-      r1 = sum_subjects_objects(vidx1, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r0 = sum_subjects_objects(vidx0, verb0, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r1 = sum_subjects_objects(vidx1, verb1, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
 
     elif not v0t and not v1t:
-      r0 = sum_subjects(vidx0, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
-      r1 = sum_subjects(vidx1, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r0 = sum_subjects(vidx0, verb0, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r1 = sum_subjects(vidx1, verb1, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
 
     elif v0t and not v1t:
-      r0 = sum_subjects_objects(vidx0, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
-      r1 = sum_subjects(vidx1, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r0 = sum_subjects_objects(vidx0, verb0, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r1 = sum_subjects(vidx1, verb1, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
 
     else:
-      r0 = sum_subjects(vidx0, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
-      r1 = sum_subjects_objects(vidx1, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r0 = sum_subjects(vidx0, verb0, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
+      r1 = sum_subjects_objects(vidx1, verb1, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE, word2vec)
 
     if r0[0] and r1[0]:
 
@@ -201,14 +201,14 @@ def do_the_maff(VEC_SIZE, SUBJECTS, DICTIONARY, SBJ_OBJ, VEC_DATA, W2V_REVERSE, 
   
   print("----")
   print("rho_base,rho_c1,rho_c2,rho_c3,rho_c4,rho_c5,rho_c6")
-  for i in range(0,7):
+  for i in range(0,6):
     r, pval = rho[i]
     sys.stdout.write(str(r) + ",")
   print(str(rho[-1][0]))
 
   print("p_base,p_c1,p_c2,p_c3,p_c4,p_c5,p_c6")
 
-  for i in range(0,7):
+  for i in range(0,6):
     r, pval = rho[i]
     sys.stdout.write(str(pval) + ",")
   print(str(rho[-1][1]))
@@ -217,8 +217,11 @@ def do_the_maff(VEC_SIZE, SUBJECTS, DICTIONARY, SBJ_OBJ, VEC_DATA, W2V_REVERSE, 
 # Main function
 if __name__ == "__main__" :
   BASE_DIR = sys.argv[1]
- 
   word = False
+
+  if len(sys.argv) > 2:
+    if sys.argv[2] == '-b':
+      word = True
 
   VERB_TRANSITIVE, VERB_INTRANSITIVE = verbs_read.read_sim_stats(BASE_DIR, STATS_FILE)
   VERBS_TO_CHECK = verbs_read.read_sim_file(BASE_DIR, SIM_FILE)
@@ -234,7 +237,7 @@ if __name__ == "__main__" :
 
   SBJ_OBJ = verbs_read.read_sbj_obj_file(BASE_DIR, len(VEC_DATA), SBJ_OBJ_FILE)
 
-  # import pdb; pdb.set_trace()
+  #import pdb; pdb.set_trace()
 
   for v0,v1,s in VERBS_TO_CHECK:
     if word:
@@ -244,4 +247,4 @@ if __name__ == "__main__" :
       verbs_read.read_subject_object(v0, BASE_DIR, DICTIONARY, SUBJECTS_FILE, OBJECTS_FILE, VEC_DATA, VEC_SIZE)
       verbs_read.read_subject_object(v1, BASE_DIR, DICTIONARY, SUBJECTS_FILE, OBJECTS_FILE, VEC_DATA, VEC_SIZE)
 
-  do_the_maff(VEC_SIZE, SUBJECTS, DICTIONARY, SBJ_OBJ, VEC_DATA, W2V_REVERSE, VERBS_TO_CHECK, VERB_TRANSITIVE, word2vec=False)
+  do_the_maff(VEC_SIZE, SUBJECTS, DICTIONARY, SBJ_OBJ, VEC_DATA, W2V_REVERSE, VERBS_TO_CHECK, VERB_TRANSITIVE, word2vec=word)

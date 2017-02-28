@@ -33,15 +33,7 @@ void read_subjects(std::string verb, std::map<std::string,int> & DICTIONARY_FAST
     boost::numeric::ublas::vector<float> & add_vector,
     boost::numeric::ublas::vector<float> & min_vector,
     boost::numeric::ublas::vector<float> & max_vector,
-    boost::numeric::ublas::vector<float> & add_base_add_vector,
-    boost::numeric::ublas::vector<float> & add_base_mul_vector,
-    boost::numeric::ublas::vector<float> & min_base_add_vector,
-    boost::numeric::ublas::vector<float> & min_base_mul_vector,
-    boost::numeric::ublas::vector<float> & max_base_add_vector,
-    boost::numeric::ublas::vector<float> & max_base_mul_vector,
-    boost::numeric::ublas::vector<float> & krn_vector,
-    boost::numeric::ublas::vector<float> & krn_base_add_vector,
-    boost::numeric::ublas::vector<float> & krn_base_mul_vector );
+    boost::numeric::ublas::vector<float> & krn_vector);
 
 //! return all the intranstive stats
 void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
@@ -59,6 +51,16 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   int BASIS_SIZE,
   std::map<std::string,int> & DICTIONARY_FAST,
   std::vector< std::vector<int> > & VERB_SBJ_OBJ,
+  std::vector< std::vector<float> > & WORD_VECTORS);
+
+//! Return all the stats
+void all_count( std::vector<VerbPair> & VERBS_TO_CHECK,
+  std::set<std::string> & VERB_TRANSITIVE,
+  std::set<std::string> & VERB_INTRANSITIVE,
+  int BASIS_SIZE,
+  std::map<std::string,int> & DICTIONARY_FAST,
+  std::vector< std::vector<int> > & VERB_SBJ_OBJ,
+	std::vector< std::vector<int> > & VERB_SUBJECTS,
   std::vector< std::vector<float> > & WORD_VECTORS);
  
 #endif

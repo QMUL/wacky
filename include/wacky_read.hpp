@@ -33,7 +33,7 @@ void  read_sim_stats(std::string OUTPUT_DIR, std::set<std::string> & VERB_TRANSI
 int   read_dictionary(std::string OUTPUT_DIR, std::map<std::string,int> & DICTIONARY_FAST, std::vector<std::string> & DICTIONARY, size_t & VOCAB_SIZE);
 
 //! read the similarity file (Sim3500 for example)
-void  read_sim_file(std::string OUTPUT_DIR, std::vector<VerbPair> & VERBS_TO_CHECK);
+void  read_sim_file(std::string simverb_file, std::vector<VerbPair> & VERBS_TO_CHECK);
 
 //! read the frequency count
 int   read_freq(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, std::vector< std::pair<std::string,size_t> > & FREQ_FLIPPED, std::set<std::string> & ALLOWED_BASIS_WORDS);

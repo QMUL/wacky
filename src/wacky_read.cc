@@ -171,9 +171,9 @@ void read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string
 * @param VERBS_TO_CHECK a vector of VerbPairs that we shall fill
 */
 
-void read_sim_file(string OUTPUT_DIR, vector<VerbPair> & VERBS_TO_CHECK) {
+void read_sim_file(string simverb_file, vector<VerbPair> & VERBS_TO_CHECK) {
    
-  std::ifstream total_file (OUTPUT_DIR + "/SimVerb-500-dev.txt");
+  std::ifstream total_file (simverb_file);
   string line;
 
   while ( getline (total_file,line) ) {
@@ -209,9 +209,7 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
   while ( getline (freq_file,line) ) {
     line = s9::RemoveChar(line,'\n');
     vector<string> tokens = s9::SplitStringString(line, ", ");
-    if (idx != 0){
-      FREQ[tokens[0]] = s9::FromString<size_t>(tokens[1]); 
-    } 
+    FREQ[tokens[0]] = s9::FromString<size_t>(tokens[1]); 
     idx+=1;
   }
 

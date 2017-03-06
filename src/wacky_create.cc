@@ -165,7 +165,6 @@ int create_freq(vector<string> filenames,
   for (string filepath : filenames){
 
     cout << filepath << endl;
-
     int num_blocks =1; 
     
     #pragma omp parallel
@@ -312,7 +311,6 @@ int create_freq(vector<string> filenames,
   // Write out the final frequency file
   std::ofstream freq_file (OUTPUT_DIR + "/freq.txt");
   if (freq_file.is_open()) {
-    freq_file << s9::ToString(FREQ.size()) << endl;
     for (auto it = FREQ.begin(); it != FREQ.end(); ++it) {
       freq_file << it->first << ", " << it->second << endl;
     }

@@ -50,8 +50,8 @@ OUT_DIR             = "."
 CHECKPOINT_DIR      = "checkpoints"
 LEARNING_RATE       = 1.0
 BATCH_SIZE          = 256
-EMBEDDING_SIZE      = 128       # Dimension of the embedding vector.
-SKIP_WINDOW         = 3         # How many words to consider left and right.
+EMBEDDING_SIZE      = 500       # Dimension of the embedding vector.
+SKIP_WINDOW         = 5         # How many words to consider left and right.
 NUM_SKIPS           = 2         # How many times to reuse an input to generate a label.
 NUM_STEPS           = 15000000  # Rough guess at the maximum number of steps
 

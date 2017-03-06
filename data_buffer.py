@@ -101,12 +101,12 @@ def read_dictionary(dict_path):
   dictionary = dict()
   
   with open(dict_path, 'r') as f:
-    lines = f.readlines()
-    size_dict = int(lines[0])
+    size_dict = 0
 
-    for line in lines[1:]:
+    for line in f.readlines():
       line = line.replace("\n","")
-      dictionary[line] = len(dictionary)
+      dictionary[line] = size_dict
+      size_dict += 1
 
   reverse_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
 
@@ -167,15 +167,13 @@ def read_freq(freq_file, dict_size):
   order = []
 
   with open(freq_file,'r') as f:
-    for line in f.readlines()[1:]:      
+    for line in f.readlines():      
       tokens = line.split(", ")
 
       if len(tokens) == 2:
         key = tokens[0].replace(" ","")
         freq  = int(tokens[1])
         count[key] = freq
-      else:
-        errors +=1
 
   count['UNK'] =-1
 

@@ -22,7 +22,13 @@
 #include <boost/filesystem.hpp>
 
 #include "string_utils.hpp"
+
+#ifdef _USE_MKL
+#include "wacky_sbj_obj_mkl.hpp"
+#else
 #include "wacky_sbj_obj.hpp"
+#endif
+
 #include "wacky_create.hpp"
 #include "wacky_read.hpp"
 #include "wacky_verb.hpp"
@@ -60,17 +66,36 @@ set<string> VERB_INTRANSITIVE;
 set<int> WORDS_TO_CHECK;
 vector<VerbPair> VERBS_TO_CHECK;
 
-size_t UNK_COUNT = 0;
-size_t TOTAL_COUNT = 0;
-size_t VOCAB_SIZE = 500000;  // Really more of a max
-size_t BASIS_SIZE = 5000;   // When creating the WORD_VECTORS how large are these vectors?
-string OUTPUT_DIR = ".";
-bool  LEMMA_TIME = true;   // Use the lemma or stem of the word
-size_t IGNORE_WINDOW = 100; // How many most frequent words do we ignore completely in the basis?
-size_t WINDOW_SIZE = 3;			// Our sliding window size, either side of the chosen word
-bool  UNIQUE_SUBJECTS = false;
-bool  UNIQUE_OBJECTS = false;
+// Our list of options
+struct WackyOptions {
 
+  string ukdir;
+  string simverb_file;
+  string combine_file;
+  string RESULTS_FILE;
+
+  bool read_in;
+  bool verb_subject;
+  bool integers;
+  bool word_vectors;
+  bool sim_verbs;
+  bool combine;
+  bool count;
+  bool intransitive;
+	bool transitive;
+
+  size_t UNK_COUNT;
+  size_t TOTAL_COUNT; // TODO - not really an option so needs moving I think
+  size_t VOCAB_SIZE;  // Really more of a max
+  size_t BASIS_SIZE;   // When creating the WORD_VECTORS how large are these vectors?
+  string WORKING_DIR;
+  bool  LEMMA_TIME;   // Use the lemma or stem of the word
+  size_t IGNORE_WINDOW; // How many most frequent words do we ignore completely in the basis?
+  size_t WINDOW_SIZE;			// Our sliding window size, either side of the chosen word
+  bool  UNIQUE_SUBJECTS;
+  bool  UNIQUE_OBJECTS;
+
+};
 
 int combine_ukwac(vector<string> filenames, string outpath) {
 
@@ -93,153 +118,194 @@ int combine_ukwac(vector<string> filenames, string outpath) {
 
 }
 
-
-// Main entrypoint
-int main(int argc, char* argv[]) {
-
+void ParseCommandLine(int argc, char* argv[], WackyOptions &options) {
   int c;
   int digit_optind = 0;
 
-  string ukdir;
-  string simverb_file;
-  string combine_file;
-  vector<string> filenames;
-  bool read_in = false;
-  bool verb_subject = false;
-  bool integers = false;
-  bool word_vectors = false;
-  bool sim_verbs = false;
-  bool combine = false;
-  bool count = false;
-  bool intransitive = false;
-	bool transitive = false;
-
-  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:j:biwnyzpad?")) != -1) {
+  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:j:f:biwnyzpad?")) != -1) {
   	int this_option_optind = optind ? optind : 1;
   	switch (c) {
       case 0 :
         break;
       case 'u' :
-        ukdir = std::string(optarg);
+        options.ukdir = std::string(optarg);
         break;
       case 'y' :
-        UNIQUE_SUBJECTS = true;
+        options.UNIQUE_SUBJECTS = true;
         break;
       case 'z' :
-        UNIQUE_OBJECTS = true;
+        options.UNIQUE_OBJECTS = true;
         break;
       case 'o' :
-        OUTPUT_DIR = string(optarg);
+        options.WORKING_DIR = string(optarg);
+        break;
+      case 'f' :
+        options.RESULTS_FILE = string(optarg);
         break;
       case 'v' :
-        VOCAB_SIZE = s9::FromString<int>(optarg);
+        options.VOCAB_SIZE = s9::FromString<int>(optarg);
         break;
       case 'b':
-        verb_subject = true;
+        options.verb_subject = true;
         break;
       case 'a':
-        intransitive = true;
+        options.intransitive = true;
         break;
 			case 'd':
-        transitive = true;
+        options.transitive = true;
         break;
       case 'i':
-        integers = true;
+        options.integers = true;
         break;
       case 'l' :
-        LEMMA_TIME = true;
+        options.LEMMA_TIME = true;
         cout << "Using Lemma forms of words" << endl;
         break;
       case 'j':
-        WINDOW_SIZE = s9::FromString<int>(optarg);
+        options.WINDOW_SIZE = s9::FromString<int>(optarg);
         break;
       case 'r':
-        read_in = true;
+        options.read_in = true;
         break;
       case 's':
-        simverb_file = string(optarg);
+        options.simverb_file = string(optarg);
         break;
       case 'w':
-        word_vectors = true;
+        options.word_vectors = true;
         break;
       case 'n' :
-        sim_verbs = true;
+        options.sim_verbs = true;
         break;
       case '?':
         std::cout << "wackyvec -u <path to ukwac> -o <output directory>" << std::endl;
         break;
       case 'c':
-        combine_file = string(optarg);
-        combine = true;
+        options.combine_file = string(optarg);
+        options.combine = true;
         break;
       case 'p':
-        count = true;
+        options.count = true;
         break;
       default:
         std::cout << "?? getopt returned character code" << c << std::endl;
     }
   }
+}
 
 
+// Main entrypoint
+int main(int argc, char* argv[]) {
+
+  // Initial settings
+  WackyOptions options;
+
+  options.read_in = false;
+  options.verb_subject = false;
+  options.integers = false;
+  options.word_vectors = false;
+  options.sim_verbs = false;
+  options.combine = false;
+  options.count = false;
+  options.intransitive = false;
+	options.transitive = false;
+
+  options.UNK_COUNT = 0;
+  options.TOTAL_COUNT = 0;
+  options.VOCAB_SIZE = 500000;
+  options.BASIS_SIZE = 5000;
+  options.WORKING_DIR = ".";
+  options.LEMMA_TIME = true;
+  options.IGNORE_WINDOW = 100;
+  options.WINDOW_SIZE = 3;
+  options.UNIQUE_SUBJECTS = false;
+  options.UNIQUE_OBJECTS = false;
+
+  options.RESULTS_FILE = "results.txt";
+
+  ParseCommandLine(argc, argv, options);
+
+  vector<string> filenames;
   
-  if (read_in){
+  // Scan directory for the ukwac files
+  if (is_directory(options.ukdir)) {
+    
+    DIR *dir;
+    struct dirent *ent;
+    dir = opendir (options.ukdir.c_str());
+
+    while ((ent = readdir (dir)) != NULL) {
+      // Files to ignore
+      if (strcmp(ent->d_name,".") == 0 || strcmp(ent->d_name,"..") == 0){
+        continue;
+      }
+      string fullpath;
+      fullpath = options.ukdir + "/" + string(ent->d_name);
+      filenames.push_back(fullpath);
+    }
+
+  } else { // Incorrect directory given
+    cout << "Incorrect command line argument for directory" << endl;
+    return 1;
+  }
+ 
+
+  if (options.read_in){
     cout << "Reading in dictionary and frequency data" << endl;
-    read_freq(OUTPUT_DIR, FREQ, FREQ_FLIPPED, ALLOWED_BASIS_WORDS);
-    read_dictionary(OUTPUT_DIR, DICTIONARY_FAST, DICTIONARY,VOCAB_SIZE);
-    create_basis(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, BASIS_SIZE, IGNORE_WINDOW);
+    read_freq(options.WORKING_DIR, FREQ, FREQ_FLIPPED, ALLOWED_BASIS_WORDS);
+    read_dictionary(options.WORKING_DIR, DICTIONARY_FAST, DICTIONARY, options.VOCAB_SIZE);
+    create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
 
   } else {
     cout << "Creating frequency and dictionary" << endl;
-    if (create_freq(filenames, OUTPUT_DIR,FREQ, FREQ_FLIPPED, WORD_IGNORES, ALLOWED_BASIS_WORDS,LEMMA_TIME) != 0)  { return 1; }    
-    if (create_dictionary(OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, VOCAB_SIZE) != 0) { return 1; }
+    if (create_freq(filenames, options.WORKING_DIR,FREQ, FREQ_FLIPPED, WORD_IGNORES, ALLOWED_BASIS_WORDS, options.LEMMA_TIME) != 0)  { return 1; }    
+    if (create_dictionary(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, options.VOCAB_SIZE) != 0) { return 1; }
   }
 	
-  cout << "Vocab Size: " << VOCAB_SIZE << endl; 
+  cout << "Vocab Size: " << options.VOCAB_SIZE << endl; 
  
   // Initialise our verb to subject/object maps
-  for (int i = 0; i <= VOCAB_SIZE; ++i) {
+  for (int i = 0; i <= options.VOCAB_SIZE; ++i) {
     VERB_SUBJECTS.push_back( vector<int>() );
   }
   
-  for (int i = 0; i <= VOCAB_SIZE; ++i) {
+  for (int i = 0; i <= options.VOCAB_SIZE; ++i) {
     VERB_OBJECTS.push_back( vector<int>() );
   }
 
-  for (int i = 0; i <= VOCAB_SIZE; ++i) {
+  for (int i = 0; i <= options.VOCAB_SIZE; ++i) {
     VERB_SBJ_OBJ.push_back( vector<int>() );
   }
 
 
-  if (count) {
-    if (read_in) { 
+  if (options.count) {
+    if (options.read_in) { 
       cout << "Performing statistics on count vectors" << endl;
       cout << "Reading in dictionary and frequency data" << endl;
-      read_total_file(OUTPUT_DIR, TOTAL_COUNT);
-      read_unk_file(OUTPUT_DIR, UNK_COUNT);
-      read_sim_file(OUTPUT_DIR, VERBS_TO_CHECK);
-      read_sim_stats(OUTPUT_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE);
-      read_subject_file(OUTPUT_DIR, VERB_SUBJECTS); 
+      read_total_file(options.WORKING_DIR, options.TOTAL_COUNT);
+      read_unk_file(options.WORKING_DIR, options.UNK_COUNT);
+      read_sim_file(options.simverb_file, VERBS_TO_CHECK);
+      read_sim_stats(options.WORKING_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE);
+      read_subject_file(options.WORKING_DIR, VERB_SUBJECTS); 
     
-    	if (intransitive){
+    	if (options.intransitive){
+				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+				read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK);
+        intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
+
+      } else if (options.transitive) {
+        read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ);
 				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
 
-				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
-  
-        intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
-      } else if (transitive) {
-        read_subject_object_file(OUTPUT_DIR, VERB_SBJ_OBJ);
-				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
-
-				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
-        trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
+				read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK);
+        trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
       } else {
-     		read_subject_object_file(OUTPUT_DIR, VERB_SBJ_OBJ);
+     		read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ);
 				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
-				read_count(OUTPUT_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
+				read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK);
 #ifdef _USE_CUDA
-        all_count_cuda( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
+        all_count_cuda(options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
 #else
-        all_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
+        all_count(options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
 #endif
       }
 
@@ -249,52 +315,30 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  // Scan directory for the files
-  if (is_directory(ukdir)) {
-    
-    DIR *dir;
-    struct dirent *ent;
-    dir = opendir (ukdir.c_str());
-
-    while ((ent = readdir (dir)) != NULL) {
-      // Files to ignore
-      if (strcmp(ent->d_name,".") == 0 || strcmp(ent->d_name,"..") == 0){
-        continue;
-      }
-      string fullpath;
-      fullpath = ukdir + "/" + string(ent->d_name);
-      filenames.push_back(fullpath);
-    }
-
-  } else { // Incorrect directory given
-    cout << "Incorrect command line argument for directory" << endl;
-    return 1;
-  }
- 
-  if (combine) {
+  if (options.combine) {
     cout << "Combining ukwac into a large file of text" << endl;
-    combine_ukwac(filenames, combine_file);
+    combine_ukwac(filenames, options.combine_file);
     return 0;
   }
  
-  if (verb_subject) {
+  if (options.verb_subject) {
     cout << "Create verb subjects and objects" << endl; 
-    if (create_verb_subject_object(filenames, OUTPUT_DIR, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, UNIQUE_OBJECTS, UNIQUE_SUBJECTS, LEMMA_TIME ) != 0)  { return 1; }
+    if (create_verb_subject_object(filenames, options.WORKING_DIR, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, options.UNIQUE_OBJECTS, options.UNIQUE_SUBJECTS, options.LEMMA_TIME ) != 0)  { return 1; }
   }
   
-  if (integers) {
+  if (options.integers) {
     cout << "Create integer files" << endl;
-    if (create_integers(filenames, OUTPUT_DIR, DICTIONARY_FAST, VOCAB_SIZE, LEMMA_TIME) != 0) { return 1; }
+    if (create_integers(filenames, options.WORKING_DIR, DICTIONARY_FAST, options.VOCAB_SIZE, options.LEMMA_TIME) != 0) { return 1; }
   }
   
-  if (word_vectors){
+  if (options.word_vectors){
     cout << "Creating word vectors" << endl;
-    if (create_word_vectors(filenames, OUTPUT_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, BASIS_VECTOR, WORD_IGNORES, WORD_VECTORS, ALLOWED_BASIS_WORDS, VOCAB_SIZE, BASIS_SIZE, WINDOW_SIZE, LEMMA_TIME) != 0)  { return 1; }
+    if (create_word_vectors(filenames, options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, BASIS_VECTOR, WORD_IGNORES, WORD_VECTORS, ALLOWED_BASIS_WORDS, options.VOCAB_SIZE, options.BASIS_SIZE, options.WINDOW_SIZE, options.LEMMA_TIME) != 0)  { return 1; }
   }
   
-  if (sim_verbs) {
+  if (options.sim_verbs) {
     cout << "Creating simverbs" << endl;
-    if (create_simverbs(filenames,simverb_file, OUTPUT_DIR, SIMVERBS, SIMVERBS_COUNT, SIMVERBS_OBJECTS, SIMVERBS_ALONE, LEMMA_TIME ) !=0)  { return 1; }
+    if (create_simverbs(filenames, options.simverb_file, options.WORKING_DIR, SIMVERBS, SIMVERBS_COUNT, SIMVERBS_OBJECTS, SIMVERBS_ALONE, options.LEMMA_TIME ) !=0)  { return 1; }
   }
 
   return 0;

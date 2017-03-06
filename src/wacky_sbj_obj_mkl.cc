@@ -6,9 +6,8 @@
 *
 */
 
-#include "wacky_sbj_obj.hpp"
+#include "wacky_sbj_obj_mkl.hpp"
 
-using namespace boost::numeric;
 using namespace std;
 
 /**
@@ -28,10 +27,10 @@ void read_subjects_objects(string verb, map<string,int> & DICTIONARY_FAST,
     vector< vector<int> > & VERB_SBJ_OBJ,
     vector< vector<float> > & WORD_VECTORS,
     int BASIS_SIZE,
-    ublas::vector<float> & base_vector,
-    ublas::vector<float> & sum_subject,
-    ublas::vector<float> & sum_object,
-    ublas::vector<float> & sum_krn) {
+    vector<float> & base_vector,
+    vector<float> & sum_subject,
+    vector<float> & sum_object,
+    vector<float> & sum_krn) {
 
   int vidx = DICTIONARY_FAST[verb];
   vector<int> subs_obs = VERB_SBJ_OBJ[vidx];
@@ -50,15 +49,15 @@ void read_subjects_objects(string verb, map<string,int> & DICTIONARY_FAST,
   }
 
   for (int i =0; i < subs_obs.size(); i+=2) {
-    ublas::vector<float> sbj_vector (BASIS_SIZE);
-    ublas::vector<float> obj_vector (BASIS_SIZE);
+    vector<float> sbj_vector (BASIS_SIZE);
+    vector<float> obj_vector (BASIS_SIZE);
 
     for (int j =0; j < BASIS_SIZE; ++j) {
       sbj_vector(j) = WORD_VECTORS[ subs_obs[i] ][j];
       obj_vector(j) = WORD_VECTORS[ subs_obs[i+1] ][j];
     }
  
-    ublas::vector<float> tk = krn_mul(sbj_vector, obj_vector);
+    vector<float> tk = krn_mul(sbj_vector, obj_vector);
       
     sum_krn = sum_krn + tk;
     
@@ -85,9 +84,9 @@ void read_subjects_objects_few(string verb, map<string,int> & DICTIONARY_FAST,
     vector< vector<int> > & VERB_SBJ_OBJ,
     vector< vector<float> > & WORD_VECTORS,
     int BASIS_SIZE,
-    ublas::vector<float> & base_vector,
-    ublas::vector<float> & sum_subject,
-    ublas::vector<float> & sum_krn) {
+    vector<float> & base_vector,
+    vector<float> & sum_subject,
+    vector<float> & sum_krn) {
 
   int vidx = DICTIONARY_FAST[verb];
   vector<int> subs_obs = VERB_SBJ_OBJ[vidx];
@@ -105,15 +104,15 @@ void read_subjects_objects_few(string verb, map<string,int> & DICTIONARY_FAST,
   }
 
   for (int i =0; i < subs_obs.size(); i+=2) {
-    ublas::vector<float> sbj_vector (BASIS_SIZE);
-    ublas::vector<float> obj_vector (BASIS_SIZE);
+    vector<float> sbj_vector (BASIS_SIZE);
+    vector<float> obj_vector (BASIS_SIZE);
 
     for (int j =0; j < BASIS_SIZE; ++j) {
       sbj_vector(j) = WORD_VECTORS[ subs_obs[i] ][j];
       obj_vector(j) = WORD_VECTORS[ subs_obs[i+1] ][j];
     }
  
-    ublas::vector<float> tk = krn_mul(sbj_vector, obj_vector);
+    vector<float> tk = krn_mul(sbj_vector, obj_vector);
       
     sum_krn = sum_krn + tk;
     
@@ -144,11 +143,11 @@ void read_subjects(string verb, map<string,int> & DICTIONARY_FAST,
     vector< vector<int> > & VERB_SUBJECTS,
     vector< vector<float> > & WORD_VECTORS,
     int BASIS_SIZE,
-    ublas::vector<float> & base_vector,
-    ublas::vector<float> & add_vector,
-    ublas::vector<float> & min_vector,
-    ublas::vector<float> & max_vector,
-    ublas::vector<float> & krn_vector) {
+    vector<float> & base_vector,
+    vector<float> & add_vector,
+    vector<float> & min_vector,
+    vector<float> & max_vector,
+    vector<float> & krn_vector) {
  
   int vidx = DICTIONARY_FAST[verb];
   vector<int> subjects = VERB_SUBJECTS[vidx];
@@ -168,14 +167,14 @@ void read_subjects(string verb, map<string,int> & DICTIONARY_FAST,
   }
 
   for (int i : subjects) {
-    ublas::vector<float> sbj_vector (BASIS_SIZE);
+    vector<float> sbj_vector (BASIS_SIZE);
   
     for (int j =0; j < BASIS_SIZE; ++j) {
       sbj_vector[j] = WORD_VECTORS[i][j];
     }
 
     add_vector = add_vector + sbj_vector;
-    ublas::vector<float> tk  = krn_mul(sbj_vector, sbj_vector);
+    vector<float> tk  = krn_mul(sbj_vector, sbj_vector);
       
     krn_vector = krn_vector + tk;
 
@@ -206,9 +205,9 @@ void read_subjects_few(string verb, map<string,int> & DICTIONARY_FAST,
     vector< vector<int> > & VERB_SUBJECTS,
     vector< vector<float> > & WORD_VECTORS,
     int BASIS_SIZE,
-    ublas::vector<float> & base_vector,
-    ublas::vector<float> & add_vector,
-    ublas::vector<float> & krn_vector) {
+    vector<float> & base_vector,
+    vector<float> & add_vector,
+    vector<float> & krn_vector) {
  
   int vidx = DICTIONARY_FAST[verb];
   vector<int> subjects = VERB_SUBJECTS[vidx];
@@ -226,14 +225,14 @@ void read_subjects_few(string verb, map<string,int> & DICTIONARY_FAST,
   }
 
   for (int i : subjects) {
-    ublas::vector<float> sbj_vector (BASIS_SIZE);
+    vector<float> sbj_vector (BASIS_SIZE);
   
     for (int j =0; j < BASIS_SIZE; ++j) {
       sbj_vector[j] = WORD_VECTORS[i][j];
     }
 
     add_vector = add_vector + sbj_vector;
-    ublas::vector<float> tk  = krn_mul(sbj_vector, sbj_vector);
+    vector<float> tk  = krn_mul(sbj_vector, sbj_vector);
     krn_vector = krn_vector + tk;   
   }
 }
@@ -300,33 +299,33 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 			if(VERB_INTRANSITIVE.find(vp.v0) != VERB_INTRANSITIVE.end() &&
 					VERB_INTRANSITIVE.find(vp.v1) != VERB_INTRANSITIVE.end()){
 
-				ublas::vector<float> base_vector0 (BASIS_SIZE);
-				ublas::vector<float> add_vector0 (BASIS_SIZE);
-				ublas::vector<float> min_vector0 (BASIS_SIZE);
-				ublas::vector<float> max_vector0 (BASIS_SIZE);
-				ublas::vector<float> add_base_add_vector0 (BASIS_SIZE);
-				ublas::vector<float> add_base_mul_vector0 (BASIS_SIZE);
-				ublas::vector<float> min_base_add_vector0 (BASIS_SIZE);
-				ublas::vector<float> min_base_mul_vector0 (BASIS_SIZE);
-				ublas::vector<float> max_base_add_vector0 (BASIS_SIZE);
-				ublas::vector<float> max_base_mul_vector0 (BASIS_SIZE);
-				ublas::vector<float> krn_vector0 (BASIS_SIZE * BASIS_SIZE);
-				ublas::vector<float> krn_base_add_vector0 (BASIS_SIZE * BASIS_SIZE);
-				ublas::vector<float> krn_base_mul_vector0 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> base_vector0 (BASIS_SIZE);
+				vector<float> add_vector0 (BASIS_SIZE);
+				vector<float> min_vector0 (BASIS_SIZE);
+				vector<float> max_vector0 (BASIS_SIZE);
+				vector<float> add_base_add_vector0 (BASIS_SIZE);
+				vector<float> add_base_mul_vector0 (BASIS_SIZE);
+				vector<float> min_base_add_vector0 (BASIS_SIZE);
+				vector<float> min_base_mul_vector0 (BASIS_SIZE);
+				vector<float> max_base_add_vector0 (BASIS_SIZE);
+				vector<float> max_base_mul_vector0 (BASIS_SIZE);
+				vector<float> krn_vector0 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> krn_base_add_vector0 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> krn_base_mul_vector0 (BASIS_SIZE * BASIS_SIZE);
 		
-				ublas::vector<float> base_vector1 (BASIS_SIZE);
-				ublas::vector<float> add_vector1 (BASIS_SIZE);
-				ublas::vector<float> min_vector1 (BASIS_SIZE);
-				ublas::vector<float> max_vector1 (BASIS_SIZE);
-				ublas::vector<float> add_base_add_vector1 (BASIS_SIZE);
-				ublas::vector<float> add_base_mul_vector1 (BASIS_SIZE);
-				ublas::vector<float> min_base_add_vector1 (BASIS_SIZE);
-				ublas::vector<float> min_base_mul_vector1 (BASIS_SIZE);
-				ublas::vector<float> max_base_add_vector1 (BASIS_SIZE);
-				ublas::vector<float> max_base_mul_vector1 (BASIS_SIZE);
-				ublas::vector<float> krn_vector1 (BASIS_SIZE * BASIS_SIZE);
-				ublas::vector<float> krn_base_add_vector1 (BASIS_SIZE * BASIS_SIZE);
-				ublas::vector<float> krn_base_mul_vector1 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> base_vector1 (BASIS_SIZE);
+				vector<float> add_vector1 (BASIS_SIZE);
+				vector<float> min_vector1 (BASIS_SIZE);
+				vector<float> max_vector1 (BASIS_SIZE);
+				vector<float> add_base_add_vector1 (BASIS_SIZE);
+				vector<float> add_base_mul_vector1 (BASIS_SIZE);
+				vector<float> min_base_add_vector1 (BASIS_SIZE);
+				vector<float> min_base_mul_vector1 (BASIS_SIZE);
+				vector<float> max_base_add_vector1 (BASIS_SIZE);
+				vector<float> max_base_mul_vector1 (BASIS_SIZE);
+				vector<float> krn_vector1 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> krn_base_add_vector1 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> krn_base_mul_vector1 (BASIS_SIZE * BASIS_SIZE);
 
 				read_subjects(vp.v0,
 						DICTIONARY_FAST,
@@ -359,7 +358,7 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   			min_base_mul_vector0 = mul_vec(min_vector0, base_vector0);
   			max_base_add_vector0 = max_vector0 + base_vector0;
   			max_base_mul_vector0 = mul_vec(max_vector0, base_vector0);
-  			ublas::vector<float> td = krn_mul(base_vector0, base_vector0);
+  			vector<float> td = krn_mul(base_vector0, base_vector0);
   			krn_base_add_vector0 = krn_vector0 + td;
   			krn_base_mul_vector0 = mul_vec(krn_vector0,td);
  
@@ -466,18 +465,18 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 			end = VERBS_TO_CHECK.size();
 		}
 
-		ublas::vector<float> base_vector0 (BASIS_SIZE);
-		ublas::vector<float> sum_subject0 (BASIS_SIZE);
-		ublas::vector<float> sum_object0 (BASIS_SIZE);
-		ublas::vector<float> sum_krn0 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> base_vector0 (BASIS_SIZE);
+		vector<float> sum_subject0 (BASIS_SIZE);
+		vector<float> sum_object0 (BASIS_SIZE);
+		vector<float> sum_krn0 (BASIS_SIZE * BASIS_SIZE);
 
-		ublas::vector<float> base_vector1 (BASIS_SIZE);
-		ublas::vector<float> sum_subject1 (BASIS_SIZE);
-		ublas::vector<float> sum_object1 (BASIS_SIZE);
-		ublas::vector<float> sum_krn1 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> base_vector1 (BASIS_SIZE);
+		vector<float> sum_subject1 (BASIS_SIZE);
+		vector<float> sum_object1 (BASIS_SIZE);
+		vector<float> sum_krn1 (BASIS_SIZE * BASIS_SIZE);
 
-		ublas::vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
-		ublas::vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
 
 		for (int i=start; i < end; ++i){
 
@@ -506,10 +505,10 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 				float c0 = cosine_sim(base_vector0, base_vector1);
 				float c1 = cosine_sim(sum_krn0, sum_krn1);
 
-				ublas::vector<float> tk0 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> tk0 (BASIS_SIZE * BASIS_SIZE);
 				tk0 = sum_krn0 + krn_base0;
 
-				ublas::vector<float> tk1 (BASIS_SIZE * BASIS_SIZE);
+				vector<float> tk1 (BASIS_SIZE * BASIS_SIZE);
 				tk1 = sum_krn1 + krn_base1;
 				float c2 = cosine_sim(tk0, tk1);
 
@@ -517,8 +516,8 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 				tk1 = mul_vec(sum_krn1,krn_base1);
 				float c3 = cosine_sim(tk0, tk1);
 
-				ublas::vector<float> tm0 (BASIS_SIZE);
-				ublas::vector<float> tm1 (BASIS_SIZE);
+				vector<float> tm0 (BASIS_SIZE);
+				vector<float> tm1 (BASIS_SIZE);
 
 				tm0 = sum_subject0 + sum_object0;
 				tm1 = sum_subject1 + sum_object1; 
@@ -568,7 +567,7 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
  * @param WORD_VECTORS our word count vectors
  */
 
-void all_count(std::string results_file,
+void all_count( std::string results_file,
   std::vector<VerbPair> & VERBS_TO_CHECK,
   set<string> & VERB_TRANSITIVE,
   set<string> & VERB_INTRANSITIVE,
@@ -612,16 +611,16 @@ void all_count(std::string results_file,
 			end = VERBS_TO_CHECK.size();
 		}
 
-		ublas::vector<float> base_vector0 (BASIS_SIZE);
-		ublas::vector<float> sum_subject0 (BASIS_SIZE);
-		ublas::vector<float> sum_krn0 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> base_vector0 (BASIS_SIZE);
+		vector<float> sum_subject0 (BASIS_SIZE);
+		vector<float> sum_krn0 (BASIS_SIZE * BASIS_SIZE);
 
-		ublas::vector<float> base_vector1 (BASIS_SIZE);
-		ublas::vector<float> sum_subject1 (BASIS_SIZE);
-		ublas::vector<float> sum_krn1 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> base_vector1 (BASIS_SIZE);
+		vector<float> sum_subject1 (BASIS_SIZE);
+		vector<float> sum_krn1 (BASIS_SIZE * BASIS_SIZE);
 
-		ublas::vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
-		ublas::vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
+		vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
 
 		for (int i=start; i < end; ++i){
 
@@ -668,8 +667,8 @@ void all_count(std::string results_file,
 			float c0 = cosine_sim(base_vector0, base_vector1);
 			float c1 = cosine_sim(sum_subject0, sum_subject1);
 			
-			ublas::vector<float> tv0 (BASIS_SIZE);
-			ublas::vector<float> tv1 (BASIS_SIZE);
+			vector<float> tv0 (BASIS_SIZE);
+			vector<float> tv1 (BASIS_SIZE);
 
 			tv0 = sum_subject0 + base_vector0;
 			tv1 = sum_subject1 + base_vector1;
@@ -681,10 +680,10 @@ void all_count(std::string results_file,
 			float c4 = cosine_sim(sum_krn0, sum_krn1);
 	
 
-			ublas::vector<float> tk0 (BASIS_SIZE * BASIS_SIZE);
+			vector<float> tk0 (BASIS_SIZE * BASIS_SIZE);
 			tk0 = sum_krn0 + krn_base0;
 
-			ublas::vector<float> tk1 (BASIS_SIZE * BASIS_SIZE);
+			vector<float> tk1 (BASIS_SIZE * BASIS_SIZE);
 			tk1 = sum_krn1 + krn_base1;
 			float c5 = cosine_sim(tk0, tk1);
 

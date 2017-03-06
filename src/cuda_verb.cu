@@ -38,7 +38,7 @@ __global__ void VerbSubjectAdd(int width, int height, float *input, float *outpu
 
 
 // Our actual kernel that runs over the screen and spits out a colour
-__global__ void VerbSubjectKrn(int width, int total_size, float *input, float *input2, float *output) {
+__global__ void VerbSubjectKrn(int width, int height, float *input, float *input2, float *output) {
 
   unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;   
   unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
@@ -46,10 +46,8 @@ __global__ void VerbSubjectKrn(int width, int total_size, float *input, float *i
   unsigned int i = y * width + x; // index of current pixel (calculated using thread index)
   unsigned int j= 0;
 
-  if (i < total_size){
-    for (j=0; j < width; ++j){
-      output[i] = input[i * width + j] * input2[i * width + j];
-    } 
+  if (i < width * height){
+    output[i] = input[i] * input2[i];
   }
 
 }
@@ -175,6 +173,10 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
   size_t num_blocks = ts / mem_size;
   size_t chunk_size = ts / num_blocks;
 
+  if (num_blocks < 1) {
+    num_blocks = 1;
+    chunk_size = ts;
+  }
 
   //size_t vecs_per_block = chunk_size / (real_width * sizeof(float));
   size_t vecs_per_block = 1;
@@ -198,10 +200,11 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
 
   while (idx < subs_obs_conv.size()) {
   
-    size_t tsize = vecs_per_block;
-    if (idx + vecs_per_block > subs_obs_conv.size()){
-      tsize = subs_obs_conv.size() - idx;
-    }
+    size_t tsize = 1;
+    //size_t tsize = vecs_per_block;
+    //if (idx + vecs_per_block > subs_obs_conv.size()){
+    //  tsize = subs_obs_conv.size() - idx;
+    //}
 
     cudaMemcpy( input_s, static_cast<void*>(&subs_obs_conv[idx]), tsize * real_width * sizeof(float), cudaMemcpyHostToDevice);
     VerbSubjectAdd  <<< numBlocks, threadsPerBlock >>>(real_width, tsize, input_s, output_s);  
@@ -209,6 +212,7 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
     idx +=  (tsize * real_width);
   }
 
+  cudaDeviceSynchronize(); // Probably dont need this now
   // copy results of computation from device back to host
   cudaMemcpy(result_s, output_s, BASIS_SIZE * sizeof(float), cudaMemcpyDeviceToHost);  
   
@@ -219,25 +223,26 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
 
   // Now perform the kronecker which is basically an N^2 / 2 number of ops
 
-/*  for (int i=0; i < BASIS_SIZE; ++i) { 
+  for (int i=0; i < BASIS_SIZE; ++i) { 
 
     idx = 0;
 
     // TODO maybe eventually use tsize here - fewer mem copies
-    cudaMemcpy( input_s, static_cast<void*>(&subs_obs_conv[i]), vecs_per_block * real_width * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy( input_s, static_cast<void*>(&subs_obs_conv[i]), 1 * real_width * sizeof(float), cudaMemcpyHostToDevice);
     
     while (idx < subs_obs_conv.size()) {
   
-      size_t tsize = vecs_per_block;
-      if (idx + vecs_per_block > subs_obs_conv.size()){
-        tsize = subs_obs_conv.size() - idx;
-      }
+      size_t tsize = 1;
+      //size_t tsize = vecs_per_block;
+      //if (idx + vecs_per_block > subs_obs_conv.size()){
+      //  tsize = subs_obs_conv.size() - idx;
+      //}
 
       cudaMemcpy( input_k, static_cast<void*>(&subs_obs_conv[idx]), tsize * real_width * sizeof(float), cudaMemcpyHostToDevice);
       VerbSubjectKrn  <<< numBlocks, threadsPerBlock >>>(real_width, tsize, input_s, input_k, output_s);  
 
       // copy results of computation from device back to host
-      cudaMemcpy(result_s, output_s, BASIS_SIZE * sizeof(float), cudaMemcpyDeviceToHost);  
+      cudaMemcpy(result_s, output_s, real_width * sizeof(float), cudaMemcpyDeviceToHost);  
   
       for (int j =0; j < BASIS_SIZE; ++j){
         sum_krn[i*BASIS_SIZE + j] += result_s[j];  
@@ -245,7 +250,9 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
 
       idx += (tsize * real_width);
     }
-  }*/
+
+    cudaDeviceSynchronize(); // Probably dont need this now
+  }
 
 
   // free CUDA memory

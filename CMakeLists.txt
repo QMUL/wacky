@@ -14,7 +14,7 @@ find_package(CUDA QUIET REQUIRED)
 option(USE_CUDA "Use CUDA for doing the math" NO)
 
 # MKL
-option(USE_MKL "Use the MKL Intel Library for the th math" NO)
+option(USE_MKL "Use the MKL Intel Library for the math" NO)
 
 # Options (gcc mostly) 
 SET(CMAKE_CXX_FLAGS "-std=c++11 -static-libstdc++")
@@ -34,15 +34,35 @@ else()
 
   if (USE_MKL)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_USE_MKL")
-    INCLUDE_DIRECTORIES( ${MKL_INCLUDE_DIR} )
+    find_path(MKL_INCLUDE_PATH mkl.h PATHS /opt/intel/mkl/include/)
+    
+    if (MKL_INCLUDE_PATH)
+      INCLUDE_DIRECTORIES( ${MKL_INCLUDE_PATH} )
+    else()
+      message(FATAL_ERROR "Failed to find MKL Include Path")
+    endif()
+
     ADD_EXECUTABLE(wacky src/wacky.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_sbj_obj_mkl.cc src/wacky_verb.cc src/wacky_breakup.cc)
-    target_link_libraries(wacky ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_core.a)
+    ADD_EXECUTABLE(wacky_bench src/wacky_bench.cc src/wacky_math.cc src/wacky_sbj_obj_mkl.cc src/wacky_breakup.cc)
+
+    find_path(MKL_LIBRARY_PATH libmkl_core.a PATHS /opt/intel/mkl/lib/intel64_lin/)
+
+    if (MKL_LIBRARY_PATH)
+      target_link_libraries(wacky ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so)
+      target_link_libraries(wacky_bench ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so) 
+    else()
+      message(FATAL_ERROR "Failed to find MKL Library Path")
+    endif()
+
 
   else()
     ADD_EXECUTABLE(wacky src/wacky.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_sbj_obj.cc src/wacky_verb.cc src/wacky_breakup.cc)
     target_link_libraries(wacky ${Boost_LIBRARIES}) 
     ADD_EXECUTABLE(wacky_bench src/wacky_bench.cc src/wacky_math.cc src/wacky_sbj_obj.cc src/wacky_breakup.cc)
     target_link_libraries(wacky_bench ${Boost_LIBRARIES}) 
+  
+  endif()
+
 endif()
 
 

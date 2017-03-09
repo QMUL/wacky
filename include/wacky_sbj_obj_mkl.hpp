@@ -6,8 +6,8 @@
 *
 */
 
-#ifndef WACKY_SBJ_OBJ_HPP
-#define WACKY_SBJ_OBJ_HPP
+#ifndef WACKY_SBJ_OBJ_MKL_HPP
+#define WACKY_SBJ_OBJ_MKL_HPP
 
 #include <iostream>
 #include <fstream>

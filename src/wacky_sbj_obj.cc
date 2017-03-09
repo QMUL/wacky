@@ -583,14 +583,16 @@ void all_count(std::string results_file,
 	for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
 		VerbPair vp = VERBS_TO_CHECK[i];
-		if(VERB_TRANSITIVE.find(vp.v0) != VERB_TRANSITIVE.end() &&
-			VERB_TRANSITIVE.find(vp.v1) != VERB_TRANSITIVE.end()){
+		if(!(VERB_TRANSITIVE.find(vp.v0) == VERB_TRANSITIVE.end() ||
+			VERB_TRANSITIVE.find(vp.v1) == VERB_TRANSITIVE.end() || 
+      VERB_INTRANSITIVE.find(vp.v0) == VERB_INTRANSITIVE.end() ||
+		  VERB_TRANSITIVE.find(vp.v1) == VERB_INTRANSITIVE.end())) {
 			//cout << vp.v0 << "," << vp.v1 << endl;
-			total_verbs ++;
+			  total_verbs ++;
 		}	
 	}
 
-	cout << "Total verbs: " << s9::ToString(total_verbs) << endl; 
+	cout << "Total verb pairs: " << s9::ToString(total_verbs) << endl; 
   cout << "verb0,verb1,base_sim,cs1,cs2,cs3,cs4,cs5,cs6,human_sim" << endl;
 
 	int num_blocks = 1;

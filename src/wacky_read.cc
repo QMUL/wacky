@@ -208,9 +208,12 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
   size_t idx = 0;
   while ( getline (freq_file,line) ) {
     line = s9::RemoveChar(line,'\n');
+
     vector<string> tokens = s9::SplitStringString(line, ", ");
-    FREQ[tokens[0]] = s9::FromString<size_t>(tokens[1]); 
-    idx+=1;
+    if (tokens.size() > 1) {
+      FREQ[tokens[0]] = s9::FromString<size_t>(tokens[1]); 
+      idx+=1;
+    }
   }
 
   for (auto it = FREQ.begin(); it != FREQ.end(); it++){

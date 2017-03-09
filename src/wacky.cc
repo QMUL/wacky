@@ -208,6 +208,7 @@ int main(int argc, char* argv[]) {
   options.count = false;
   options.intransitive = false;
 	options.transitive = false;
+  options.ukdir = ".";
 
   options.UNK_COUNT = 0;
   options.TOTAL_COUNT = 0;
@@ -290,14 +291,15 @@ int main(int argc, char* argv[]) {
     	if (options.intransitive){
 				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
 				read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK);
-        intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
+        // TODO - put back in when we've done the all bit
+        //intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
 
       } else if (options.transitive) {
         read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ);
 				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
 
 				read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK);
-        trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
+        //trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
       } else {
      		read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ);
 				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
@@ -305,7 +307,7 @@ int main(int argc, char* argv[]) {
 #ifdef _USE_CUDA
         all_count_cuda(options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
 #else
-        all_count(options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
+        all_count(options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
 #endif
       }
 

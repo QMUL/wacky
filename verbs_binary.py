@@ -17,7 +17,7 @@ SUBJECTS_FILE = "verb_subjects.txt"
 OBJECTS_FILE = "verb_objects.txt"
 SBJ_OBJ_FILE = "verb_sbj_obj.txt"
 W2V_DICT_FILE = "vocab.txt"
-SIM_FILE = "SimVerb-500-dev.txt"
+SIM_FILE = "SimVerb-3000-test.txt"
 STATS_FILE = "sim_stats.txt"
 VEC_FILE = ""
 VEC_SIZE = -1
@@ -98,7 +98,7 @@ def read_sim_file():
 def read_dictionary() :
   #print("Reading Dictionary")
   with open(BASE_DIR + "/" + DICT_FILE,'r') as f:
-    for line in f.readlines()[1:]:
+    for line in f.readlines():
       DICTIONARY.append( line.replace("\n",""))
 
 
@@ -751,20 +751,18 @@ def trans_intrans(word2vec=False):
 
   for verb0, verb1, sim in verbs_to_check:
   
-    if not ( (verb0 in VERB_INTRANSITIVE and verb1 in VERB_TRANSITIVE) or
-        (verb0 in VERB_TRANSITIVE and verb1 in VERB_INTRANSITIVE)):
-      continue
-
-  
     r0 = []
     r1 = []
   
     if verb0 in VERB_TRANSITIVE:
       r0 = read_sbj_obj2(verb0,word2vec)
-      r1 = read_subjects_2(verb1,word2vec)
     else:
-      r0 = read_sbj_obj2(verb1,word2vec)
-      r1 = read_subjects_2(verb0,word2vec)
+      r0 = read_subjects_2(verb0,word2vec)
+ 
+    if verb1 in VERB_TRANSITIVE:
+      r1 = read_sbj_obj2(verb1,word2vec)
+    else:
+      r1 = read_subjects_2(verb1,word2vec)
 
     if r0[0] and r1[0]:
 

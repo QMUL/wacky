@@ -19,7 +19,8 @@
 #include "wacky_misc.hpp"
 
 
-void all_count_cuda( std::vector<VerbPair> & VERBS_TO_CHECK,
+void all_count_cuda(std::string results_file, 
+  std::vector<VerbPair> & VERBS_TO_CHECK,
   std::set<std::string> & VERB_TRANSITIVE,
   std::set<std::string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,

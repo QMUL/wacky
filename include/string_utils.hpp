@@ -115,6 +115,8 @@ namespace s9 {
   }
 
 
+  // http://en.cppreference.com/w/cpp/string/byte/isspace
+
   static inline std::vector<std::string> SplitStringWhitespace(const std::string& input ) { 
     size_t start = 0;
     size_t end = 0;

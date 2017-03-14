@@ -38,16 +38,15 @@ __global__ void VerbSubjectAdd(int width, int height, float *input, float *outpu
 
 
 // Our actual kernel that runs over the screen and spits out a colour
-__global__ void VerbSubjectKrn(int width, int height, float *input, float *input2, float *output) {
+__global__ void VerbSubjectKrn(int width, int height, float *input, int idx, float *output) {
 
   unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;   
   unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
 
   unsigned int i = y * width + x; // index of current pixel (calculated using thread index)
-  unsigned int j= 0;
 
   if (i < width * height){
-    output[i] = input[i] * input2[i];
+    output[x] = input[i] * input[idx];
   }
 
 }
@@ -149,14 +148,12 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
   cout << "Verb: " << verb << endl; 
 
   float* input_s;
-  float* input_k;
 
   // Results on the device
   float* output_s;
 
   // results on the host
   float* result_s = new float[real_width];
-  float* result_k = new float[real_width];
 
 
 	// allocate memory on the CUDA device (GPU VRAM) for input, sum and kronecker
@@ -186,7 +183,6 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
 
   // Allocate pinned memory
   cudaMallocHost(&input_s, real_width * vecs_per_block * sizeof(float));
-  cudaMallocHost(&input_k, real_width * vecs_per_block * sizeof(float));
   cout << "Cuda Error M2 " << cudaGetErrorString(cudaGetLastError()) << endl;
 
   // Zero everything first
@@ -220,45 +216,36 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
     sum_subject[i] = result_s[i];  
   }
 
+ 
+  std::fill(sum_krn.begin(), sum_krn.end(), 0);
 
   // Now perform the kronecker which is basically an N^2 / 2 number of ops
+  // It looks like this is very prohibitive unless we can get all the output memory in one go, rather than
+  // copying each sub vector. It should, in theory, be possible? It's only about 190 meg? I suspect we'd have
+  // to break things up into blocks though to make it work fast right?
+  idx = 0;
+  while (idx < subs_obs_conv.size()) {
 
-  for (int i=0; i < BASIS_SIZE; ++i) { 
+    size_t tsize = 1;
 
-    idx = 0;
+    cudaMemcpy( input_s, static_cast<void*>(&subs_obs_conv[idx]), tsize * real_width * sizeof(float), cudaMemcpyHostToDevice);
 
-    // TODO maybe eventually use tsize here - fewer mem copies
-    cudaMemcpy( input_s, static_cast<void*>(&subs_obs_conv[i]), 1 * real_width * sizeof(float), cudaMemcpyHostToDevice);
-    
-    while (idx < subs_obs_conv.size()) {
-  
-      size_t tsize = 1;
-      //size_t tsize = vecs_per_block;
-      //if (idx + vecs_per_block > subs_obs_conv.size()){
-      //  tsize = subs_obs_conv.size() - idx;
-      //}
-
-      cudaMemcpy( input_k, static_cast<void*>(&subs_obs_conv[idx]), tsize * real_width * sizeof(float), cudaMemcpyHostToDevice);
-      VerbSubjectKrn  <<< numBlocks, threadsPerBlock >>>(real_width, tsize, input_s, input_k, output_s);  
-
-      // copy results of computation from device back to host
+    for (int i=0; i < BASIS_SIZE; ++i) {
+      VerbSubjectKrn  <<< numBlocks, threadsPerBlock >>>(real_width, tsize, input_s, i, output_s);  
       cudaMemcpy(result_s, output_s, real_width * sizeof(float), cudaMemcpyDeviceToHost);  
-  
+
       for (int j =0; j < BASIS_SIZE; ++j){
         sum_krn[i*BASIS_SIZE + j] += result_s[j];  
       }
-
-      idx += (tsize * real_width);
     }
-
-    cudaDeviceSynchronize(); // Probably dont need this now
+    idx += (tsize * real_width);
   }
 
+  cudaDeviceSynchronize(); // Probably dont need this now
 
   // free CUDA memory
 	cudaFree(output_s);  
 	cudaFree(input_s);
-  cudaFree(input_k);
 
   delete[] result_s;
 
@@ -277,7 +264,8 @@ void read_subjects_objects_cuda(string verb, map<string,int> & DICTIONARY_FAST,
  */
 
 
-void all_count_cuda( std::vector<VerbPair> & VERBS_TO_CHECK,
+void all_count_cuda( string results_file, 
+  vector<VerbPair> & VERBS_TO_CHECK,
   set<string> & VERB_TRANSITIVE,
   set<string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,
@@ -286,20 +274,7 @@ void all_count_cuda( std::vector<VerbPair> & VERBS_TO_CHECK,
 	vector< vector<int> > & VERB_SUBJECTS,
   vector< vector<float> > & WORD_VECTORS) {
 
-	int total_verbs = 0;
-	// Print out the total number we should expect
-	for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
-
-		VerbPair vp = VERBS_TO_CHECK[i];
-		if(VERB_TRANSITIVE.find(vp.v0) != VERB_TRANSITIVE.end() &&
-			VERB_TRANSITIVE.find(vp.v1) != VERB_TRANSITIVE.end()){
-			//cout << vp.v0 << "," << vp.v1 << endl;
-			total_verbs ++;
-		}	
-	}
-
-	cout << "Total verbs: " << s9::ToString(total_verbs) << endl; 
-  cout << "verb0,verb1,base_sim,cs1,cs2,cs3,cs4,cs5,cs6,human_sim" << endl;
+	cout << "verb0,verb1,base_sim,cs1,cs2,cs3,cs4,cs5,cs6,human_sim" << endl;
 
 	int num_blocks = 1;
 

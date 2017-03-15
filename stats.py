@@ -5,7 +5,7 @@ sbj obj and verb data.
 '''
 
 import numpy as np
-import sys
+import sys, math
 from collections import Counter
 
 
@@ -60,6 +60,8 @@ def stats(SBJ_OBJ, DICTIONARY, verbs_to_check, checked):
   avg = 0
   high = -5000000
   low = 5000000
+  low_verb = ""
+  high_verb = ""
   dups = False
   unks = 0
   total = 0
@@ -72,7 +74,7 @@ def stats(SBJ_OBJ, DICTIONARY, verbs_to_check, checked):
       ll = len(SBJ_OBJ[verb])
       avg += ll
       values.append(ll)
-
+    
       if not dups:
         cc = Counter(SBJ_OBJ[verb])
         for vv in cc.values():
@@ -81,25 +83,40 @@ def stats(SBJ_OBJ, DICTIONARY, verbs_to_check, checked):
             break
 
       for word_idx in SBJ_OBJ[verb]:
-        if word_idx == len(DICTIONARY):
+        if word_idx == len(DICTIONARY)-1:
           unks += 1
 
       if ll < low:
         low = ll
+        low_verb = DICTIONARY[verb]
       if ll > high:
         high = ll
+        high_verb = DICTIONARY[verb]
+
 
   avg = avg / float(total)
   unks = unks / float(total)
 
+  values.sort()
+
+  median = values[ int(math.floor(len(values) / 2))]
+  ninefive = values[ int(math.floor(len(values) / 100 * 95)) ]
+
   print("Dups?: ", str(dups))
-  print("std-dev:", str(np.std(values)), "avg:", str(avg), "high:", str(high), "low:", str(low), "unks:", str(unks))
+  print("std-dev:", str(np.std(values)), "avg:", str(avg), "high:", str(high), "low:", str(low), "unks:", str(unks), "low verb:", low_verb, "high verb:", high_verb, "median:", median, "95%:", ninefive)
+
+  
+  import matplotlib.pyplot as plt
+
+  plt.hist(values, bins=1000)
+  plt.show()
 
 if __name__ == "__main__" :
   BASE_DIR = sys.argv[1]
   SBJ_OBJ_FILE = "verb_sbj_obj.txt"
   DICT_FILE = "dictionary.txt"
-  SIM_FILE = "SimVerb-3000-test.txt"
+  SIM_FILE = "SimVerb-500-dev.txt"
+  #SIM_FILE = "SimVerb-3000-test.txt"
   SBJ_OBJ = read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE)
   DICTIONARY = read_dictionary(BASE_DIR, DICT_FILE)
   verbs_to_check, paired = read_sim_file(BASE_DIR, SIM_FILE)

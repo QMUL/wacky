@@ -281,29 +281,30 @@ def avg_rho (cc, human, titles, rdictionary, verbs_check, verbs_paired, sbj_obj,
   for n in range(0,len(cc)):
     idh = 0
     for m in cc[n]:
-     
-      rd0 = rdictionary[v0[idh]]
-      rd1 = rdictionary[v1[idh]]
-      
-      if (m < cpu_avg[n] and human[idh] < hum_avg) or (m > cpu_avg[n] and human[idh] > hum_avg):
-        aligned[n].append(idh)
-        if rd0 in sbj_obj.keys() and rd1 in sbj_obj.keys(): 
-          v0a[n].append( len(sbj_obj[rd0]))
-          v1a[n].append( len(sbj_obj[rd1]))
-        else:
-          v0a[n].append(0)
-          v1a[n].append(0)
+    
+      if v0[idh] in dictionary and v1[idh] in dictionary:
+        rd0 = rdictionary[v0[idh]]
+        rd1 = rdictionary[v1[idh]]
+        
+        if (m < cpu_avg[n] and human[idh] < hum_avg) or (m > cpu_avg[n] and human[idh] > hum_avg):
+          aligned[n].append(idh)
+          if rd0 in sbj_obj.keys() and rd1 in sbj_obj.keys(): 
+            v0a[n].append( len(sbj_obj[rd0]))
+            v1a[n].append( len(sbj_obj[rd1]))
+          else:
+            v0a[n].append(0)
+            v1a[n].append(0)
 
-      else:
-        misaligned[n].append(idh)
-
-        if rd0 in sbj_obj.keys() and rd1 in sbj_obj.keys(): 
-          v0m[n].append( len(sbj_obj[rd0]))
-          v1m[n].append( len(sbj_obj[rd1]))
         else:
-          v0m[n].append(0)
-          v1m[n].append(0)
-  
+          misaligned[n].append(idh)
+
+          if rd0 in sbj_obj.keys() and rd1 in sbj_obj.keys(): 
+            v0m[n].append( len(sbj_obj[rd0]))
+            v1m[n].append( len(sbj_obj[rd1]))
+          else:
+            v0m[n].append(0)
+            v1m[n].append(0)
+    
       idh += 1
 
    
@@ -344,7 +345,7 @@ def hist(sbj_obj, dictionary, verbs_to_check):
 
   median = values[ int(math.floor(len(values) / 2))]
   ninefive = values[ int(math.floor(len(values) / 100.0 * 95.0)) ]
-  five =  values[ int(math.floor(len(values) / 100.0 * 95.0)) ]
+  five =  values[ int(math.floor(len(values) / 100.0 * 5.0)) ]
 
   return (median, ninefive, five)
 
@@ -373,7 +374,7 @@ if __name__ == "__main__" :
       print("cutoff:",avg)
       drop_rho(cc, human, titles, rdictionary, verbs_check, verbs_paired, sbj_obj, v0, v1, avg, True)
     elif sys.argv[2] == '-h':  
-      avg = sum( [len(sbj_obj[x]) for x in sbj_obj.keys()] )  / len(sbj)
+      avg = sum( [len(sbj_obj[x]) for x in sbj_obj.keys()] )  / len(sbj_obj)
       print("cutoff:",avg)
       drop_rho(cc, human, titles, rdictionary, verbs_check, verbs_paired, sbj_obj, v0, v1, avg, False)
  

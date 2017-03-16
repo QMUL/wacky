@@ -162,7 +162,6 @@ def set_integer_files(integer_files, size_files):
 # We return a dictionary of the various frequences and an ordering 
 # from most to least
 def read_freq(freq_file, dict_size):
-  errors = 0
   count = {}
   order = []
 

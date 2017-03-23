@@ -41,6 +41,9 @@ int   read_freq(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, st
 //! read in the count vectors
 void  read_count(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, std::vector<std::string> & DICTIONARY, std::vector<int>  & BASIS_VECTOR, std::vector< std::vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT, std::set<int> & WORDS_TO_CHECK );
 
+//! read in the insist words
+void  read_insist_words(std::string OUTPUT_DIR, std::set<std::string> & INSIST_BASIS_WORDS);
+
 //! read the subject object pairs for verbs
 void  read_subject_object_file(std::string OUTPUT_DIR, std::vector< std::vector<int> > & VERB_SBJ_OBJ);
 

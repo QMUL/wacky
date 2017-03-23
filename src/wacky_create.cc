@@ -98,6 +98,7 @@ int create_dictionary(string OUTPUT_DIR,
  * @param DICTIONARY_FAST a lookup from string to position
  * @param BASIS_VECTOR the vector this function will fill
  * @param ALLOWED_BASIS_WORDS words we are actually allowed to use in the basis
+ * @param INSIST_WORDS words we must include if any
  * @param BASIS_SIZE how big should this basis be
  * @param IGNORE_WINDOW how many of the most frequent words should we ignore
  * @return int a value to say if we succeeded or not
@@ -109,6 +110,7 @@ void create_basis(string OUTPUT_DIR,
     map<string,int> & DICTIONARY_FAST,
     vector<int> & BASIS_VECTOR,
     set<string> & ALLOWED_BASIS_WORDS,
+    set<string> & INSIST_WORDS,
     size_t BASIS_SIZE,
     size_t IGNORE_WINDOW ) {
 
@@ -117,17 +119,21 @@ void create_basis(string OUTPUT_DIR,
   // We dont add UNK to the basis
   int idx = 0;
 
+  for (auto it = INSIST_WORDS.begin(); it != INSIST_WORDS.end(); it++) {
+    BASIS_VECTOR.push_back(DICTIONARY_FAST[*it]);
+    cout << "Inserting " << *it << " into basis" << endl;
+  }
+
   for (auto it = FREQ_FLIPPED.begin(); it != FREQ_FLIPPED.end(); it++) {
     if (!s9::StringContains(it->first,"UNK")){ 
       if (idx > IGNORE_WINDOW) {
         if (ALLOWED_BASIS_WORDS.find(it->first) != ALLOWED_BASIS_WORDS.end()) {
           BASIS_VECTOR.push_back(DICTIONARY_FAST[it->first]);
-					idx++;
-        }
+				}
       } else{ 
         idx++;
       }
-      if (idx >= BASIS_SIZE + IGNORE_WINDOW){
+      if (BASIS_VECTOR.size() >= BASIS_SIZE){
         break;
       }
     }   

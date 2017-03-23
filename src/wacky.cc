@@ -51,6 +51,7 @@ set<string> WORD_IGNORES {",","-",".","@card@", "<text","<s>xt","</s>SENT", "<s>
 map<string,int> DICTIONARY_FAST {};
 vector<string> DICTIONARY {};
 set<string> ALLOWED_BASIS_WORDS;
+set<string> INSIST_BASIS_WORDS;
 vector< vector<int> > VERB_SUBJECTS;
 vector< vector<int> > VERB_OBJECTS;
 vector< vector<float> > WORD_VECTORS;
@@ -217,7 +218,7 @@ int main(int argc, char* argv[]) {
   options.WORKING_DIR = ".";
   options.LEMMA_TIME = true;
   options.IGNORE_WINDOW = 100;
-  options.WINDOW_SIZE = 3;
+  options.WINDOW_SIZE = 5;
   options.UNIQUE_SUBJECTS = false;
   options.UNIQUE_OBJECTS = false;
 
@@ -254,7 +255,8 @@ int main(int argc, char* argv[]) {
     cout << "Reading in dictionary and frequency data" << endl;
     read_freq(options.WORKING_DIR, FREQ, FREQ_FLIPPED, ALLOWED_BASIS_WORDS);
     read_dictionary(options.WORKING_DIR, DICTIONARY_FAST, DICTIONARY, options.VOCAB_SIZE);
-    create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
+    read_insist_words(options.WORKING_DIR, INSIST_BASIS_WORDS);
+    create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, INSIST_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
 
   } else {
     cout << "Creating frequency and dictionary" << endl;

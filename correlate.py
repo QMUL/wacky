@@ -357,8 +357,8 @@ if __name__ == "__main__" :
   BASE_DIR = os.path.dirname(os.path.abspath(sys.argv[1]))
   DICT_FILE = "dictionary.txt"
   # Sim file must match the results file made from it
-  SIM_FILE = "SimVerb-500-dev.txt"
-  #SIM_FILE = "SimVerb-3000-test.txt"
+  #SIM_FILE = "SimVerb-500-dev.txt"
+  SIM_FILE = "SimVerb-3000-test.txt"
   SBJ_OBJ_FILE = "verb_sbj_obj.txt"
 
   if len(sys.argv) > 2:

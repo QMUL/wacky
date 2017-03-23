@@ -13,11 +13,10 @@ from scipy import stats
 verb_pairs = [ 
     [("drink", "empty"), ("glass", "empty"), ("wine", "empty"), ("fill", "empty") ],
     [("drink", "full"), ("empty","full"), ("glass","full"), ("wine","full"), ("fill", "full")],
-    [("find", "thief"), ("gold", "thief"), ("run away", "thief"), ("flee", "thief")],
-    [("find", "prospectors"), ("gold", "prospectors"), ("run away", "prospectors"), ("flee", "prospectors")],
-    [("find", "discoverer"), ("gold", "discoverer"), ("run away", "discoverer"), ("flee", "discoverer")]
+    [("find", "thief"), ("gold", "thief"), ("run-away", "thief"), ("flee", "thief")],
+    [("find", "prospector"), ("gold", "prospector"), ("run-away", "prospector"), ("flee", "prospector")],
+    [("find", "discoverer"), ("gold", "discoverer"), ("run-away", "discoverer"), ("flee", "discoverer")]
   ]
-
 
 
 def read_dictionary(base_dir, dict_file) :
@@ -178,7 +177,7 @@ if __name__ == "__main__" :
   total_count = read_total_size(base_dir + "/" + total_file)
   basis = read_basis(base_dir + "/" + basis_file)
 
-  dictionary, rdictionary = read_dictionary(base_dir + "/" + base_dir, base_dir + "/" + dict_file)
+  dictionary, rdictionary = read_dictionary(base_dir,  dict_file)
   freq, freq_order = read_freq(base_dir + "/" + freq_file)
   
   vectors = read_count_vectors(base_dir + "/" + vector_file, dictionary, rdictionary, word_list)

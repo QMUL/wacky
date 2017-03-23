@@ -59,6 +59,27 @@ int read_unk_file(string OUTPUT_DIR, size_t & UNK_COUNT) {
   return 0;
 }
 
+/**
+ * Read the optional list of words that have to be in basis
+ * @param OUTPUT_DIR the output directory
+ * @param UNK_COUNT the number we are filling
+ * @return int a value to say if we succeeded or not
+ */
+
+void read_insist_words(std::string OUTPUT_DIR, std::set<std::string> & INSIST_BASIS_WORDS) {
+  std::ifstream insist_file (OUTPUT_DIR + "/insist.txt");
+  string line;
+
+  if (insist_file.is_open()) {
+    while ( getline (insist_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      INSIST_BASIS_WORDS.insert(line); 
+    }    
+    insist_file.close();
+  }
+
+}
+
 
 /**
  * Read in the file that contains verb subjects

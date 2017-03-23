@@ -43,6 +43,7 @@ void create_basis(std::string OUTPUT_DIR,
     std::map<std::string,int> & DICTIONARY_FAST,
     std::vector<int> & BASIS_VECTOR,
     std::set<std::string> & ALLOWED_BASIS_WORDS,
+    std::set<std::string> & INSIST_WORDS,
     size_t BASIS_SIZE,
     size_t IGNORE_WINDOW );
 

@@ -1,0 +1,476 @@
+<text id="ukwac:http://www.voiceprint.co.uk/web/Release/OW112CD/">
+<s>
+11	@card@	CD	1	0	ROOT
+.	.	SENT	2	1	P
+</s>
+<s>
+People	people	NNS	1	34	DEP
+That	that	IN	2	1	NMOD
+Hurt	Hurt	NP	3	0	ROOT
+Beverly	Beverly	NP	4	6	VMOD
+Martin	Martin	NP	5	6	SBJ
+was	be	VBD	6	34	ADV
+a	a	DT	7	8	NMOD
+student	student	NN	8	6	PRD
+at	at	IN	9	8	ADV
+the	the	DT	10	34	P
+Corona	Corona	NP	11	34	DEP
+Academy	Academy	NP	12	34	P
+of	of	IN	13	12	NMOD
+Theatre	Theatre	NP	14	0	ROOT
+Arts	Art	NPS	15	18	VMOD
+when	when	WRB	16	0	ROOT
+she	she	PP	17	18	SBJ
+was	be	VBD	18	13	PMOD
+singled	single	VVN	19	18	VC
+out	out	RP	20	19	PRT
+to	to	TO	21	19	ADV
+front	front	NN	22	21	PMOD
+"	"	``	23	22	P
+The	the	DT	24	34	DEP
+Levee	Levee	NP	25	34	P
+Breakers	Breakers	NP	26	34	DEP
+"	"	''	27	34	ADV
+,	,	,	28	34	P
+a	a	DT	29	34	DEP
+much	much	RB	30	31	AMOD
+lauded	laud	VVN	31	0	ROOT
+Jug	Jug	NP	32	0	ROOT
+Band	Band	NP	33	0	ROOT
+.	.	SENT	34	0	ROOT
+</s>
+<s>
+At	at	IN	1	7	ADV
+the	the	DT	2	3	NMOD
+age	age	NN	3	1	PMOD
+of	of	IN	4	3	NMOD
+16	@card@	CD	5	4	PMOD
+she	she	PP	6	7	SBJ
+made	make	VVD	7	0	ROOT
+her	her	PP$	8	10	NMOD
+first	first	JJ	9	10	NMOD
+single	single	JJ	10	7	OBJ
+'	'	POS	11	10	NMOD
+Babe	Babe	NP	12	14	VMOD
+I	I	PP	13	14	SBJ
+'m	be	VBP	14	7	ADV
+Leaving	leaving	JJ	15	14	PRD
+You	you	PP	16	19	SBJ
+'	'	''	17	19	P
+which	which	WDT	18	19	SBJ
+was	be	VBD	19	15	AMOD
+released	release	VVN	20	19	VC
+on	on	IN	21	20	ADV
+the	the	DT	22	24	NMOD
+Parlophone	Parlophone	NP	23	24	NMOD
+label	label	NN	24	21	PMOD
+.	.	SENT	25	7	P
+</s>
+<s>
+Beverley	Beverley	NP	1	2	SBJ
+was	be	VBD	2	0	ROOT
+then	then	RB	3	2	ADV
+spotted	spot	VVN	4	2	VC
+by	by	IN	5	4	LGS
+Denny	Denny	NP	6	0	ROOT
+Cordell	Cordell	NP	7	0	ROOT
+who	who	WP	8	9	SBJ
+discovered	discover	VVD	9	7	NMOD
+Joe	Joe	NP	10	0	ROOT
+Cocker	Cocker	NP	11	17	SBJ
+and	and	CC	12	11	CC
+Procul	Procul	NP	13	17	ADV
+Harum	Harum	NP	14	0	ROOT
+,	,	,	15	17	P
+and	and	CC	16	0	ROOT
+was	be	VBD	17	9	OBJ
+signed	sign	VVN	18	17	VC
+as	as	IN	19	18	ADV
+a	a	DT	20	22	NMOD
+solo	solo	JJ	21	22	NMOD
+artiste	artiste	NN	22	19	PMOD
+to	to	TO	23	22	NMOD
+Deram	Deram	NP	24	23	PMOD
+.	.	SENT	25	2	P
+</s>
+<s>
+During	during	IN	1	0	ROOT
+this	this	DT	2	3	NMOD
+period	period	NN	3	1	PMOD
+Bert	Bert	NP	4	0	ROOT
+Jansch	Jansch	NP	5	9	VMOD
+the	the	DT	6	8	NMOD
+legendary	legendary	JJ	7	8	NMOD
+guitarist	guitarist	NN	8	9	SBJ
+taught	teach	VVD	9	0	ROOT
+her	her	PP	10	12	SBJ
+to	to	TO	11	12	VMOD
+play	play	VV	12	9	OBJ
+and	and	CC	13	9	CC
+encouraged	encourage	VVD	14	9	COORD
+her	her	PP$	15	17	NMOD
+song	song	NN	16	17	NMOD
+writing	writing	NN	17	14	OBJ
+.	.	SENT	18	0	ROOT
+</s>
+<s>
+Paul	Paul	NP	1	3	VMOD
+Simon	Simon	NP	2	3	SBJ
+was	be	VBD	3	0	ROOT
+so	so	RB	4	5	ADV
+impressed	impress	VVN	5	3	VC
+with	with	IN	6	5	ADV
+Beverley	Beverley	NP	7	10	VMOD
+that	that	WDT	8	10	OBJ
+he	he	PP	9	10	SBJ
+took	take	VVD	10	6	PMOD
+her	her	PP	11	10	OBJ
+to	to	TO	12	10	ADV
+New	New	NP	13	0	ROOT
+York	York	NP	14	0	ROOT
+where	where	WRB	15	17	ADV
+she	she	PP	16	17	SBJ
+contributed	contribute	VVD	17	0	ROOT
+to	to	TO	18	17	ADV
+the	the	DT	19	20	NMOD
+track	track	NN	20	18	PMOD
+'	'	POS	21	20	NMOD
+Faking	Faking	NP	22	0	ROOT
+It	it	PP	23	0	ROOT
+'	'	POS	24	0	ROOT
+on	on	IN	25	0	ROOT
+the	the	DT	26	0	ROOT
+Simon	Simon	NP	27	0	ROOT
+and	and	CC	28	27	CC
+Garfunkel	Garfunkel	NP	29	30	NMOD
+album	album	NN	30	0	ROOT
+'	'	POS	31	30	NMOD
+Bookends	Bookends	NP	32	0	ROOT
+'	'	POS	33	32	NMOD
+.	.	SENT	34	0	ROOT
+</s>
+<s>
+She	she	PP	1	2	SBJ
+appeared	appear	VVD	2	0	ROOT
+with	with	IN	3	2	ADV
+Simon	Simon	NP	4	13	P
+and	and	CC	5	4	CC
+Garfunkel	Garfunkel	NP	6	13	DEP
+at	at	IN	7	6	ADV
+the	the	DT	8	13	P
+legendary	legendary	JJ	9	13	DEP
+Monterey	Monterey	NP	10	13	DEP
+Pop	Pop	NP	11	0	ROOT
+Festival	Festival	NP	12	0	ROOT
+.	.	SENT	13	2	P
+</s>
+<s>
+Beverley	Beverley	NP	1	30	DEP
+later	later	RBR	2	3	AMOD
+married	marry	VVN	3	0	ROOT
+John	John	NP	4	0	ROOT
+Martyn	Martyn	NP	5	0	ROOT
+and	and	CC	6	5	CC
+as	as	IN	7	5	COORD
+a	a	DT	8	9	NMOD
+duo	duo	NN	9	7	PMOD
+they	they	PP	10	11	SBJ
+issued	issue	VVD	11	9	NMOD
+2	2	CD	12	13	NMOD
+albums	album	NNS	13	11	OBJ
+,	,	,	14	13	P
+'	'	''	15	13	P
+Stormbringer	Stormbringer	NP	16	0	ROOT
+'	'	POS	17	16	NMOD
+and	and	NP	18	0	ROOT
+'	'	POS	19	18	NMOD
+Road	Road	NP	20	0	ROOT
+To	To	TO	21	25	VMOD
+Ruin	Ruin	NP	22	25	SBJ
+'	'	''	23	25	P
+which	which	WDT	24	25	SBJ
+were	be	VBD	25	0	ROOT
+released	release	VVN	26	25	VC
+on	on	IN	27	26	ADV
+Island	Island	NP	28	29	NMOD
+records	record	NNS	29	27	PMOD
+.	.	SENT	30	0	ROOT
+</s>
+<s>
+Although	although	IN	1	4	VMOD
+her	her	PP$	2	3	NMOD
+efforts	effort	NNS	3	4	SBJ
+were	be	VBD	4	0	ROOT
+devoted	devote	VVN	5	4	VC
+mainly	mainly	RB	6	5	ADV
+to	to	TO	7	5	ADV
+her	her	PP$	8	9	NMOD
+children	child	NNS	9	7	PMOD
+,	,	,	10	4	P
+Beverley	Beverley	NP	11	13	SBJ
+still	still	RB	12	13	ADV
+continued	continue	VVD	13	4	COORD
+to	to	TO	14	15	VMOD
+write	write	VV	15	13	OBJ
+with	with	IN	16	15	ADV
+John	John	NP	17	16	PMOD
+on	on	IN	18	17	ADV
+his	his	PP$	19	21	NMOD
+solo	solo	NN	20	21	NMOD
+projects	project	NNS	21	18	PMOD
+.	.	SENT	22	0	ROOT
+</s>
+<s>
+She	she	PP	1	2	SBJ
+was	be	VBD	2	0	ROOT
+invited	invite	VVN	3	2	VC
+to	to	TO	4	5	VMOD
+join	join	VV	5	3	OBJ
+Loundon	Loundon	NP	6	0	ROOT
+Wainwright	Wainwright	NP	7	0	ROOT
+on	on	IN	8	0	ROOT
+his	his	PP$	9	11	NMOD
+european	European	JJ	10	11	NMOD
+tour	tour	NN	11	8	PMOD
+in	in	IN	12	7	ADV
+the	the	DT	13	16	SBJ
+1990,s.	1990,s.	NP	14	16	ADV
+which	which	WDT	15	16	SBJ
+resulted	result	VVD	16	12	PMOD
+in	in	IN	17	16	ADV
+rapturous	rapturous	JJ	18	19	NMOD
+audiences	audience	NNS	19	17	PMOD
+.	.	SENT	20	2	P
+</s>
+<s>
+Having	have	VHG	1	38	ADV
+worked	work	VVN	2	1	VC
+with	with	IN	3	2	ADV
+Levon	Levon	NP	4	0	ROOT
+Helm	Helm	NP	5	38	ADV
+,	,	,	6	38	P
+Jimmy	Jimmy	NP	7	38	DEP
+Page	Page	NP	8	38	ADV
+,	,	,	9	38	P
+Dave	Dave	NP	10	38	DEP
+Pegg	Pegg	NP	11	38	ADV
+,	,	,	12	38	P
+Richard	Richard	NP	13	38	DEP
+Thompson	Thompson	NP	14	38	ADV
+,	,	,	15	38	P
+John	John	NP	16	38	DEP
+Renbourn	Renbourn	NP	17	38	ADV
+,	,	,	18	38	P
+Ralph	Ralph	NP	19	38	DEP
+McTell	McTell	NP	20	38	ADV
+,	,	,	21	38	P
+Davy	Davy	NP	22	38	DEP
+Graham	Graham	NP	23	38	ADV
+,	,	,	24	38	P
+Sandy	Sandy	NP	25	38	DEP
+Denny	Denny	NP	26	0	ROOT
+and	and	CC	27	26	CC
+Nick	Nick	NP	28	32	SBJ
+Drake	Drake	NP	29	32	ADV
+,	,	,	30	32	P
+Beverley	Beverley	NP	31	32	SBJ
+is	be	VBZ	32	26	COORD
+truly	truly	RB	33	32	ADV
+a	a	DT	34	37	NMOD
+consummate	consummate	JJ	35	37	NMOD
+singer/song	singer/song	NN	36	37	NMOD
+writer	writer	NN	37	32	PRD
+.	.	SENT	38	0	ROOT
+</s>
+</text>
+<text id="ukwac:http://www.scrapaholic.co.uk/main.php?page=Club-Hastings">
+<s>
+Hastings	Hastings	NP	1	35	DEP
+Scrapaholic	Scrapaholic	NP	2	35	P
+Club	Club	NP	3	7	VMOD
+The	the	DT	4	6	NMOD
+Hastings	Hastings	NP	5	6	NMOD
+club	club	NN	6	7	SBJ
+meets	meet	VVZ	7	0	ROOT
+twice	twice	RB	8	7	ADV
+a	a	DT	9	10	NMOD
+month	month	NN	10	7	ADV
+at	at	IN	11	7	ADV
+Bohemian	Bohemian	JJ	12	35	DEP
+Scrapsody	Scrapsody	NP	13	35	ADV
+,	,	,	14	35	P
+89/91	@card@	CD	15	35	DEP
+Bohemia	Bohemia	NP	16	0	ROOT
+Road	Road	NP	17	35	ADV
+,	,	,	18	35	P
+St	St	NP	19	35	P
+Leonards	Leonard	NPS	20	35	DEP
+on	on	IN	21	35	P
+Sea,East	Sea,East	NP	22	35	DEP
+Sussex	Sussex	NP	23	35	P
+TN37	tn37	JJ	24	35	DEP
+6RJ	6RJ	NP	25	26	AMOD
+where	where	WRB	26	28	ADV
+there	there	EX	27	28	SBJ
+is	be	VBZ	28	0	ROOT
+ample	ample	JJ	29	30	NMOD
+parking	parking	NN	30	28	PRD
+and	and	CC	31	30	CC
+access	access	NN	32	30	COORD
+for	for	IN	33	32	NMOD
+wheelchairs	wheelchair	NNS	34	33	PMOD
+.	.	SENT	35	0	ROOT
+</s>
+<s>
+Bohemian	Bohemian	JJ	1	3	ADV
+Scrapsody	Scrapsody	NP	2	3	SBJ
+is	be	VBZ	3	0	ROOT
+a	a	DT	4	7	NMOD
+dedicated	dedicated	JJ	5	7	NMOD
+Scrapbooking	scrapbooking	NN	6	7	NMOD
+shop	shop	NN	7	3	PRD
+so	so	IN	8	10	VMOD
+you	you	PP	9	10	SBJ
+can	can	MD	10	7	NMOD
+shop	shop	VV	11	10	VC
+while	while	IN	12	0	ROOT
+you	you	PP	13	14	NMOD
+crop	crop	NN	14	0	ROOT
+!	!	SENT	15	3	P
+</s>
+<s>
+.	.	SENT	1	0	ROOT
+</s>
+<s>
+Club	Club	NP	1	3	NMOD
+project	project	NN	2	3	NMOD
+kits	kit	NNS	3	4	SBJ
+are	are	VBP	4	0	ROOT
+available	available	JJ	5	4	PRD
+and	and	CC	6	4	CC
+will	will	MD	7	4	COORD
+need	need	VV	8	7	VC
+to	to	TO	9	10	VMOD
+be	be	VB	10	8	OBJ
+paid	pay	VVN	11	10	VC
+for	for	IN	12	11	ADV
+on	on	IN	13	11	ADV
+the	the	DT	14	15	NMOD
+day	day	NN	15	13	PMOD
+.	.	SENT	16	4	P
+</s>
+<s>
+Scrapbookers	scrapbookers	NNS	1	5	SBJ
+of	of	IN	2	1	NMOD
+all	all	DT	3	4	NMOD
+levels	level	NNS	4	2	PMOD
+are	are	VBP	5	0	ROOT
+welcome	welcome	JJ	6	5	PRD
+to	to	TO	7	8	VMOD
+come	come	VV	8	6	AMOD
+along	along	RP	9	8	PRT
+and	and	CC	10	9	CC
+crop	crop	NN	11	9	COORD
+,	,	,	12	8	P
+socialize	socialize	VV	13	8	COORD
+and	and	CC	14	8	CC
+learn	learn	VV	15	8	COORD
+new	new	JJ	16	17	NMOD
+techniques	technique	NNS	17	15	OBJ
+.	.	SENT	18	5	P
+</s>
+<s>
+Click	click	NN	1	4	SBJ
+HERE	here	RB	2	4	ADV
+to	to	TO	3	4	VMOD
+book	book	VV	4	0	ROOT
+your	your	PP$	5	6	NMOD
+place	place	NN	6	4	OBJ
+.	.	SENT	7	4	P
+</s>
+</text>
+<text id="ukwac:http://www.william-shakespeare.org.uk/shakespeare-quarto-text.htm">
+<s>
+Plays	play	VVZ	1	0	ROOT
+during	during	IN	2	1	ADV
+the	the	DT	3	5	NMOD
+Elizabethan	Elizabethan	JJ	4	5	NMOD
+era	era	NN	5	2	PMOD
+were	be	VBD	6	1	VC
+big	big	JJ	7	8	NMOD
+business	business	NN	8	6	PRD
+!	!	SENT	9	1	P
+</s>
+<s>
+Money	money	NN	1	0	ROOT
+!	!	SENT	2	1	P
+</s>
+<s>
+The	the	DT	1	3	SBJ
+more	more	RBR	2	3	ADV
+Plays	play	VVZ	3	0	ROOT
+a	a	DT	4	6	VMOD
+Theatre	Theatre	NP	5	6	SBJ
+produced	produce	VVD	6	3	OBJ
+the	the	DT	7	8	DEP
+bigger	big	JJR	8	10	NMOD
+the	the	DT	9	10	NMOD
+audience	audience	NN	10	6	OBJ
+and	and	CC	11	10	CC
+the	the	DT	12	13	DEP
+greater	great	JJR	13	15	DEP
+the	the	DT	14	15	NMOD
+profit	profit	NN	15	10	COORD
+!	!	SENT	16	3	P
+</s>
+<s>
+Plays	play	NNS	1	2	SBJ
+were	be	VBD	2	0	ROOT
+written	write	VVN	3	2	VC
+and	and	CC	4	2	CC
+then	then	RB	5	6	ADV
+performed	perform	VVN	6	2	COORD
+as	as	IN	7	6	ADV
+soon	soon	RB	8	10	AMOD
+as	as	RB	9	10	AMOD
+possible	possible	JJ	10	7	PMOD
+-	-	:	11	2	P
+they	they	PP	12	13	SBJ
+were	be	VBD	13	2	COORD
+not	not	RB	14	13	VMOD
+printed	print	VVN	15	13	VC
+until	until	IN	16	15	ADV
+after	after	IN	17	19	VMOD
+they	they	PP	18	19	SBJ
+were	be	VBD	19	16	PMOD
+performed	perform	VVN	20	19	VC
+Shakespeare	Shakespeare	NP	21	22	SBJ
+was	be	VBD	22	20	OBJ
+just	just	RB	23	24	ADV
+paid	pay	VVN	24	22	VC
+a	a	DT	25	27	NMOD
+one-off	one-off	NN	26	27	NMOD
+fee	fee	NN	27	24	OBJ
+for	for	IN	28	27	NMOD
+the	the	DT	29	30	NMOD
+play	play	NN	30	28	PMOD
+-	-	:	31	2	P
+there	there	EX	32	33	SBJ
+were	be	VBD	33	2	COORD
+no	no	DT	34	35	NMOD
+Royalties	royalty	NNS	35	33	PRD
+!	!	SENT	36	2	P
+</s>
+<s>
+There	There	EX	1	2	SBJ
+were	be	VBD	2	0	ROOT
+no	no	DT	3	7	SBJ
+Copyright	Copyright	NP	4	7	VMOD
+Laws	Laws	NP	5	7	SBJ
+to	to	TO	6	7	VMOD
+protect	protect	VV	7	2	PRD
+Shakespeare	Shakespeare	NP	8	10	NMOD
+'s	's	POS	9	8	NMOD
+work	work	NN	10	7	OBJ
+!	!	SENT	11	2	P
+</s>

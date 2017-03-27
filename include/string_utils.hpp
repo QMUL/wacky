@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <functional>
 #include <cctype>
+#include <cmath>
 #include <locale>
 
 #include <stdlib.h>
@@ -79,15 +80,31 @@ namespace s9 {
     return true;
   }
 
-	template<class T> std::string ToPrecision(T num, int n) {
+	inline std::string ToPrecision(float num, int n) {
 
     if(num == 0) {
       return "0";
     }
 
-    T d = ceil(log10(num < 0 ? -num : num));
+    float d = ceil(log10(num < 0 ? -num : num));
     int power = n - (int)d;
-    T magnitude = pow(10., power);
+    float magnitude = pow(10., power);
+    long shifted = ::round(num*magnitude);
+
+    std::ostringstream oss;
+    oss << shifted/magnitude;
+    return oss.str();
+	}
+
+  inline std::string ToPrecision(double num, int n) {
+
+    if(num == 0) {
+      return "0";
+    }
+
+    double d = ceil(log10(num < 0 ? -num : num));
+    int power = n - (int)d;
+    double magnitude = pow(10., power);
     long shifted = ::round(num*magnitude);
 
     std::ostringstream oss;

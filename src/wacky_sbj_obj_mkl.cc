@@ -294,7 +294,8 @@ void read_subjects_few(string verb, map<string,int> & DICTIONARY_FAST,
  * @param VERB_SUBJECTS the vector of vectors of verb subjects
  * @param WORD_VECTORS our word count vectors
  */
-/*
+
+
 void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   set<string> & VERB_TRANSITIVE,
   set<string> & VERB_INTRANSITIVE,
@@ -382,28 +383,35 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 						max_vector1,
 						krn_vector1);
 
-
   			// Now we can perform the last step in our equation
   
-  			add_base_add_vector0 = add_vector0 + base_vector0;
-  			add_base_mul_vector0 = mul_vec(add_vector0,base_vector0);
-  			min_base_add_vector0 = min_vector0 + base_vector0;
-  			min_base_mul_vector0 = mul_vec(min_vector0, base_vector0);
-  			max_base_add_vector0 = max_vector0 + base_vector0;
-  			max_base_mul_vector0 = mul_vec(max_vector0, base_vector0);
-  			vector<float> td = krn_mul(base_vector0, base_vector0);
-  			krn_base_add_vector0 = krn_vector0 + td;
-  			krn_base_mul_vector0 = mul_vec(krn_vector0,td);
- 
-  			add_base_add_vector1 = add_vector1 + base_vector1;
-  			add_base_mul_vector1 = mul_vec(add_vector1,base_vector1);
-  			min_base_add_vector1 = min_vector1 + base_vector1;
-  			min_base_mul_vector1 = mul_vec(min_vector1, base_vector1);
-  			max_base_add_vector1 = max_vector1 + base_vector1;
-  			max_base_mul_vector1 = mul_vec(max_vector1, base_vector1);
-  			td = krn_mul(base_vector1, base_vector1);
-  			krn_base_add_vector1 = krn_vector1 + td;
-  			krn_base_mul_vector1 = mul_vec(krn_vector1,td);
+	      vsAdd(BASIS_SIZE, &add_vector0[0], &base_vector0[0], &add_base_add_vector0[0]);
+        mul_vec(add_vector0,base_vector0, add_base_mul_vector0);
+  			
+	      vsAdd(BASIS_SIZE, &min_vector0[0], &base_vector0[0], &min_base_add_vector0[0]);
+        mul_vec(min_vector0, base_vector0, min_base_mul_vector0);
+  			
+	      vsAdd(BASIS_SIZE, &max_vector0[0], &base_vector0[0], &max_base_add_vector0[0]);
+        
+        max_base_mul_vector0 = mul_vec(max_vector0, base_vector0, max_base_mul_vector0);
+  			vector<float> td (BASIS_SIZE * BASIS_SIZE);
+        krn_mul(base_vector0, base_vector0, td);
+  			
+	      vsAdd(BASIS_SIZE * BASIS_SIZE, &krn_vector0[0], &td[0], &krn_base_add_vector0[0]);
+  			
+        mul_vec(krn_vector0, td, krn_base_mul_vector0);
+	      vsAdd(BASIS_SIZE, &add_vector1[0], &base_vector1[0], &add_base_add_vector1[0]);
+          
+	      vsAdd(BASIS_SIZE, &min_vector1[0], &base_vector1[0], &min_base_add_vector1[0]);
+        
+        mul_vec(min_vector1, base_vector1, min_base_mul_vector1);
+	      vsAdd(BASIS_SIZE, &max_vector1[0], &base_vector1[0], &max_base_add_vector1[0]);
+        
+        mul_vec(max_vector1, base_vector1, max_base_mul_vector1);
+  			krn_mul(base_vector1, base_vector1, td);
+  			
+	      vsAdd(BASIS_SIZE * BASIS_SIZE, &rkn_vector1[0], &td[0], &krn_base_add_vector1[0]);
+        mul_vec(krn_vector1, td, krn_base_mul_vector1);
 
 				float c0 = cosine_sim(base_vector0, base_vector1);
 				float c1 = cosine_sim(add_vector0, add_vector1);
@@ -418,7 +426,6 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 				float c10 = cosine_sim(krn_vector0, krn_vector1);
 				float c11 = cosine_sim(krn_base_add_vector0, krn_base_add_vector1);
 				float c12 = cosine_sim(krn_base_mul_vector0, krn_base_mul_vector1);
-
 
 				std::stringstream stream;       
 				stream << vp.v0 << "," << vp.v1 << "," << s9::ToString(c0)
@@ -442,7 +449,7 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 		}
 	}
 }
-*/
+
 
 /**
  * Return all the stats for our transitive verb pairs
@@ -455,7 +462,7 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
  * @param WORD_VECTORS our word count vectors
  */
 
-/*
+
 void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   set<string> & VERB_TRANSITIVE,
   set<string> & VERB_INTRANSITIVE,
@@ -463,7 +470,6 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   map<string,int> & DICTIONARY_FAST,
   vector< vector<int> > & VERB_SBJ_OBJ,
   vector< vector<float> > & WORD_VECTORS) {
-
 
 	int total_verbs = 0;
 	// Print out the total number we should expect
@@ -527,47 +533,50 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 				sum_krn0.clear();
 				sum_krn1.clear();
 
-
 				read_subjects_objects(vp.v0,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_object0, sum_krn0);
-
 				read_subjects_objects(vp.v1,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_object1, sum_krn1);
-
 			
-				krn_base0 = krn_mul(base_vector0, base_vector0);
-				krn_base1 = krn_mul(base_vector1, base_vector1);
+				krn_mul(base_vector0, base_vector0, krn_base0);
+				krn_mul(base_vector1, base_vector1, krn_base1);
 				
 				float c0 = cosine_sim(base_vector0, base_vector1);
 				float c1 = cosine_sim(sum_krn0, sum_krn1);
 
-				vector<float> tk0 (BASIS_SIZE * BASIS_SIZE);
-				tk0 = sum_krn0 + krn_base0;
+				vector<float> tk0 (BASIS_SIZE * BASIS_SIZE);		
+	      vsAdd(BASIS_SIZE * BASIS_SIZE, &sum_krn0[0], &krn_base0[0], &tk0[0]);
 
 				vector<float> tk1 (BASIS_SIZE * BASIS_SIZE);
-				tk1 = sum_krn1 + krn_base1;
+	      vsAdd(BASIS_SIZE * BASIS_SIZE, &sum_krn1[0], &krn_base1[0], &tk1[0]);
 				float c2 = cosine_sim(tk0, tk1);
 
-				tk0 = mul_vec(sum_krn0, krn_base0);
-				tk1 = mul_vec(sum_krn1,krn_base1);
+				mul_vec(sum_krn0, krn_base0, tk0);
+			  mul_vec(sum_krn1, krn_base1, tk1);
 				float c3 = cosine_sim(tk0, tk1);
 
 				vector<float> tm0 (BASIS_SIZE);
 				vector<float> tm1 (BASIS_SIZE);
 
-				tm0 = sum_subject0 + sum_object0;
-				tm1 = sum_subject1 + sum_object1; 
+	      vsAdd(BASIS_SIZE, &sum_subject0[0], &sum_subject0[0], &tm0[0]);
+	      vsAdd(BASIS_SIZE, &sum_subject1[0], &sum_object1[0], &tm1[0]);
 
 				float c4 = cosine_sim(tm0, tm1);
+        
+	      vsAdd(BASIS_SIZE, &sum_subject0[0], &sum_object0[0], &tm0[0]);
 
-				tm0 = sum_subject0 + sum_object0;
-				tm0 = mul_vec(tm0, base_vector0);
-				tm1 = sum_subject1 + sum_object1;
-				tm1 = mul_vec(tm1, base_vector1);
+				mul_vec(tm0, base_vector0, tm0);
+			
+	      vsAdd(BASIS_SIZE, &sum_subject1[0], &sum_object1[0], &tm1[0]);
+      
+        mul_vec(tm1, base_vector1, tm1);
 
 				float c5 = cosine_sim(tm0, tm1);
 				
-				tm0 = sum_subject0 + sum_object0 + base_vector0;
-				tm1 = sum_subject1 + sum_object1 + base_vector1;
-				
+	      vsAdd(BASIS_SIZE, &sum_subject0[0], &sum_object0[0], &tm0[0]);
+	      vsAdd(BASIS_SIZE, &base_vector0[0], &tm0[0], &tm0[0]);
+
+	      vsAdd(BASIS_SIZE, &sum_subject1[0], &sum_object1[0], &tm1[0]);
+	      vsAdd(BASIS_SIZE, &base_vector1[0], &tm1[0], &tm1[0]);
+
 				float c6 = cosine_sim(tm0, tm1);
 			
 				std::stringstream stream;
@@ -587,7 +596,7 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 			}
 		}
 	}
-}*/
+}
 
 /**
  * Return all the stats for all verb pairs

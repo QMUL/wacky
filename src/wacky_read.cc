@@ -24,13 +24,18 @@ int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector
   std::ifstream dictionary_file (OUTPUT_DIR + "/dictionary.txt");
   string line;
   size_t idx = 0;
-  while ( getline (dictionary_file,line) ) {
-    string word = s9::RemoveChar(line,'\n'); 
-    DICTIONARY.push_back(word);
-    DICTIONARY_FAST[word] = idx;
-    idx+=1;
+  
+  if (dictionary_file.is_open()) {
+    while ( getline (dictionary_file,line) ) {
+      string word = s9::RemoveChar(line,'\n'); 
+      DICTIONARY.push_back(word);
+      DICTIONARY_FAST[word] = idx;
+      idx+=1;
+    }
+	  VOCAB_SIZE = DICTIONARY.size();
+    return 0;
   }
-	VOCAB_SIZE = DICTIONARY.size();
+  return 1;
 }
 
 
@@ -48,15 +53,18 @@ int read_unk_file(string OUTPUT_DIR, size_t & UNK_COUNT) {
   std::ifstream unk_file (OUTPUT_DIR + "/unk_count.txt");
   string line;
 
-  while ( getline (unk_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
-    int uk = s9::FromString<int>(line);
-    unk_file.close();
-    UNK_COUNT = uk;
-    return uk;
-  }
+  if (unk_file.is_open()) {
+    while ( getline (unk_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      int uk = s9::FromString<int>(line);
+      unk_file.close();
+      UNK_COUNT = uk;
+      return uk;
+    }
 
-  return 0;
+    return 0;
+  }
+  return 1;
 }
 
 /**
@@ -66,7 +74,7 @@ int read_unk_file(string OUTPUT_DIR, size_t & UNK_COUNT) {
  * @return int a value to say if we succeeded or not
  */
 
-void read_insist_words(std::string OUTPUT_DIR, std::set<std::string> & INSIST_BASIS_WORDS) {
+int read_insist_words(std::string OUTPUT_DIR, std::set<std::string> & INSIST_BASIS_WORDS) {
   std::ifstream insist_file (OUTPUT_DIR + "/insist.txt");
   string line;
 
@@ -76,8 +84,9 @@ void read_insist_words(std::string OUTPUT_DIR, std::set<std::string> & INSIST_BA
       INSIST_BASIS_WORDS.insert(line); 
     }    
     insist_file.close();
+    return 0;
   }
-
+  return 1;
 }
 
 
@@ -85,51 +94,61 @@ void read_insist_words(std::string OUTPUT_DIR, std::set<std::string> & INSIST_BA
  * Read in the file that contains verb subjects
  * @param OUTPUT_DIR the output directory
  * @param VERB_SUBJECTS a vector of vector of ints we shall file
+ * @return int value to say if we succeeded or not
  */
 
-void read_subject_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SUBJECTS) {
+int read_subject_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SUBJECTS) {
   std::ifstream total_file (OUTPUT_DIR + "/verb_subjects.txt");
   string line;
 
   cout << "Reading Subject File" << endl;
 
-  while ( getline (total_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
-    vector<string> tokens =  s9::SplitStringWhitespace(line);
+  if (total_file.is_open()) {
+    while ( getline (total_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      vector<string> tokens =  s9::SplitStringWhitespace(line);
 
-    if (tokens.size() > 1) {
-			int idx = s9::FromString<int>(tokens[0]);
-      for (int i= 1; i < tokens.size(); ++i) {
-        int sbj_idx = s9::FromString<int>(tokens[i]);
-        VERB_SUBJECTS[idx].push_back(sbj_idx);
+      if (tokens.size() > 1) {
+        int idx = s9::FromString<int>(tokens[0]);
+        for (int i= 1; i < tokens.size(); ++i) {
+          int sbj_idx = s9::FromString<int>(tokens[i]);
+          VERB_SUBJECTS[idx].push_back(sbj_idx);
+        }
       }
     }
+    return 0;
   }
+  return 1;
 }
 
 /**
  * Read the subject object pairing file
  * @param OUTPUT_DIR the output directory
  * @param VERB_SBJ_OBJ a vector of vector of ints we shall file
+ * @return int value to say if we succeeded or not
  */
 
-void read_subject_object_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SBJ_OBJ) {
+int read_subject_object_file(string OUTPUT_DIR, vector< vector<int> > & VERB_SBJ_OBJ) {
   std::ifstream total_file (OUTPUT_DIR + "/verb_sbj_obj.txt");
   string line;
 
   cout << "Reading Subject Object File" << endl;
 
-  while ( getline (total_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
-    vector<string> tokens =  s9::SplitStringWhitespace(line);
+  if (total_file.is_open()) {
+    while ( getline (total_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      vector<string> tokens =  s9::SplitStringWhitespace(line);
 
-    if (tokens.size() > 1) {
-      for (int i= 1; i < tokens.size(); ++i) {
-        int idx = s9::FromString<int>(tokens[i]);
-        VERB_SBJ_OBJ[s9::FromString<int>(tokens[0])].push_back(idx);
+      if (tokens.size() > 1) {
+        for (int i= 1; i < tokens.size(); ++i) {
+          int idx = s9::FromString<int>(tokens[i]);
+          VERB_SBJ_OBJ[s9::FromString<int>(tokens[0])].push_back(idx);
+        }
       }
     }
+    return 0;
   }
+  return 1;
 }
 
 
@@ -145,15 +164,18 @@ int read_total_file(string OUTPUT_DIR, size_t & TOTAL_COUNT ) {
   std::ifstream total_file (OUTPUT_DIR + "/total_count.txt");
   string line;
 
-  while ( getline (total_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
-    int uk = s9::FromString<int>(line);
-    total_file.close();
-    TOTAL_COUNT = uk;
-    return uk;
-  }
+  if (total_file.is_open()) {
+    while ( getline (total_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      int uk = s9::FromString<int>(line);
+      total_file.close();
+      TOTAL_COUNT = uk;
+      return uk;
+    }
 
-  return 0;
+    return 0;
+  }
+  return 1;
 }
 
 
@@ -162,54 +184,64 @@ int read_total_file(string OUTPUT_DIR, size_t & TOTAL_COUNT ) {
  * @param OUTPUT_DIR the output directory
  * @param VERB_TRANSITIVE a set of transitive verbs we shall fill
  * @param VERB_INTRANSITIVE a set of intransitive verbs we shall fill
+ * @return int to show if we succeeded or not
  */
 
-void read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string> & VERB_INTRANSITIVE ) {
+int read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string> & VERB_INTRANSITIVE ) {
 
   std::ifstream total_file (OUTPUT_DIR + "/sim_stats.txt");
   string line;
 
-  while ( getline (total_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
+  if (total_file.is_open()) {
+    while ( getline (total_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
 
-    vector<string> tokens = s9::SplitStringWhitespace(line);
-    string verb = tokens[0];
-    int obs = s9::FromString<int>(tokens[1]);
-    int alone = s9::FromString<int>(tokens[2]);
-    int total = s9::FromString<int>(tokens[3]);
+      vector<string> tokens = s9::SplitStringWhitespace(line);
+      string verb = tokens[0];
+      int obs = s9::FromString<int>(tokens[1]);
+      int alone = s9::FromString<int>(tokens[2]);
+      int total = s9::FromString<int>(tokens[3]);
 
-    if (obs > alone){
-      VERB_TRANSITIVE.insert(verb);
-    } else {
-      VERB_INTRANSITIVE.insert(verb);
-    }    
+      if (obs > alone){
+        VERB_TRANSITIVE.insert(verb);
+      } else {
+        VERB_INTRANSITIVE.insert(verb);
+      }    
+    }
+    return 0;
   }
+  return 1;
 }
 
 /**
 * Read in the verb pair comparisons file
 * @param OUTPUT_DIR the output directory
 * @param VERBS_TO_CHECK a vector of VerbPairs that we shall fill
+* @return int to say if we succeeded or not
 */
 
-void read_sim_file(string simverb_file, vector<VerbPair> & VERBS_TO_CHECK) {
+int read_sim_file(string simverb_file, vector<VerbPair> & VERBS_TO_CHECK) {
    
   std::ifstream total_file (simverb_file);
   string line;
 
-  while ( getline (total_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
-    
-    vector<string> tokens = s9::SplitStringWhitespace(line);
-    
-    VerbPair s;
-    s.v0 = tokens[0];
-    s.v1 = tokens[1];
-    s.s = s9::FromString<float>(tokens[3]);
+  if (total_file.is_open()) {
+    while ( getline (total_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      
+      vector<string> tokens = s9::SplitStringWhitespace(line);
+      
+      VerbPair s;
+      s.v0 = tokens[0];
+      s.v1 = tokens[1];
+      s.s = s9::FromString<float>(tokens[3]);
 
-    VERBS_TO_CHECK.push_back(s);
+      VERBS_TO_CHECK.push_back(s);
+    }
 
+    return 0;
   }
+  return 1;
 
 }
 
@@ -227,32 +259,37 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
   std::ifstream freq_file (OUTPUT_DIR + "/freq.txt");
   string line;
   size_t idx = 0;
-  while ( getline (freq_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
 
-    vector<string> tokens = s9::SplitStringString(line, ", ");
-    if (tokens.size() > 1) {
-      FREQ[tokens[0]] = s9::FromString<size_t>(tokens[1]); 
-      idx+=1;
+  if (freq_file.is_open()) {
+    while ( getline (freq_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+
+      vector<string> tokens = s9::SplitStringString(line, ", ");
+      if (tokens.size() > 1) {
+        FREQ[tokens[0]] = s9::FromString<size_t>(tokens[1]); 
+        idx+=1;
+      }
     }
+
+    for (auto it = FREQ.begin(); it != FREQ.end(); it++){
+      FREQ_FLIPPED.push_back(*it);
+    }
+
+    std::sort(FREQ_FLIPPED.begin(), FREQ_FLIPPED.end(), sort_freq);
+    freq_file.close();
+
+    // Read the allowed file too
+    std::ifstream allowed_file (OUTPUT_DIR + "/allowed.txt");
+    while ( getline (allowed_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      ALLOWED_BASIS_WORDS.insert(line);
+    }
+    allowed_file.close();
+
+    return 0;
   }
 
-  for (auto it = FREQ.begin(); it != FREQ.end(); it++){
-    FREQ_FLIPPED.push_back(*it);
-  }
-
-  std::sort(FREQ_FLIPPED.begin(), FREQ_FLIPPED.end(), sort_freq);
-  freq_file.close();
-
-  // Read the allowed file too
-  std::ifstream allowed_file (OUTPUT_DIR + "/allowed.txt");
-  while ( getline (allowed_file,line) ) {
-    line = s9::RemoveChar(line,'\n');
-    ALLOWED_BASIS_WORDS.insert(line);
-  }
-  allowed_file.close();
-
-  return 0;
+  return 1;
 }
 
 void generate_words_to_check(set<int> & WORDS_TO_CHECK, vector< vector<int> > & VERB_SBJ_OBJ, vector< vector<int> > & VERB_SUBJECTS, vector< vector<int> > & VERB_OBJECTS, vector<VerbPair> & VERBS_TO_CHECK, map<string,int> DICTIONARY_FAST ) {
@@ -300,13 +337,19 @@ void generate_words_to_check(set<int> & WORDS_TO_CHECK, vector< vector<int> > & 
  * @param BASIS_VECTOR the vector of ints that represents the basis
  * @param WORD_VECTORS the vector of vectors we shall fill
  * @param TOTAL_COUNT the total count of all the words in ukwac
+ * @return int whether we succeeded or not
  */
 
-void read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT, set<int> & WORDS_TO_CHECK) {
+int read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT, set<int> & WORDS_TO_CHECK) {
   cout << "Reading the word_vectors count" << endl;
   std::ifstream count_file (OUTPUT_DIR + "/word_vectors.txt");
   string line;
   size_t idx = 0;
+ 
+  if (!count_file.is_open()) {
+    return 1;
+  }
+
   while ( getline (count_file,line) && idx < DICTIONARY.size()) {
     line = s9::RemoveChar(line,'\n');
     vector<string> tokens = s9::SplitStringWhitespace(line);
@@ -336,6 +379,7 @@ void read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & 
 		WORD_VECTORS.push_back(tv);
     idx++;
   }
+  return 0;
 }
 
 

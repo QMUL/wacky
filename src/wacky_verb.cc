@@ -262,23 +262,15 @@ int create_verb_subject_object(vector<string> filenames,
 
   // Scan directory for the files
   for( string filepath : filenames) {
-    int num_blocks =1; 
-      
-    #pragma omp parallel
-    {
-      num_blocks = omp_get_num_threads();
-    }
-  
-    cout << "Num Blocks: " << num_blocks << endl;
-
-    char * block_pointer[num_blocks];
-    size_t block_size[num_blocks];
+    int num_blocks = 1;  
+    char ** block_pointer;
+    size_t * block_size;
 
     // Cant pass this into _breakup sadly
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
 		if (result == -1){
 			return -1;
 		}	
@@ -339,28 +331,12 @@ int create_verb_subject_object(vector<string> filenames,
     
         mem++;
         progress +=1;
-
-        /*#pragma omp master
-        {
-          if ( progress % 1000 == 0){
-            // Progress output to console
-            int pp = static_cast<int>((static_cast<float>(progress * omp_get_num_threads()) / static_cast<float>(size)) * 10.0);
-            std::cout << std::setw(20);
-            cout << "Progress: ";
-            for (int l=0; l < pp; l++){
-              cout << "#"; 
-            }
-
-            for (int l=pp; l < 10; l++){
-              cout << "_";
-            }
-            cout << '\r';
-          }
-        }*/
       }
-      // sub_file.close();
     }
-
+    
+    // These need to be freed as breakup assigns them. A bit naughty
+    //free(block_pointer);
+    //free(block_size);
   }
 
   cout << endl;
@@ -481,14 +457,14 @@ int create_simverbs(vector<string> filenames, string simverb_path,
       num_blocks = omp_get_num_threads();
     }
     
-    char * block_pointer[num_blocks];
-    size_t block_size[num_blocks];
+    char ** block_pointer;
+    size_t * block_size;
 
     // Cant pass this into _breakup sadly
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
 		if (result == -1){
 			return -1;
 		}	
@@ -619,6 +595,11 @@ int create_simverbs(vector<string> filenames, string simverb_path,
         mem++;
       }
     }
+
+    // These need to be freed as breakup assigns them. A bit naughty
+    //free(block_pointer);
+    //free(block_size);
+
   }
 
   string filename = OUTPUT_DIR + "/sim_stats.txt";

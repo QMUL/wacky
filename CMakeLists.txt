@@ -5,8 +5,8 @@ PROJECT(wacky)
 # Basic includes
 include_directories( "include" )
 
-# Boost for Memory Mapping the big files
-FIND_PACKAGE( Boost 1.58 COMPONENTS program_options system filesystem REQUIRED )
+# Boost for Memory Mapping the big files and testing
+FIND_PACKAGE( Boost 1.58 COMPONENTS program_options system filesystem unit_test_framework REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 # Custom Options
@@ -66,5 +66,10 @@ else()
 
 endif()
 
+# Test bits
 
+enable_testing()
+ADD_EXECUTABLE(wacky_test_basic test/basic.cc)
+target_link_libraries(wacky_test_basic ${Boost_LIBRARIES}) 
 
+add_test( basic wacky_test_basic)

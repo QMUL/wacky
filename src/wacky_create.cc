@@ -398,14 +398,14 @@ int create_word_vectors(vector<string> filenames,
 
   for( string filepath : filenames) {
 
-    char * block_pointer[num_blocks];
-    size_t block_size[num_blocks];
+    char ** block_pointer;
+    size_t * block_size;
 
     // Cant pass this into _breakup sadly
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
 		if (result == -1){
 			return -1;
 		}	
@@ -496,6 +496,10 @@ int create_word_vectors(vector<string> filenames,
 				mem++;
 			}    
 		} // end parallel bit
+    
+    // These need to be freed as breakup assigns them. A bit naughty
+    //free(block_pointer);
+    //free(block_size);
 	}
 
 	// Finished all the files, now quit
@@ -549,14 +553,14 @@ int create_integers(vector<string> filenames,
       num_blocks = omp_get_num_threads();
     }
     
-    char * block_pointer[num_blocks];
-    size_t block_size[num_blocks];
+    char ** block_pointer;
+    size_t * block_size;
 
     // Cant pass this into _breakup sadly
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region );
+		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
 		if (result == -1){
 			return -1;
 		}	
@@ -611,8 +615,11 @@ int create_integers(vector<string> filenames,
       std::ofstream size_file (filename);
       size_file << s9::ToString(file_count) << endl;
       size_file.close();
-
     }
+
+    // These need to be freed as breakup assigns them. A bit naughty
+    free(block_pointer);
+    free(block_size);
 
   }
 

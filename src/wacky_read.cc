@@ -59,10 +59,8 @@ int read_unk_file(string OUTPUT_DIR, size_t & UNK_COUNT) {
       int uk = s9::FromString<int>(line);
       unk_file.close();
       UNK_COUNT = uk;
-      return uk;
+      return 0;
     }
-
-    return 0;
   }
   return 1;
 }
@@ -170,10 +168,8 @@ int read_total_file(string OUTPUT_DIR, size_t & TOTAL_COUNT ) {
       int uk = s9::FromString<int>(line);
       total_file.close();
       TOTAL_COUNT = uk;
-      return uk;
+      return 0;
     }
-
-    return 0;
   }
   return 1;
 }

@@ -14,7 +14,7 @@ using namespace std;
  * @return int a value to say if we succeeded or not
  */
 
-int breakup ( char ** block_pointer, size_t * block_size, file_mapping &m_file, mapped_region &region, int & num_blocks) {
+int breakup ( char ** & block_pointer, size_t * & block_size, file_mapping &m_file, mapped_region &region, int & num_blocks) {
   // Scan directory for the files
 	num_blocks = 1; 
 	

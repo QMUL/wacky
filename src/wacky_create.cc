@@ -172,144 +172,78 @@ int create_freq(vector<string> filenames,
 
     cout << filepath << endl;
     int num_blocks =1; 
+   
+    char ** block_pointer;
+    size_t * block_size;
+
+    // Cant pass this into _breakup sadly
+    file_mapping m_file(filepath.c_str(), read_only);
+    mapped_region region(m_file, read_only);  
+
+    int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
+    if (result == -1){
+      return -1;
+    }	
+
+    // Now begin the threading block
+    // Probably a little slow reading char by char right?
+    // Also potential unicode errors? Maybe
     
+    omp_set_num_threads(num_blocks);
     #pragma omp parallel
-    {
-      num_blocks = omp_get_num_threads();
-    }
-  
-    char * block_pointer[num_blocks];
-    size_t block_size[num_blocks];
-    cout << "Num Blocks: " << num_blocks << endl;
+    {   
+      int block_id = omp_get_thread_num();
+      char *mem = block_pointer[block_id];
+      string str;
 
-    // Problem with memory-mapped files is we need the number of line
-    // endings in order to split the file for OpenMP processing on the same
-    // file. Using one thread per file is probably easier. 
-    //
-    // OR we could just move the pointers within the file backwards till we hit
-    // a newline and set it there. That would probably be quite easy
+      for(std::size_t i = 0; i < block_size[block_id]; ++i){
+        char data = *mem;
+        if (data != '\n' && data != '\r'){
+          str += data;
+        } else {
+          // Can now look at the string and work on our FREQ
+          vector<string> tokens = s9::SplitStringWhitespace(str);  
+          if (tokens.size() > 2) {
+            string val = s9::ToLower(tokens[0]);
+            if (LEMMA_TIME) {
+              val = s9::ToLower(tokens[1]); // Use the canonical form of the word
+            }
 
-    try {
+            if (s9::IsAsciiPrintableString(val)){
+              if (WORD_IGNORES.find(val) == WORD_IGNORES.end()){  
 
-      file_mapping m_file(filepath.c_str(), read_only);
-      mapped_region region(m_file, read_only);  
-
-      void * addr = region.get_address();
-      size_t size = region.get_size();
-  
-#ifdef _WRITE_WORDS  
-      string filename = OUTPUT_DIR + "/words_" + s9::FilenameFromPath(filepath) + ".txt";
-      std::ofstream words_file (filename);
-#endif
-
-      size_t step = size / num_blocks;
-      cout << "Step Size " << step <<endl;
-
-      // Set the starting positions and the sizes, by finding the nearest end sentence marker
-      // that occurs after the guessed block border. This likely means the last block
-      // will be the smallest
-      
-      std::string ssm = "0000";
-      
-      block_pointer[0] = static_cast<char*>(addr);
-      char *mem = static_cast<char*>(addr);
-      for (int i=1; i < num_blocks; ++i) {
-        mem += step;
-        while (ssm.compare("</s>") != 0){
-        	ssm[0] = ssm[1];
-        	ssm[1] = ssm[2];
-        	ssm[2] = ssm[3];
-					ssm[3] = *mem;
-          mem++;
-				}
-       	ssm = "0000"; 
-        block_pointer[i] = mem;
-      }
-  
-      size_t csize = 0;
-      for (int i = 0; i < num_blocks-1; ++i) {
-        block_size[i] = block_pointer[i+1] - block_pointer[i];
-        csize += block_size[i];
-      }
-
-      if (num_blocks > 1){
-        block_size[num_blocks-1] = size - csize;
-      } else {
-        block_size[0] = size;
-      }
-
-      cout << "Block Sizes: " << endl;
-      for (int i = 0; i < num_blocks; ++i) {
-        cout << i << " " <<  block_size[i] << endl;
-      }
-
-      // Now begin the threading block
-
-      // Probably a little slow reading char by char right?
-      // Also potential unicode errors? Maybe
-      #pragma omp parallel
-      {   
-        int block_id = omp_get_thread_num();
-        char *mem = block_pointer[block_id];
-        string str;
-
-        for(std::size_t i = 0; i < block_size[block_id]; ++i){
-          char data = *mem;
-          if (data != '\n' && data != '\r'){
-            str += data;
-          } else {
-            // Can now look at the string and work on our FREQ
-            vector<string> tokens = s9::SplitStringWhitespace(str);  
-            if (tokens.size() > 2) {
-              string val = s9::ToLower(tokens[0]);
-              if (LEMMA_TIME) {
-                val = s9::ToLower(tokens[1]); // Use the canonical form of the word
-              }
-
-              if (s9::IsAsciiPrintableString(val)){
-                if (WORD_IGNORES.find(val) == WORD_IGNORES.end()){  
-
-#ifdef _WRITE_WORDS
+               auto result = FREQ.find(val); 
+                if (result == FREQ.end()){
                   #pragma omp critical
-                  words_file << val << " ";
-#endif
-                  auto result = FREQ.find(val); 
-                  if (result == FREQ.end()){
-                    #pragma omp critical
-                    { 
-                      FREQ[val] = 1;
-                      if ( s9::StringContains(tokens[2],"NN") ||
-                            s9::StringContains(tokens[2],"JJ") ||
-                            s9::StringContains(tokens[2],"VV") ||
-                            s9::StringContains(tokens[2],"RB")){
-                        ALLOWED_BASIS_WORDS.insert(val);  
-                      }
+                  { 
+                    FREQ[val] = 1;
+                    if ( s9::StringContains(tokens[2],"NN") ||
+                          s9::StringContains(tokens[2],"JJ") ||
+                          s9::StringContains(tokens[2],"VV") ||
+                          s9::StringContains(tokens[2],"RB")){
+                      ALLOWED_BASIS_WORDS.insert(val);  
                     }
-                   
-                  }  else {
-                    #pragma omp atomic 
-                    FREQ[val] = FREQ[val] + 1;
                   }
+                 
+                }  else {
+                  #pragma omp atomic 
+                  FREQ[val] = FREQ[val] + 1;
                 }
               }
             }
-            str = "";
           }
-          mem++;
+          str = "";
         }
-      
+        mem++;
       }
+    
+    }
 
 #ifdef _WRITE_WORDS
-      words_file.flush();
-      words_file.close();
+    words_file.flush();
+    words_file.close();
 #endif
 
-    } catch (interprocess_exception &ex) {
-      fprintf(stderr, "Exception %s\n", ex.what());
-      fflush(stderr);
-      return 1;
-    }
     // remove memory map ?
   }
   
@@ -381,10 +315,6 @@ int create_word_vectors(vector<string> filenames,
 	
   int num_blocks =1; 
 		
-	#pragma omp parallel
-	{
-		num_blocks = omp_get_num_threads();
-	}
 
 	// Start by setting the counts - we add an extra 1 for the UNK value (but UNK does not occur in the basis)
 	for (int i =0; i < VOCAB_SIZE+1; ++i) {
@@ -411,7 +341,8 @@ int create_word_vectors(vector<string> filenames,
 		}	
 
     cout << "Reading file " << filepath << endl;
-		
+
+    omp_set_num_threads(num_blocks);
 		#pragma omp parallel
 		{   
 			int block_id = omp_get_thread_num();
@@ -548,15 +479,11 @@ int create_integers(vector<string> filenames,
   for( string filepath : filenames) {
     int num_blocks =1; 
       
-    #pragma omp parallel
-    {
-      num_blocks = omp_get_num_threads();
-    }
-    
     char ** block_pointer;
     size_t * block_size;
 
     // Cant pass this into _breakup sadly
+    // break the file we are looking at into chunks to process
 		file_mapping m_file(filepath.c_str(), read_only);
 		mapped_region region(m_file, read_only);  
 
@@ -564,7 +491,8 @@ int create_integers(vector<string> filenames,
 		if (result == -1){
 			return -1;
 		}	
- 
+    
+    omp_set_num_threads(num_blocks);
     #pragma omp parallel
     {   
       int block_id = omp_get_thread_num();
@@ -596,6 +524,7 @@ int create_integers(vector<string> filenames,
 
             if (DICTIONARY_FAST.find(val) == DICTIONARY_FAST.end()){
               int_file << s9::ToString(VOCAB_SIZE) << endl;
+              #pragma omp critical
               unk_count++; 
             } else {
               int_file << s9::ToString( DICTIONARY_FAST[val] ) << endl;

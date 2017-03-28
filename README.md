@@ -74,7 +74,7 @@ Once you have these files, you can choose which models you want to train and run
 
    ./wacky -u ~/ukwac -r -l -o ~/output -i
 
-This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data.
+This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data, as well as the other models. Two REQUIRED files are created at this stage - the total_count.txt and unk_count.txt. This lists the total count of words in ukwac and the number of words that didn't appear in the dictionary. These are used in creation of statistics later on.
 
 Alternatively, lets say you wish to use the original word2vec program. You would have to combine all the files together into one.
 

@@ -27,7 +27,7 @@ struct VerbPair {
 inline bool sort_freq (std::pair<std::string,size_t> i, std::pair<std::string, size_t> j) { return (i.second > j.second); }
 
 //! breakup the ukwac into managable chunks
-int breakup ( char ** block_pointer, size_t * block_size, boost::interprocess::file_mapping &m_file, boost::interprocess::mapped_region &region, int & num_blocks);
+int breakup ( char ** & block_pointer, size_t * & block_size, boost::interprocess::file_mapping &m_file, boost::interprocess::mapped_region &region, int & num_blocks);
 
 #endif
 

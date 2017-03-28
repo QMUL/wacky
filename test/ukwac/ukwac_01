@@ -15,6 +15,21 @@ Spain	Spain	NP	12	11	PMOD
 .	.	SENT	13	1	P
 </s>
 <s>
+I I NN 1 0 ROOT
+Read read VV 2 1 NMOD
+Books book NN 3 2 SBJ
+</s>
+<s>
+eat eat VV 1 0 ROOT
+aloe aloe NN 2 1 SBJ
+</s>
+<s>
+that that PMOD 1 0 ROOT
+person person NN 3 2 OBJ
+eats eat VV 2 1 PMOD
+aloe aloe NN 4 2 SBJ
+</s>
+<s>
 Our	our	PP$	1	3	NMOD
 biking	biking	NN	2	3	NMOD
 vacation	vacation	NN	3	0	ROOT

@@ -278,6 +278,7 @@ int create_verb_subject_object(vector<string> filenames,
     // Progress basically
     size_t progress = 0;
 
+    omp_set_num_threads(num_blocks);
     #pragma omp parallel
     {   
       int block_id = omp_get_thread_num();
@@ -451,12 +452,7 @@ int create_simverbs(vector<string> filenames, string simverb_path,
   // Scan directory for the files
   for( string filepath : filenames) {
     int num_blocks =1; 
-      
-    #pragma omp parallel
-    {
-      num_blocks = omp_get_num_threads();
-    }
-    
+       
     char ** block_pointer;
     size_t * block_size;
 
@@ -470,6 +466,7 @@ int create_simverbs(vector<string> filenames, string simverb_path,
 		}	
 
     // Now do the search
+    omp_set_num_threads(num_blocks); 
     #pragma omp parallel
     {   
       int block_id = omp_get_thread_num();

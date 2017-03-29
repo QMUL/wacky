@@ -24,9 +24,9 @@ Wacky creates a lot of files in its *working directory*. These files are summari
 
 Simply create a directory and run cmake as you normally would. Example:
 
-   mkdir build
-   cd build
-   cmake ..
+    mkdir build
+    cd build
+    cmake ..
 
 ### requirements
 
@@ -70,11 +70,11 @@ Depending on the command line flags, wacky can perform several operations on the
 
 If starting from scratch, the first part of any workflow with wacky is to create the basic summary files. These are used by the various scripts as well as wacky itself.
 
-   ./wacky -u ~/ukwac -l -v 500000 -o ~/output
+    ./wacky -u ~/ukwac -l -v 500000 -o ~/output
 
 Once you have these files, you can choose which models you want to train and run. For example, if you want to train Tensorflow on this data, you will need to convert all the ukwac data into numbers. These numbers represent the dictionary position of that word. 
 
-   ./wacky -u ~/ukwac -r -l -o ~/output -i
+    ./wacky -u ~/ukwac -r -l -o ~/output -i
 
 This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data, as well as the other models. Two REQUIRED files are created at this stage - the total_count.txt and unk_count.txt. This lists the total count of words in ukwac and the number of words that didn't appear in the dictionary. These are used in creation of statistics later on.
 

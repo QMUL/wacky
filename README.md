@@ -1,4 +1,6 @@
-The Wacky project is a set of tools for working with the ukwac dataset. It consists of... 
+# Wacky
+
+The Wacky project is a set of tools for working with the ukwac dataset. It consists of 
 
 * A C++ program that does a lot of the heavy lifting 
 * A set of python scripts for analyis and further processing
@@ -6,7 +8,7 @@ The Wacky project is a set of tools for working with the ukwac dataset. It consi
 * Singularity definitions for creating containers to perform Tensorflow training
 * A Tensorflow word2vec example using wacky data.
 
-# Wacky
+# wacky program
 
 Wacky is a C++ program that can be built with CMake. It uses Boost's memory mapping to map the large ukWaC data files, resulting in a lower memory usage. It can (and should) use [Intel's Math Library](https://software.intel.com/en-us/intel-mkl/) for extra speed when working out Kronecker products and matrix multiplication. There is an early draft of a CUDA version of the program but this is incomplete and should be ignored.
 
@@ -178,3 +180,21 @@ Then perform the bootstrapping
 Finally, run the container with the provided data directory mapped to /data
 
     singularity run -B /home/oni/Projects/WackyVec/build:/data wackyvec.img
+
+# Acknowledgements
+
+The simverb.txt test file is taken from the SimVerb 3500 dataset:
+
+[http://people.ds.cam.ac.uk/dsg40/simverb.html](http://people.ds.cam.ac.uk/dsg40/simverb.html)
+
+    SimVerb-3500: A Large-Scale Evaluation Set of Verb Similarity
+    Daniela Gerz, Ivan Vulić, Felix Hill, Roi Reichart and Anna Korhonen. EMNLP 2016.
+
+The test ukwac files are taken from ukWaC:
+
+[http://wacky.sslmit.unibo.it/doku.php](http://wacky.sslmit.unibo.it/doku.php)
+
+    M. Baroni, S. Bernardini, A. Ferraresi and E. Zanchetta. 2009. The WaCky Wide Web: A Collection of 
+    Very Large Linguistically Processed Web-Crawled Corpora. Language Resources and Evaluation 43 (3): 209-226.
+
+

@@ -11,66 +11,12 @@ import os, sys, math, struct, codecs
 
 from scipy import stats
 
-BASE_DIR = ""
-DICT_FILE = "dictionary.txt"
-SUBJECTS_FILE = "verb_subjects.txt"
-OBJECTS_FILE = "verb_objects.txt"
-SBJ_OBJ_FILE = "verb_sbj_obj.txt"
-W2V_DICT_FILE = "vocab.txt"
-SIM_FILE = "SimVerb-3000-test.txt"
-STATS_FILE = "sim_stats.txt"
-VEC_FILE = ""
-VEC_SIZE = -1
-DICTIONARY = []
-W2V_DICTIONARY = []
-W2V_REVERSE = {}
-VEC_DATA = []
-VERB_TRANSITIVE = []
-VERB_INTRANSITIVE = []
+def read_sim_stats(base_dir, stats_file):
+  '''Read the sim_stats to check for intransitive and transitive.'''
+  verb_transitive = []
+  verb_intransitive = []
 
-SUBJECTS = {}
-
-SBJ_OBJ = {}
-
-unique_verbs = []
-
-verbs_to_check = [
-    ('sleep', 'snooze'), 
-    ('sleep', 'nap'), 
-    ('sleep', 'doze'), 
-    ('sleep', 'slumber'), 
-    ('sleep', 'snore'),
-    ('smile', 'laugh'), 
-    ('smile', 'giggle'),
-    ('walk', 'stroll'), 
-    ('walk', 'march'),
-    ('die', 'pass away'),
-    ('disappear', 'vanish'), 
-    ('disappear', 'fade'),
-    ('shout', 'yell'),
-    ('shout', 'cry'),
-    ('freeze', 'melt'), 
-    ('talk', 'chat'),
-    ('read', 'punch'),
-    ('type', 'scrub'),
-    ('program','scratch'),
-    ('murder', 'love'),
-    ('wander', 'burn'),
-    ('read', 'write'),
-    ('read', 're-read'),
-    ('sleep', 'feel'),
-  ]
-'''
-verbs_to_check = [
-    ('sleep', 'snooze'), 
-  ] 
-'''
-
-
-
-# Read the sim_stats to check for intransitive and transitive
-def read_sim_stats():
-  with open(BASE_DIR + "/" + STATS_FILE,'r') as f:
+  with open(base_dir + "/" + stats_file,'r') as f:
     for line in f.readlines():
       tokens = line.split()
       verb = tokens[0]
@@ -79,113 +25,117 @@ def read_sim_stats():
       total = int(tokens[3])
     
       if obs > alone:
-        VERB_TRANSITIVE.append(verb)
+        verb_transitive.append(verb)
       else:
-        VERB_INTRANSITIVE.append(verb)
+        verb_intransitive.append(verb)
 
-# read the similarity file from http://people.ds.cam.ac.uk/dsg40/simverb.html
-def read_sim_file():
-  global verbs_to_check
+  verb_transitive, verb_intransitive
+
+def read_sim_file(base_dir, sim_file):
+  '''Read the similarity file from http://people.ds.cam.ac.uk/dsg40/simverb.html '''
   verbs_to_check = []
-  with open(BASE_DIR + "/" + SIM_FILE,'r') as f:
+  with open(base_dir + "/" + sim_file,'r') as f:
     for line in f.readlines():
       tokens = line.split()
       verbs_to_check.append( (tokens[0], tokens[1], float(tokens[3])) )
+  
+  return verbs_to_check
 
 
-# Read in the basic DICTIONARY file
-# This is the one we generate basically
-def read_dictionary() :
-  #print("Reading Dictionary")
-  with open(BASE_DIR + "/" + DICT_FILE,'r') as f:
+def read_dictionary(base_dir, dict_file) :
+  '''Read in the basic DICTIONARY file.'''
+  dictionary = []
+  with open(base_dir + "/" + dict_file,'r') as f:
     for line in f.readlines():
-      DICTIONARY.append( line.replace("\n",""))
+      dictionary.append( line.replace("\n",""))
+  return dictionary
 
-
-def read_w2v_dictionary():
-  #print ("Reading w2v vocab")
-  # This could be better :/
+def read_w2v_dictionary(base_dir, w2v_dict_file):
+  ''' Read in the word2vec vocab and reverse it.'''
   tt = {}
-  with open(BASE_DIR + "/" + W2V_DICT_FILE,'rb') as f:
+  w2v_dictionary = []
+  w2v_reverse = {}
+
+  with open(base_dir + "/" + w2v_dict_file,'rb') as f:
     f_decoded = codecs.getreader("ISO-8859-15")(f)
     for line in f_decoded.readlines():
       tokens = line.split(" ")
       word = tokens[0]
-      W2V_DICTIONARY.append(word)
+      w2v_dictionary.append(word)
 
   idx = 0
-  for i in W2V_DICTIONARY:
-    W2V_REVERSE[W2V_DICTIONARY[idx]] = idx;
+  for i in w2v_dictionary:
+    w2v_reverse[w2v_dictionary[idx]] = idx;
     idx += 1
+  
+  return w2v_dictionary, w2v_reverse
 
 
-# Read the subjects verb_idx -> [subject_idxs]
-def read_subjects_file():
-  with open(BASE_DIR + "/" + SUBJECTS_FILE, 'r') as f:
+def read_subjects_file(base_dir, subjects_file):
+  '''Read the subjects verb_idx -> [subject_idxs]'''
+  subjects = {}
+  with open(base_dir + "/" + subjects_file, 'r') as f:
     for line in f.readlines():
       line = line.replace("\n","")
       tokens = line.split()
-      SUBJECTS[int(tokens[0])] = []
+      subjects[int(tokens[0])] = []
       if (len(tokens) > 1):
         for sbj in tokens[1:]:
           sbj_idx = int(sbj)
-          SUBJECTS[int(tokens[0])].append(sbj_idx)  
- 
+          subjects[int(tokens[0])].append(sbj_idx)  
+  return subjects
 
-# Read the subject object pairs
-def read_sbj_obj_file():
-  with open(BASE_DIR + "/" + SBJ_OBJ_FILE, 'r') as f:
+
+def read_sbj_obj_file(base_dir, sbj_obj_file):
+  '''Read the subject object pairs.'''
+  sbj_obj = {}
+  with open(base_dir + "/" + sbj_obj_file, 'r') as f:
     for line in f.readlines():
       line = line.replace("\n","")
       tokens = line.split()
-      SBJ_OBJ[int(tokens[0])] = []
+      sbj_obj[int(tokens[0])] = []
       if (len(tokens) > 1):
         for i in range(1,len(tokens),2):
           sbj_idx = int(tokens[i])
           obj_idx = int(tokens[i+1])
-          SBJ_OBJ[int(tokens[0])].append( (sbj_idx, obj_idx) )  
- 
-# Read both the subjects and the objects. Used in the tran
-
-def read_subject_object(verb, word2vec=False) :
-
-  #print("Reading Subjects")
-  global VEC_SIZE
-
-  #print(verb,":")
-  #base_vector = VEC_DATA[int(tokens[0])]
+          sbj_obj[int(tokens[0])].append( (sbj_idx, obj_idx) ) 
   
-  verb_subjects = []
+  return sbj_obj
+ 
 
-  with open(BASE_DIR + "/" + SUBJECTS_FILE, 'r') as f:
+def read_subject_object(base_dir, subjects_file, object_file, dictionary, w2v_reverse, vec_data, verb, vec_size, word2vec=False) :
+  ''' Read both the subjects and the objects. Used in the tran.'''
+  verb_subjects = []
+  verb_objects = []
+
+  with open(base_dir + "/" + subjects_file, 'r') as f:
     for line in f.readlines():
       line = line.replace("\n","")
       tokens = line.split()
       if (len(tokens) > 2):
       
-        found_subject = DICTIONARY[int(tokens[0])]
+        found_subject = dictionary[int(tokens[0])]
         
         if verb == found_subject: 
           for sbj in tokens[1:]:
             sbj_idx = int(sbj)
 
             # Convert to the word2vec lookup
-            verb_sbj = DICTIONARY[sbj_idx]
+            verb_sbj = dictionary[sbj_idx]
             if word2vec:
-              sbj_idx = W2V_REVERSE[verb_sbj]
+              sbj_idx = w2v_reverse[verb_sbj]
 
             # Now find the subject vectors
-            vv = VEC_DATA[sbj_idx]
+            vv = vec_data[sbj_idx]
             verb_subjects.append(vv)
-
     
-  with open(BASE_DIR + "/" + OBJECT_FILE, 'r') as f:
+  with open(base_dir + "/" + object_file, 'r') as f:
     for line in f.readlines():
       line = line.replace("\n","")
       tokens = line.split()
       if (len(tokens) > 2):
       
-        found_object = DICTIONARY[int(tokens[0])]
+        found_object = dictionary[int(tokens[0])]
         
         if verb == found_object: 
           for obj in tokens[1:]:
@@ -193,51 +143,49 @@ def read_subject_object(verb, word2vec=False) :
             obj_idx = int(obj)
 
             # Convert to the word2vec lookup
-            verb_obj = DICTIONARY[sbj_idx]
+            verb_obj = dictionary[sbj_idx]
             if word2vec:
-              obj_idx = W2V_REVERSE[verb_obj]
+              obj_idx = w2v_reverse[verb_obj]
 
             # Now find the subject vectors
-            vv = VEC_DATA[obj_idx]
+            vv = vec_data[obj_idx]
             verb_objects.append(vv)
 
-  # Now we combine - hopefully they will match up :/
+  return verb_objects, verb_subjects
   
-# Read the subject object file - a little different. We have pairs of SBJ OBJ for each verb
 
-def read_sbj_obj(verb, word2vec=False):
-  global VEC_SIZE
-
-  for found_idx in SBJ_OBJ.keys():
-    found_verb = DICTIONARY[found_idx]
+def read_sbj_obj(verb, dictionary, w2v_reverse, sbj_obj, vec_data, vec_size, word2vec=False):
+  ''' Read the subject object file - a little different. We have pairs of SBJ OBJ for each verb.'''
+  for found_idx in sbj_obj.keys():
+    found_verb = dictionary[found_idx]
   
     if verb == found_verb: 
   
-      base_vector = VEC_DATA[ found_idx ]
+      base_vector = vec_data[ found_idx ]
 
       if word2vec:
-        base_vector = VEC_DATA[ W2V_REVERSE[verb] ]
+        base_vector = vec_data[ w2v_reverse[verb] ]
     
-      sbj_obj_vector = np.zeros((1,VEC_SIZE * VEC_SIZE))
-      sbj_vector = np.zeros((1,VEC_SIZE))
-      obj_vector = np.zeros((1,VEC_SIZE))
-      sbj_obj_add_vector = np.zeros((1,VEC_SIZE * VEC_SIZE)) 
-      sbj_obj_mul_vector = np.zeros((1,VEC_SIZE * VEC_SIZE))
+      sbj_obj_vector = np.zeros((1,vec_size * vec_size))
+      sbj_vector = np.zeros((1,vec_size))
+      obj_vector = np.zeros((1,vec_size))
+      sbj_obj_add_vector = np.zeros((1,vec_size * vec_size)) 
+      sbj_obj_mul_vector = np.zeros((1,vec_size * vec_size))
 
-      for sbj_idx, obj_idx in SBJ_OBJ[found_idx]:
+      for sbj_idx, obj_idx in sbj_obj[found_idx]:
 
-        verb_sbj = DICTIONARY[sbj_idx]
-        verb_obj = DICTIONARY[obj_idx]
+        verb_sbj = dictionary[sbj_idx]
+        verb_obj = dictionary[obj_idx]
 
         if word2vec:
-          if verb_sbj not in W2V_REVERSE or verb_obj not in W2V_REVERSE:
+          if verb_sbj not in w2v_reverse or verb_obj not in w2v_reverse:
             continue
 
-          sbj_idx = W2V_REVERSE[verb_sbj]
-          obj_idx = W2V_REVERSE[verb_obj]
+          sbj_idx = w2v_reverse[verb_sbj]
+          obj_idx = w2v_reverse[verb_obj]
 
-        vs = VEC_DATA[sbj_idx]
-        vo = VEC_DATA[obj_idx]
+        vs = vec_data[sbj_idx]
+        vo = vec_data[obj_idx]
 
         sbj_vector = np.add(sbj_vector,vs)
         obj_vector = np.add(obj_vector,vo)
@@ -260,98 +208,91 @@ def read_sbj_obj(verb, word2vec=False):
   return (False,0)
 
 
-def read_sbj_obj2(verb, word2vec=False):
-  global VEC_SIZE
+def read_sbj_obj2(verb, dictionary, w2v_reverse, vec_data, vec_size, sbj_obj, word2vec=False):
 
-  for found_idx in SBJ_OBJ.keys():
-    found_verb = DICTIONARY[found_idx]
+  for found_idx in sbj_obj.keys():
+    found_verb = dictionary[found_idx]
   
     if verb == found_verb: 
   
-      base_vector = VEC_DATA[ found_idx ]
+      base_vector = vec_data[ found_idx ]
 
       if word2vec:
-        base_vector = VEC_DATA[ W2V_REVERSE[verb] ]
+        base_vector = vec_data[ w2v_reverse[verb] ]
   
-      sbj_obj_vector = np.zeros((1,VEC_SIZE))
-      sbj_obj_krn_vector = np.zeros((1,VEC_SIZE * VEC_SIZE)) 
+      sbj_obj_vector = np.zeros((1,vec_size))
+      sbj_obj_krn_vector = np.zeros((1,vec_size * vec_size)) 
 
-      for sbj_idx, obj_idx in SBJ_OBJ[found_idx]:
+      for sbj_idx, obj_idx in sbj_obj[found_idx]:
 
-        verb_sbj = DICTIONARY[sbj_idx]
-        verb_obj = DICTIONARY[obj_idx]
+        verb_sbj = dictionary[sbj_idx]
+        verb_obj = dictionary[obj_idx]
 
         if word2vec:
-          if verb_sbj not in W2V_REVERSE or verb_obj not in W2V_REVERSE:
+          if verb_sbj not in w2v_reverse or verb_obj not in w2v_reverse:
             continue
 
-          sbj_idx = W2V_REVERSE[verb_sbj]
-          obj_idx = W2V_REVERSE[verb_obj]
+          sbj_idx = w2v_reverse[verb_sbj]
+          obj_idx = w2v_reverse[verb_obj]
 
-        vs = VEC_DATA[sbj_idx]
-        vo = VEC_DATA[obj_idx]
+        vs = vec_data[sbj_idx]
+        vo = vec_data[obj_idx]
 
         sbj_obj_vector = np.add(sbj_obj_vector, np.add(vo,vs))
         
         tk = np.kron(vs,vo)
         sbj_obj_krn_vector = np.add(sbj_obj_krn_vector, tk)
 
-
       return (True, base_vector, sbj_obj_vector, sbj_obj_krn_vector)
 
   return (False,0)
 
 
+def read_subjects(verb, dictionary, w2v_reverse, vec_data, vec_size, subjects, word2vec=False) :
+  ''' Read the subject file - each line is a verb subject list of numbers - indices into the DICTIONARY
+  We don't read the entire file - we scoot to the index for the verb given
+  Only called on intransitive verbs. '''
 
-
-# Read the subject file - each line is a verb subject list of numbers - indices into the DICTIONARY
-# We don't read the entire file - we scoot to the index for the verb given
-# Only called on intransitive verbs
-def read_subjects(verb, word2vec=False) :
-
-  #print("Reading Subjects")
-  global VEC_SIZE
-
-  for found_idx in SUBJECTS.keys():
+  for found_idx in subjects.keys():
   
-    found_verb = DICTIONARY[found_idx]
+    found_verb = dictionary[found_idx]
 
     if verb == found_verb: 
  
-      base_vector = VEC_DATA[found_idx]
+      base_vector = vec_data[found_idx]
 
       if word2vec:
-        base_vector = VEC_DATA[ W2V_REVERSE[verb] ]
+        base_vector = vec_data[ w2v_reverse[verb] ]
 
-      add_vector = np.zeros((1,VEC_SIZE))
-      min_vector = np.zeros((1,VEC_SIZE))
-      max_vector = np.zeros((1,VEC_SIZE))
+      add_vector = np.zeros((1,vec_size))
+      min_vector = np.zeros((1,vec_size))
+      max_vector = np.zeros((1,vec_size))
 
-      add_base_add_vector = np.zeros((1,VEC_SIZE))
-      min_base_add_vector = np.zeros((1,VEC_SIZE))
-      max_base_add_vector = np.zeros((1,VEC_SIZE))
+      add_base_add_vector = np.zeros((1,vec_size))
+      min_base_add_vector = np.zeros((1,vec_size))
+      max_base_add_vector = np.zeros((1,vec_size))
 
-      add_base_mul_vector = np.zeros((1,VEC_SIZE))
-      min_base_mul_vector = np.zeros((1,VEC_SIZE))
-      max_base_mul_vector = np.zeros((1,VEC_SIZE))
+      add_base_mul_vector = np.zeros((1,vec_size))
+      min_base_mul_vector = np.zeros((1,vec_size))
+      max_base_mul_vector = np.zeros((1,vec_size))
 
-      krn_vector = np.zeros((1,VEC_SIZE * VEC_SIZE))
-      krn_base_mul_vector = np.zeros((1,VEC_SIZE * VEC_SIZE))
-      krn_base_add_vector = np.zeros((1,VEC_SIZE * VEC_SIZE))
+      krn_vector = np.zeros((1,vec_size * vec_size))
+      krn_base_mul_vector = np.zeros((1,vec_size * vec_size))
+      krn_base_add_vector = np.zeros((1,vec_size * vec_size))
       
-      for sbj_idx in SUBJECTS[found_idx]:
+      for sbj_idx in subjects[found_idx]:
 
         # Convert to the word2vec lookup
-        verb_sbj = DICTIONARY[sbj_idx]
+        verb_sbj = dictionary[sbj_idx]
 
         if word2vec:
-          if verb_sbj not in W2V_REVERSE:
+          if verb_sbj not in w2v_reverse:
             continue
 
-          sbj_idx = W2V_REVERSE[verb_sbj]
+          sbj_idx = w2v_reverse[verb_sbj]
 
         # Now find the subject vectors
-        vv = VEC_DATA[sbj_idx]
+        vv = vec_data[sbj_idx]
 
         # Add vector math
         add_vector = np.add(add_vector,vv)
@@ -360,7 +301,7 @@ def read_subjects(verb, word2vec=False) :
         krn_vector = np.kron(vv, vv) + krn_vector
       
         # Now do the min and max
-        for i in range(0,VEC_SIZE):
+        for i in range(0,vec_size):
           if vv[i] < min_vector[0][i] or min_vector[0][i] == 0.0:
             min_vector[0][i] = vv[i]
 
@@ -385,38 +326,35 @@ def read_subjects(verb, word2vec=False) :
   return (False,0)
 
 
-def read_subjects_2(verb, word2vec=False) :
-
-  #print("Reading Subjects")
-  global VEC_SIZE
-
-  for found_idx in SUBJECTS.keys():
+def read_subjects_2(verb, dictionary, w2v_reverse, vec_data, vec_size, subjects, word2vec=False) :
   
-    found_verb = DICTIONARY[found_idx]
+  for found_idx in subjects.keys():
+  
+    found_verb = dictionary[found_idx]
 
     if verb == found_verb: 
  
-      base_vector = VEC_DATA[found_idx]
+      base_vector = vec_data[found_idx]
 
       if word2vec:
-        base_vector = VEC_DATA[ W2V_REVERSE[verb] ]
+        base_vector = vec_data[ w2v_reverse[verb] ]
 
-      add_vector = np.zeros((1,VEC_SIZE))
-      krn_vector = np.zeros((1,VEC_SIZE * VEC_SIZE))
+      add_vector = np.zeros((1,vec_size))
+      krn_vector = np.zeros((1,vec_size * vec_size))
       
-      for sbj_idx in SUBJECTS[found_idx]:
+      for sbj_idx in subjects[found_idx]:
 
         # Convert to the word2vec lookup
-        verb_sbj = DICTIONARY[sbj_idx]
+        verb_sbj = dictionary[sbj_idx]
 
         if word2vec:
-          if verb_sbj not in W2V_REVERSE:
+          if verb_sbj not in w2v_reverse:
             continue
 
-          sbj_idx = W2V_REVERSE[verb_sbj]
+          sbj_idx = w2v_reverse[verb_sbj]
 
         # Now find the subject vectors
-        vv = VEC_DATA[sbj_idx]
+        vv = vec_data[sbj_idx]
 
         # Add vector math
         add_vector = np.add(add_vector,vv)
@@ -429,15 +367,14 @@ def read_subjects_2(verb, word2vec=False) :
   return (False,0)
 
 
-# Determine the cosine similarity
-# https://en.wikipedia.org/wiki/Cosine_similarity#Angular_distance_and_similarity
-# Pass in the two vectors 
-
-def cosine_sim(v0, v1) :
+def cosine_sim(v0, v1, vec_size) :
+  ''' Determine the cosine similarity
+  https://en.wikipedia.org/wiki/Cosine_similarity#Angular_distance_and_similarity
+  Pass in the two vectors. ''' 
 
   dist = 0
   # Not needed in the trans case
-  if v1.shape[0] == VEC_SIZE:
+  if v1.shape[0] == vec_size:
     v1 = v1.reshape(( v1.shape[0],))
   else:
     v1 = v1.reshape((v1.shape[1], 1))
@@ -456,9 +393,8 @@ def cosine_sim(v0, v1) :
 
   return 1.0 - dist
 
-
-
 def kron_sim(v0, v1):
+  ''' Kronecker cosine similarity.'''
   try: 
     dist = 0
     v1 = v1.reshape((v1.shape[1],1))
@@ -479,27 +415,21 @@ def kron_sim(v0, v1):
   except:
     return -1.0
 
-# Read the Tensorflow version - held as a numpy array
-# Quite straight forward basically
-
 def read_tensorflow(filepath):
+  ''' Read the Tensorflow version - held as a numpy array
+  Quite straight forward basically.'''
 
-  global VEC_SIZE
+  vec_data = np.load(filepath)
+  vec_size = vec_data.shape[1]
 
-  VEC_DATA = np.load(filepath)
-  VEC_SIZE = VEC_DATA.shape[1]
+  return vec_data, vec_size
 
-  return VEC_DATA
+def read_binary(filepath, w2v_dictionary):
 
-# Read the binary file from word2vec, returning a numpy array
-# we use the DICTIONARY created by tensorflow, because all the integer
-# files, DICTIONARYs and verb/subject lookups are based on that/
+  ''' Read the binary file from word2vec, returning a numpy array
+  we use the DICTIONARY created by tensorflow, because all the integer
+  files, DICTIONARYs and verb/subject lookups are based on that.'''
 
-def read_binary(filepath):
-
-  global VEC_SIZE
-
-  #print("Reading binary")
   vectors = []
  
   with open(filepath,'rb') as f:
@@ -515,12 +445,10 @@ def read_binary(filepath):
 
     tt = ''.join(nums).split(" ") 
     words = int( tt[0] ) # long long int?
-    VEC_SIZE = int( tt[1] )
+    vec_size = int( tt[1] )
 
-    for i in range(0,len(W2V_DICTIONARY)):
-      vectors.append( np.zeros(VEC_SIZE) )
-
-    #print("Loading vectors.bin with", words, "words with", VEC_SIZE, "vec size")
+    for i in range(0,len(w2v_dictionary)):
+      vectors.append( np.zeros(vec_size) )
 
     # TODO - for some reason this explodes memory (the numbers bit at the end) even though
     # the C version copes fine. I suspect we must be duplicating something? 
@@ -542,16 +470,15 @@ def read_binary(filepath):
           # We got a character that is non ascii so skip this row - but keep reading
           skip = True
           
-
       word = word.replace("\n", "")
       
-      # Now read the numbers, should be VEC_SIZE of them (4 bytes probably)
+      # Now read the numbers, should be vec_size of them (4 bytes probably)
       tidx = 0
       pidx = -1
-      if word in W2V_REVERSE.keys():
-        pidx = W2V_REVERSE[word]
+      if word in w2v_reverse.keys():
+        pidx = w2v_reverse[word]
       
-      for i in range(0,VEC_SIZE):
+      for i in range(0,vec_size):
         byte = f.read(4)
         num = struct.unpack('f',byte)
 
@@ -559,20 +486,16 @@ def read_binary(filepath):
           vectors[pidx].itemset(tidx, num[0])
 
         tidx += 1
-     
       widx += 1
 
   vectors = np.vstack(vectors)
-  #print(vectors.shape)
-  #return DICTIONARY, vectors
   
-  return vectors
+  return vectors, vec_size
 
-#transitive verb output
-
-def trans(word2vec=False):
-
+def trans(verbs_to_check, verb_transitive,  dictionary, w2v_reverse, sbj_obj, vec_data, vec_size, word2vec=False):
+  ''' transitive verb output.'''
   print ("verb0,verb1,base_sim,sbj_obj_sim,sbj_obj_add,sbj_obj_mul,sum_sbj_obj,sum_sbj_obj_mul,sum_sbj_obj_add, human_sim")
+
 
   cc = []
   hc = []
@@ -582,11 +505,11 @@ def trans(word2vec=False):
 
   for verb0, verb1, sim in verbs_to_check:
   
-    if not(verb0 in VERB_TRANSITIVE and verb1 in VERB_TRANSITIVE):
+    if not(verb0 in verb_transitive and verb1 in verb_transitive):
       continue
     
-    r0 = read_sbj_obj(verb0,word2vec)
-    r1 = read_sbj_obj(verb1,word2vec)
+    r0 = read_sbj_obj(verb0, dictionary, w2v_reverse, sbj_obj, vec_data, vec_size, word2vec)
+    r1 = read_sbj_obj(verb1, dictionary, w2v_reverse, sbj_obj, vec_data, vec_size, word2vec)
 
     if r0[0] and r1[0]:  
       base_vector0 = r0[1] 
@@ -604,7 +527,6 @@ def trans(word2vec=False):
       sum_sbj_obj_vector1 = r1[5]
       sum_sbj_obj_mul_vector1 = r1[6]
       sum_sbj_obj_add_vector1 = r1[7]
-
 
       cc[0].append(cosine_sim(base_vector0, base_vector1))  
       cc[1].append(cosine_sim(sbj_obj_vector0, sbj_obj_vector1)) 
@@ -644,9 +566,9 @@ def trans(word2vec=False):
     sys.stdout.write(str(pval) + ",")
   print(str(rho[-1][1]))
 
-# Intransitive case
-def intrans(word2vec=False):
 
+def intrans(verbs_to_check, verb_intransitive, dictionary, w2v_reverse, vec_data, vec_size, subjects, word2vec=False):
+  ''' Intransitive case.'''
   print ("verb0,verb1,base_sim,add_sim,min_sim,max_sim,add_add_sim,add_mul_sim,min_add_sim,min_mul_sim,max_add_sim,max_mul_sim,krn_sim,krn_add_sim,krn_mul_sim,human_sim")
 
   cc = []
@@ -656,12 +578,12 @@ def intrans(word2vec=False):
 
   for verb0, verb1, sim in verbs_to_check:
   
-    if not(verb0 in VERB_INTRANSITIVE and verb1 in VERB_INTRANSITIVE):
+    if not(verb0 in verb_intransitive and verb1 in verb_intransitive):
       continue
 
     #print(verb0,verb1)
-    r0 = read_subjects(verb0,word2vec)
-    r1 = read_subjects(verb1,word2vec)
+    r0 = read_subjects(verb0, dictionary, w2v_reverse, vec_data, vec_size, subjects, word2vec)
+    r1 = read_subjects(verb1, dictionary, w2v_reverse, vec_data, vec_size, subjects, word2vec)
 
     if r0[0] and r1[0]:
       
@@ -692,7 +614,6 @@ def intrans(word2vec=False):
       krn_vector1 = r1[11] 
       krn_base_add_vector1 = r1[12] 
       krn_base_mul_vector1 = r1[13] 
-
       
       cc[0].append(cosine_sim(base_vector0, base_vector1)) 
       cc[1].append(cosine_sim(add_vector0, add_vector1))
@@ -738,10 +659,8 @@ def intrans(word2vec=False):
   print(str(rho[-1][1]))
 
 
-# transitive vs intransitive
-
-def trans_intrans(word2vec=False):
-
+def trans_intrans(verbs_to_check, verb_transitive, dictionary, w2v_reverse, vec_data, vec_size, sbj_obj,  word2vec=False):
+  ''' transitive vs intransitive '''
   print ("verb0,verb1,base,add,add_verb,mul_verb,krn,krn_add_verb,krn_mul_verb,human_sim")
 
   cc = []
@@ -754,15 +673,15 @@ def trans_intrans(word2vec=False):
     r0 = []
     r1 = []
   
-    if verb0 in VERB_TRANSITIVE:
-      r0 = read_sbj_obj2(verb0,word2vec)
+    if verb0 in verb_transitive:
+      r0 = read_sbj_obj2(verb0, dictionary, w2v_reverse, vec_data, vec_size, sbj_obj, word2vec)
     else:
-      r0 = read_subjects_2(verb0,word2vec)
+      r0 = read_subjects_2(verb0, dictionary, w2v_reverse, vec_data, vec_size, subjects, word2vec)
  
-    if verb1 in VERB_TRANSITIVE:
-      r1 = read_sbj_obj2(verb1,word2vec)
+    if verb1 in verb_transitive:
+      r1 = read_sbj_obj2(verb1, dictionary, w2v_reverse, vec_data, vec_size, sbj_obj, word2vec)
     else:
-      r1 = read_subjects_2(verb1,word2vec)
+      r1 = read_subjects_2(verb1, dictionary, w2v_reverse, vec_data, vec_size, subjects, word2vec)
 
     if r0[0] and r1[0]:
 
@@ -810,11 +729,51 @@ def trans_intrans(word2vec=False):
     sys.stdout.write(str(pval) + ",")
   print(str(rho[-1][1]))
 
-
 # Main function
 
 if __name__ == "__main__" :
+
   BASE_DIR = sys.argv[1]
+  DICT_FILE = "dictionary.txt"
+  SUBJECTS_FILE = "verb_subjects.txt"
+  OBJECTS_FILE = "verb_objects.txt"
+  SBJ_OBJ_FILE = "verb_sbj_obj.txt"
+  W2V_DICT_FILE = "vocab.txt"
+  SIM_FILE = "SimVerb-3000-test.txt"
+  STATS_FILE = "sim_stats.txt"
+  unique_verbs = []
+
+  verbs_to_check = [
+    ('sleep', 'snooze'), 
+    ('sleep', 'nap'), 
+    ('sleep', 'doze'), 
+    ('sleep', 'slumber'), 
+    ('sleep', 'snore'),
+    ('smile', 'laugh'), 
+    ('smile', 'giggle'),
+    ('walk', 'stroll'), 
+    ('walk', 'march'),
+    ('die', 'pass away'),
+    ('disappear', 'vanish'), 
+    ('disappear', 'fade'),
+    ('shout', 'yell'),
+    ('shout', 'cry'),
+    ('freeze', 'melt'), 
+    ('talk', 'chat'),
+    ('read', 'punch'),
+    ('type', 'scrub'),
+    ('program','scratch'),
+    ('murder', 'love'),
+    ('wander', 'burn'),
+    ('read', 'write'),
+    ('read', 're-read'),
+    ('sleep', 'feel'),
+  ]
+'''
+verbs_to_check = [
+    ('sleep', 'snooze'), 
+  ] 
+'''
 
   transitive = False
   both = False
@@ -826,28 +785,28 @@ if __name__ == "__main__" :
 
     elif sys.argv[2] == '-b':
       both = True
- 
 
     if len(sys.argv) >= 4:
       if sys.argv[3] == '-w':
         word = True
   
-  read_sim_stats()
-  read_sim_file()
-  read_dictionary()
-  read_w2v_dictionary()
-  read_subjects_file()
+  # Begin to read in all the files
+  verb_transitive, verb_intransitive = read_sim_stats(BASE_DIR, STATS_FILE)
+  verbs_to_check = read_sim_file(BASE_DIR, SIM_FILE)
+  dictionary = read_dictionary(BASE_DIR, DICT_FILE)
+  w2v_dictionary, w2v_reverse = read_w2v_dictionary(BASE_DIR, W2V_DICT_FILE)
+  subjects = read_subjects_file(BASE_DIR, SUBJECTS_FILE)
  
   if word:
-    VEC_DATA = read_binary(BASE_DIR + "/vectors.bin")
+    vec_data, vec_size = read_binary(BASE_DIR + "/vectors.bin", w2v_dictionary)
   else:
-    VEC_DATA = read_tensorflow(BASE_DIR + "/final_standard_embeddings.npy")
+    vec_data, vec_size = read_tensorflow(BASE_DIR + "/final_standard_embeddings.npy", w2v_dictionary)
 
   if transitive:
-    read_sbj_obj_file()
-    trans(word)
+    sbj_obj = read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE)
+    trans(verbs_to_check, verb_transitive, dictionary, w2v_reverse, sbj_obj, vec_data, vec_size, word)
   elif both:
-    read_sbj_obj_file()
-    trans_intrans(word)
+    read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE)
+    trans_intrans(verbs_to_check, verb_transitive, dictionary, w2v_reverse, vec_data, vec_size, sbj_obj, word)
   else:
-    intrans(word)
+    intrans(verbs_to_check, verb_intransitive, dictionary, w2v_reverse, vec_data, vec_size, subjects, word)

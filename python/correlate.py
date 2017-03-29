@@ -2,7 +2,10 @@
 
 '''
 Perform the correlation and other such stats on our produced CSV files
-Mostly used for the count vectors
+Mostly used for the count vectors.
+
+python3 correlate.py path/to/csv.file
+
 '''
 
 import numpy as np
@@ -12,7 +15,8 @@ from scipy import stats
 
 
 def read_dictionary(BASE_DIR, DICT_FILE) :
-  #print("Reading Dictionary")
+ ''' Read in the dictionary file from the base dir and file name '''
+    
   dictionary = []
   with open(BASE_DIR + "/" + DICT_FILE,'r') as f:
     for line in f.readlines():
@@ -27,6 +31,7 @@ def read_dictionary(BASE_DIR, DICT_FILE) :
   return dictionary, rdictionary
 
 def read_sim_file(BASE_DIR, SIM_FILE):
+  ''' Read in the sim file that holds the stats on the verbs '''
   verbs_to_check_paired = []
   verbs_to_check = []
 
@@ -47,8 +52,9 @@ def read_sim_file(BASE_DIR, SIM_FILE):
 
   return verbs_to_check, verbs_to_check_paired
 
-# Read the subject object pairs
+
 def read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE):
+  ''' read the file that lists the subjects and objects of the verbs '''
 
   SBJ_OBJ = {}
 
@@ -67,6 +73,8 @@ def read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE):
 
 
 def read_csv_file(filepath): 
+  ''' Read the CSV file of results we are looking to generate stats for '''
+
   with open(filepath,'r') as f:
 
     header = f.readline()
@@ -89,7 +97,6 @@ def read_csv_file(filepath):
       verb0 = tokens[0]
       verb1 = tokens[1]
 
-
       # check to see if there any mistakes
       # Basically, are any of our factors 2.0?
       for i in range(0,num_compares-1):
@@ -108,7 +115,7 @@ def read_csv_file(filepath):
 
 
 def basic_rho(cc,human,titles):
-
+  ''' Perform spearmans rho on this set of values '''
   rho = []
   rho_sort = []
  
@@ -127,9 +134,10 @@ def basic_rho(cc,human,titles):
   print_rho(rho_sort)
 
 
-# Here we drop these verb pairs that have too few or too many 
-# subjects and objects based on an average value
 def drop_rho(cc,human,titles,rdictionary, verbs_check, verbs_paired, sbj_obj, v0, v1, avg, lower):
+
+  '''Here we drop these verb pairs that have too few or too many 
+  subjects and objects based on an average value '''
 
   rho = []
   rho_sort = []
@@ -175,8 +183,8 @@ def drop_rho(cc,human,titles,rdictionary, verbs_check, verbs_paired, sbj_obj, v0
 
   print_rho(rho_sort)
 
-# Here we keep or drop a specific word group 
 def keep_rho_type(cc, human, titles, rdictionary, verbs_check, verbs_paired, sbj_obj, v0, v1, vtype, keep):
+  ''' Here we decide whether to keep a result based on the verb type '''
 
   rho = []
   rho_sort = []
@@ -224,9 +232,8 @@ def keep_rho_type(cc, human, titles, rdictionary, verbs_check, verbs_paired, sbj
   print("total:", len(human_trimmed), len(human))
   print_rho(rho_sort)
 
-
-# Print out the rho in order
 def print_rho(rho_sort):
+  ''' Print out the results in order '''
   for title,r,pval in rho_sort:
     sys.stdout.write("rho_" + title + ",")
 
@@ -247,13 +254,12 @@ def print_rho(rho_sort):
   print("")
 
 
-
-# The avg_rho where we see how many follow the alignment
-# Basically what we do is see how many of the models fall above or below the average, compared
-# with the human generated values. We then see how many subjects and objects each one had 
-# and whether they were aligned or misaligned
-
 def avg_rho (cc, human, titles, rdictionary, verbs_check, verbs_paired, sbj_obj, v0, v1):
+  ''' The avg_rho where we see how many follow the alignment
+  Basically what we do is see how many of the models fall above or below the average, compared
+  with the human generated values. We then see how many subjects and objects each one had 
+  and whether they were aligned or misaligned '''
+
   # Figure out these that are above and below the human average
   
   hum_avg = sum(human) / len(human)
@@ -324,7 +330,7 @@ def avg_rho (cc, human, titles, rdictionary, verbs_check, verbs_paired, sbj_obj,
     print(titles[m], "a:", len(aligned[m]), "m:", len(misaligned[m]), "v0a:", a0, "v1a:", a1, "v0m:", a2, "v1m:", a3)
 
 def hist(sbj_obj, dictionary, verbs_to_check):
-
+  ''' Plot a histogram of the number of subjects+objects for the verbs '''
   values = []
   avg = 0
   total = 0
@@ -399,5 +405,4 @@ if __name__ == "__main__" :
 
   else:
     basic_rho(cc,human,titles)
-
 

@@ -20,7 +20,7 @@ verb_pairs = [
 
 
 def read_dictionary(base_dir, dict_file) :
-  #print("Reading Dictionary")
+  ''' Read in the dictionary from base and dict file '''  
   dictionary = []
   with open(base_dir + "/" + dict_file,'r') as f:
     for line in f.readlines():
@@ -34,15 +34,17 @@ def read_dictionary(base_dir, dict_file) :
 
   return dictionary, rdictionary
 
-# Read the number of unknowns we have
+
 def read_unk_count(unk_file):
+  ''' Read the number of unknowns we have '''
   l = 0
   with open(unk_file, 'r') as f:
     l = int(f.readlines()[0])
   return l
 
-# Read the total data count file
+
 def read_total_size(total_file):
+  ''' Read the total data count file'''
   total_size = 0
   with open(total_file,'r') as f:
     total_size = int(f.readlines()[0])
@@ -50,6 +52,7 @@ def read_total_size(total_file):
   return total_size
 
 def read_freq(freq_file):
+  ''' Read in the frequency file of all the words '''
   count = {}
   order = []
 
@@ -69,9 +72,9 @@ def read_freq(freq_file):
 
   return count, count_order
 
-# Read the count vectors but do so just for the words we are interested in
+
 def read_count_vectors(vector_file, dictionary, rdictionary, word_list):
-  
+  ''' Read the count vectors but do so just for the words we are interested in. '''
   vectors = {}
   indices = []
   for word in word_list:
@@ -95,8 +98,8 @@ def read_count_vectors(vector_file, dictionary, rdictionary, word_list):
       
   return vectors
 
-# Read in the numbers that form the basis
 def read_basis(basis_file):
+  ''' Read in the numbers that form the basis.'''
   basis = []
   with open(basis_file,'r') as f:
     for line in f.readlines():
@@ -104,10 +107,8 @@ def read_basis(basis_file):
 
   return basis
 
-
-# Convert count vectors to the log based probability
 def probs(vectors, dictionary, rdictionary, freq, basis, total):
-
+  ''' Convert count vectors to the log based probability. '''
   vl = {}
 
   for word in vectors.keys():
@@ -136,7 +137,7 @@ def probs(vectors, dictionary, rdictionary, freq, basis, total):
   return vl
 
 def words_to_check():
-
+  ''' create a list of unique verbs we are looking at.'''
   vv = []
   for ll in verb_pairs:
     for vp in ll:
@@ -147,8 +148,8 @@ def words_to_check():
 
   return vv
 
-# Where does a word sit in the basis?
 def basis_position(basis, rdictionary, word):
+  '''Where does a word sit in the basis? '''
   if rdictionary[word] in basis:
     for i in range(0,len(basis)):
       if basis[i] == rdictionary[word]:

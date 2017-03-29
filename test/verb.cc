@@ -16,7 +16,6 @@
 #include <omp.h>
 #include <deque>
 
-
 #include "string_utils.hpp"
 
 #include "wacky_sbj_obj.hpp"
@@ -125,7 +124,7 @@ BOOST_AUTO_TEST_CASE(verb_create_test) {
 
   generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST);
 	read_count("./output", FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, TOTAL_COUNT, WORDS_TO_CHECK);
-  intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, 250, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
+  intrans_count("./output/intrans_results.txt", VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, 250, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
 
   // Trans
   

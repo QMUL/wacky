@@ -319,7 +319,7 @@ int main(int argc, char* argv[]) {
         if (read_subject_file(options.WORKING_DIR, VERB_SUBJECTS) != 0 ) { cout << "read subject file failed" << endl; return 1; }
         generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
 				if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK) != 0 ) { cout << "read count file failed" << endl; return 1; }
-        intrans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
+        intrans_count( options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
 
       } else if (options.transitive) {
         if (read_subject_file(options.WORKING_DIR, VERB_SUBJECTS) != 0 ) { cout << "read subject file failed" << endl; return 1; }
@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) {
 				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
 
 				if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK) != 0 ) { cout << "read count file failed" << endl; return 1; }
-        trans_count( VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
+        trans_count( options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
       } else {
      		if(read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ) != 0 ) { cout << "read subject/object file failed" << endl; return 1; }
 

@@ -249,7 +249,8 @@ void read_subjects_few(string verb, map<string,int> & DICTIONARY_FAST,
  * @param WORD_VECTORS our word count vectors
  */
 
-void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
+void intrans_count( std::string results_file,
+  std::vector<VerbPair> & VERBS_TO_CHECK,
   set<string> & VERB_TRANSITIVE,
   set<string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,
@@ -281,8 +282,14 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 	//cout << "Total verbs: " << s9::ToString(total_verbs) << endl;
 	//cout << "Block Size: " << block_size << ", num_blocks: " << num_blocks << endl;
 
+  // Open the file to write results
+  std::ofstream out_file (results_file);
+  if (!out_file.is_open()) {
+    cout << "Unable to open " << results_file << " for writing" << endl;
+    return;
+  }
 
-  cout << "verb0,verb1,base_sim,add_sim,min_sim,max_sim,add_add_sim,add_mul_sim,min_add_sim,min_mul_sim,max_add_sim,max_mul_sim,krn_sim,krn_add_sim,krn_mul_sim,human_sim" << endl;
+  out_file << "verb0,verb1,base_sim,add_sim,min_sim,max_sim,add_add_sim,add_mul_sim,min_add_sim,min_mul_sim,max_add_sim,max_mul_sim,krn_sim,krn_add_sim,krn_mul_sim,human_sim" << endl;
 
 	#pragma omp parallel
 	{   
@@ -404,11 +411,16 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 					<< "," << s9::ToString(c12)
 					<< "," << s9::ToString(vp.s)
 					<< endl;
-				std::cout << stream.str();
-					
+	
+        #pragma omp critical
+        {
+			    out_file << stream.str();
+          out_file.flush();
+        }
 			}
 		}
 	}
+  out_file.close();
 }
 
 
@@ -423,7 +435,8 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
  * @param WORD_VECTORS our word count vectors
  */
 
-void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
+void trans_count(std::string results_file,
+  std::vector<VerbPair> & VERBS_TO_CHECK,
   set<string> & VERB_TRANSITIVE,
   set<string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,
@@ -444,8 +457,13 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 		}	
 	}
 
-	cout << "Total verbs: " << s9::ToString(total_verbs) << endl; 
-  cout << "verb0,verb1,base_sim,sbj_obj_sim,sbj_obj_add,sbj_obj_mul,sum_sbj_obj,sum_sbj_obj_mul,sum_sbj_obj_add,human_sim" << endl;
+  // Open the file to write results
+  std::ofstream out_file (results_file);
+  if (!out_file.is_open()) {
+    cout << "Unable to open " << results_file << " for writing" << endl;
+    return;
+  }
+  out_file << "verb0,verb1,base_sim,sbj_obj_sim,sbj_obj_add,sbj_obj_mul,sum_sbj_obj,sum_sbj_obj_mul,sum_sbj_obj_add,human_sim" << endl;
 
 	int num_blocks = 1;
 
@@ -549,11 +567,17 @@ void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
 					<< "," << s9::ToString(vp.s)
 					<< endl;
 
-				std::cout << stream.str();
+        #pragma omp critical
+        {
+			    out_file << stream.str();
+          out_file.flush();
+        }
 
 			}
 		}
 	}
+
+  out_file.close();
 }
 
 /**
@@ -592,8 +616,14 @@ void all_count(std::string results_file,
 		}	
 	}
 
-	cout << "Total verb pairs: " << s9::ToString(total_verbs) << endl; 
-  cout << "verb0,verb1,base_sim,cs1,cs2,cs3,cs4,cs5,cs6,human_sim" << endl;
+  // Open the file to write results
+  std::ofstream out_file (results_file);
+  if (!out_file.is_open()) {
+    cout << "Unable to open " << results_file << " for writing" << endl;
+    return;
+  }
+ 
+  out_file << "verb0,verb1,base_sim,cs1,cs2,cs3,cs4,cs5,cs6,human_sim" << endl;
 
 	int num_blocks = 1;
 
@@ -706,8 +736,12 @@ void all_count(std::string results_file,
 				<< "," << s9::ToString(vp.s)
 				<< endl;
 
-			std::cout << stream.str();
-
+      #pragma omp critical
+      {
+			  out_file << stream.str();
+        out_file.flush();
+      }
 		}
 	}
+  out_file.close();
 }

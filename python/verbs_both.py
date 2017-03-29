@@ -11,32 +11,11 @@ import os, sys, math, struct, codecs, verbs_read, verbs_math
 
 from scipy import stats
 
-BASE_DIR = ""
-DICT_FILE = "dictionary.txt"
-SUBJECTS_FILE = "verb_subjects.txt"
-OBJECTS_FILE = "verb_objects.txt"
-SBJ_OBJ_FILE = "verb_sbj_obj.txt"
-W2V_DICT_FILE = "vocab.txt"
-SIM_FILE = "SimVerb-500-dev.txt"
-STATS_FILE = "sim_stats.txt"
-
-VEC_FILE = ""
-VEC_SIZE = -1
-DICTIONARY = []
-W2V_DICTIONARY = []
-W2V_REVERSE = {}
-VEC_DATA = []
-VERB_TRANSITIVE = []
-VERB_INTRANSITIVE = []
-SUBJECTS = {}
-SBJ_OBJ = {}
-VERBS_TO_CHECK = {}
-
-# Read the subject file - each line is a verb subject list of numbers - indices into the DICTIONARY
-# We don't read the entire file - we scoot to the index for the verb given
-# Only called on intransitive verbs
-
 def sum_subjects(vidx, verb, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVERSE=[], word2vec=False) :
+
+  '''Read the subject file - each line is a verb subject list of numbers - indices into the DICTIONARY
+  We don't read the entire file - we scoot to the index for the verb given
+  Only called on intransitive verbs. '''
 
   if vidx >= 0 and vidx < len(VEC_DATA): 
 
@@ -72,9 +51,9 @@ def sum_subjects(vidx, verb, VEC_SIZE, SUBJECTS, DICTIONARY, VEC_DATA, W2V_REVER
 
   return (False,0)
 
-# Do the summing for the transitive verbs with both subjects and objects
+
 def sum_subjects_objects(vidx, verb, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2V_REVERSE=[], word2vec=False):
- 
+  '''Do the summing for the transitive verbs with both subjects and objects.'''
   if vidx >= 0 and vidx < len(VEC_DATA): 
 
     base_vector = VEC_DATA[ vidx ]
@@ -105,15 +84,13 @@ def sum_subjects_objects(vidx, verb, VEC_SIZE, SBJ_OBJ, DICTIONARY, VEC_DATA, W2
       tk = np.kron(vs,vo)
       sbj_obj_krn_vector = np.add(sbj_obj_krn_vector, tk)
 
-
     return (True, base_vector, sbj_obj_vector, sbj_obj_krn_vector)
 
   return (False,0)
 
 
-# Perform the 6 equations summing over various things and printing
 def do_the_maff(VEC_SIZE, SUBJECTS, DICTIONARY, SBJ_OBJ, VEC_DATA, W2V_REVERSE, VERBS_TO_CHECK, VERB_TRANSITIVE, word2vec=False):
-
+  '''Perform the 6 equations summing over various things and printing.'''
   print ("verb0,verb1,base,cs1,cs2,cs3,cs4,cs5,cs6,human_sim")
 
   cc = []
@@ -217,6 +194,15 @@ def do_the_maff(VEC_SIZE, SUBJECTS, DICTIONARY, SBJ_OBJ, VEC_DATA, W2V_REVERSE, 
 # Main function
 if __name__ == "__main__" :
   BASE_DIR = sys.argv[1]
+
+  DICT_FILE = "dictionary.txt"
+  SUBJECTS_FILE = "verb_subjects.txt"
+  OBJECTS_FILE = "verb_objects.txt"
+  SBJ_OBJ_FILE = "verb_sbj_obj.txt"
+  W2V_DICT_FILE = "vocab.txt"
+  SIM_FILE = "SimVerb-500-dev.txt"
+  STATS_FILE = "sim_stats.txt"
+
   word = False
 
   if len(sys.argv) > 2:
@@ -234,10 +220,8 @@ if __name__ == "__main__" :
     VEC_DATA, VEC_SIZE = verbs_read.read_tensorflow(BASE_DIR + "/final_standard_embeddings.npy")
 
   SUBJECTS = verbs_read.read_subjects_file(BASE_DIR, len(VEC_DATA), SUBJECTS_FILE)
-
   SBJ_OBJ = verbs_read.read_sbj_obj_file(BASE_DIR, len(VEC_DATA), SBJ_OBJ_FILE)
 
-  #import pdb; pdb.set_trace()
 
   for v0,v1,s in VERBS_TO_CHECK:
     if word:

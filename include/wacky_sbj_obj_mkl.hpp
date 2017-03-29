@@ -35,7 +35,8 @@ void read_subjects(std::string verb, std::map<std::string,int> & DICTIONARY_FAST
     std::vector<float> & krn_vector);
 
 //! return all the intranstive stats
-void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
+void intrans_count( std::string results_file,
+  std::vector<VerbPair> & VERBS_TO_CHECK,
   std::set<std::string> & VERB_TRANSITIVE,
   std::set<std::string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,
@@ -44,7 +45,8 @@ void intrans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
   std::vector< std::vector<float> > & WORD_VECTORS);
  
 //! return the transitive stats
-void trans_count( std::vector<VerbPair> & VERBS_TO_CHECK,
+void trans_count(  std::string results_file,
+  std::vector<VerbPair> & VERBS_TO_CHECK,
   std::set<std::string> & VERB_TRANSITIVE,
   std::set<std::string> & VERB_INTRANSITIVE,
   int BASIS_SIZE,

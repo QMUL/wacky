@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(dictionary_freq_create_test) {
           BOOST_CHECK_EQUAL(freq, 3);
         }
         else if (tokens[0].compare("aloe") == 0){
-          BOOST_CHECK_EQUAL(freq, 5);
+          BOOST_CHECK_EQUAL(freq, 7);
         }
       } 
     }
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(dictionary_freq_read_test) {
 
   int r0 = read_total_file("./output", TOTAL_COUNT);
   BOOST_CHECK_EQUAL(r0, 0);
-  BOOST_CHECK_EQUAL(TOTAL_COUNT, 1984);
+  BOOST_CHECK_EQUAL(TOTAL_COUNT, 1993);
   
   int r1 = read_unk_file("./output", UNK_COUNT);
   BOOST_CHECK_EQUAL(r1, 0);

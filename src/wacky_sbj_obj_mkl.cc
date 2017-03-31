@@ -305,7 +305,7 @@ void intrans_count(  std::string results_file,
   vector< vector<int> > & VERB_SUBJECTS,
   vector< vector<float> > & WORD_VECTORS) {
   
-	int num_blocks = 1;
+	/*int num_blocks = 1;
 
 	#pragma omp parallel
 	{
@@ -313,7 +313,7 @@ void intrans_count(  std::string results_file,
 	}
 
 	int block_size = VERBS_TO_CHECK.size() / num_blocks;
-
+  */
 	int total_verbs = 0;
 
   // Open the file to write results
@@ -327,17 +327,26 @@ void intrans_count(  std::string results_file,
 
 	#pragma omp parallel
 	{   
-		int block_id = omp_get_thread_num();
+		/*int block_id = omp_get_thread_num();
 		int start = block_size * block_id;
 		int end = block_size * (block_id + 1);
 		if (block_id + 1 == num_blocks){
 			end = VERBS_TO_CHECK.size();
-		}
+		}*/
 
-		for (int i=start; i < end; ++i){
+    std::string status;
+
+    #pragma omp for
+		for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
 			VerbPair vp = VERBS_TO_CHECK[i];
 
+      status = "Verbs: " + vp.v0 + ", " + vp.v1 + "                             " + s9::ToString(i) + "of" + s9::ToString(VERBS_TO_CHECK.size()) + "  ";
+  
+      int thread_num = omp_get_thread_num();
+      printf("\033[%d;0H%d-%s",thread_num+1, thread_num, status.c_str()); 
+      fflush(stdout);
+		 
 			if(VERB_INTRANSITIVE.find(vp.v0) != VERB_INTRANSITIVE.end() &&
 					VERB_INTRANSITIVE.find(vp.v1) != VERB_INTRANSITIVE.end()){
 
@@ -508,26 +517,30 @@ void trans_count(  std::string results_file,
 
   out_file << "verb0,verb1,base_sim,sbj_obj_sim,sbj_obj_add,sbj_obj_mul,sum_sbj_obj,sum_sbj_obj_mul,sum_sbj_obj_add,human_sim" << endl;
 
-	int num_blocks = 1;
+	/*int num_blocks = 1;
 
 	#pragma omp parallel
 	{
 		num_blocks = omp_get_num_threads();
 	}
 
-	int block_size = VERBS_TO_CHECK.size() / num_blocks;
+	int block_size = VERBS_TO_CHECK.size() / num_blocks;*/
+
+
 
 	#pragma omp parallel
 	{   
-		int block_id = omp_get_thread_num();
+		/*int block_id = omp_get_thread_num();
 		int start = block_size * block_id;
 		int end = block_size * (block_id + 1);
 
 		if (block_id + 1 == num_blocks){
 			end = VERBS_TO_CHECK.size();
-		}
+		}*/
 
-		vector<float> base_vector0 (BASIS_SIZE);
+    std::string status;
+    
+    vector<float> base_vector0 (BASIS_SIZE);
 		vector<float> sum_subject0 (BASIS_SIZE);
 		vector<float> sum_object0 (BASIS_SIZE);
 		vector<float> sum_krn0 (BASIS_SIZE * BASIS_SIZE);
@@ -540,7 +553,8 @@ void trans_count(  std::string results_file,
 		vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
 		vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
 
-		for (int i=start; i < end; ++i){
+    #pragma omp for
+		for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
 			VerbPair vp = VERBS_TO_CHECK[i];
 
@@ -555,6 +569,12 @@ void trans_count(  std::string results_file,
 				sum_krn0.clear();
 				sum_krn1.clear();
 
+        status = "Verbs: " + vp.v0 + ", " + vp.v1 + "                             " + s9::ToString(i) + "of" + s9::ToString(VERBS_TO_CHECK.size()) + "  ";
+ 
+        int thread_num = omp_get_thread_num();
+        printf("\033[%d;0H%d-%s",thread_num+1, thread_num, status.c_str()); 
+        fflush(stdout);
+		 
 				read_subjects_objects(vp.v0,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_object0, sum_krn0);
 				read_subjects_objects(vp.v1,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_object1, sum_krn1);
 			

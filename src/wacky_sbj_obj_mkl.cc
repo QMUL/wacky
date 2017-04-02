@@ -305,7 +305,7 @@ void intrans_count(  std::string results_file,
   vector< vector<int> > & VERB_SUBJECTS,
   vector< vector<float> > & WORD_VECTORS) {
   
-	int num_blocks = 1;
+	/*int num_blocks = 1;
 
 	#pragma omp parallel
 	{
@@ -313,7 +313,7 @@ void intrans_count(  std::string results_file,
 	}
 
 	int block_size = VERBS_TO_CHECK.size() / num_blocks;
-
+  */
 	int total_verbs = 0;
 
   // Open the file to write results
@@ -327,17 +327,26 @@ void intrans_count(  std::string results_file,
 
 	#pragma omp parallel
 	{   
-		int block_id = omp_get_thread_num();
+		/*int block_id = omp_get_thread_num();
 		int start = block_size * block_id;
 		int end = block_size * (block_id + 1);
 		if (block_id + 1 == num_blocks){
 			end = VERBS_TO_CHECK.size();
-		}
+		}*/
 
-		for (int i=start; i < end; ++i){
+    std::string status;
+
+    #pragma omp for
+		for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
 			VerbPair vp = VERBS_TO_CHECK[i];
 
+      status = "Verbs: " + vp.v0 + ", " + vp.v1 + "                             " + s9::ToString(i) + "of" + s9::ToString(VERBS_TO_CHECK.size()) + "  ";
+  
+      int thread_num = omp_get_thread_num();
+      printf("\033[%d;0H%d-%s",thread_num+1, thread_num, status.c_str()); 
+      fflush(stdout);
+		 
 			if(VERB_INTRANSITIVE.find(vp.v0) != VERB_INTRANSITIVE.end() &&
 					VERB_INTRANSITIVE.find(vp.v1) != VERB_INTRANSITIVE.end()){
 
@@ -401,7 +410,7 @@ void intrans_count(  std::string results_file,
   			
 	      vsAdd(BASIS_SIZE, &max_vector0[0], &base_vector0[0], &max_base_add_vector0[0]);
         
-        max_base_mul_vector0 = mul_vec(max_vector0, base_vector0, max_base_mul_vector0);
+        mul_vec(max_vector0, base_vector0, max_base_mul_vector0);
   			vector<float> td (BASIS_SIZE * BASIS_SIZE);
         krn_mul(base_vector0, base_vector0, td);
   			
@@ -418,22 +427,22 @@ void intrans_count(  std::string results_file,
         mul_vec(max_vector1, base_vector1, max_base_mul_vector1);
   			krn_mul(base_vector1, base_vector1, td);
   			
-	      vsAdd(BASIS_SIZE * BASIS_SIZE, &rkn_vector1[0], &td[0], &krn_base_add_vector1[0]);
+	      vsAdd(BASIS_SIZE * BASIS_SIZE, &krn_vector1[0], &td[0], &krn_base_add_vector1[0]);
         mul_vec(krn_vector1, td, krn_base_mul_vector1);
 
-				float c0 = cosine_sim(base_vector0, base_vector1);
-				float c1 = cosine_sim(add_vector0, add_vector1);
-				float c2 = cosine_sim(min_vector0, min_vector1);
-				float c3 = cosine_sim(max_vector0, max_vector1);
-				float c4 = cosine_sim(add_base_add_vector0, add_base_add_vector1);
-				float c5 = cosine_sim(add_base_mul_vector0, add_base_mul_vector1);
-				float c6 = cosine_sim(min_base_add_vector0, min_base_add_vector1);
-				float c7 = cosine_sim(min_base_mul_vector0, min_base_mul_vector1);
-				float c8 = cosine_sim(max_base_add_vector0, max_base_add_vector1);
-				float c9 = cosine_sim(max_base_mul_vector0, max_base_mul_vector1);
-				float c10 = cosine_sim(krn_vector0, krn_vector1);
-				float c11 = cosine_sim(krn_base_add_vector0, krn_base_add_vector1);
-				float c12 = cosine_sim(krn_base_mul_vector0, krn_base_mul_vector1);
+				float c0 = cosine_sim(base_vector0, base_vector1, BASIS_SIZE);
+				float c1 = cosine_sim(add_vector0, add_vector1, BASIS_SIZE);
+				float c2 = cosine_sim(min_vector0, min_vector1, BASIS_SIZE);
+				float c3 = cosine_sim(max_vector0, max_vector1, BASIS_SIZE);
+				float c4 = cosine_sim(add_base_add_vector0, add_base_add_vector1, BASIS_SIZE);
+				float c5 = cosine_sim(add_base_mul_vector0, add_base_mul_vector1, BASIS_SIZE);
+				float c6 = cosine_sim(min_base_add_vector0, min_base_add_vector1, BASIS_SIZE);
+				float c7 = cosine_sim(min_base_mul_vector0, min_base_mul_vector1, BASIS_SIZE);
+				float c8 = cosine_sim(max_base_add_vector0, max_base_add_vector1, BASIS_SIZE);
+				float c9 = cosine_sim(max_base_mul_vector0, max_base_mul_vector1, BASIS_SIZE);
+				float c10 = cosine_sim(krn_vector0, krn_vector1, BASIS_SIZE * BASIS_SIZE);
+				float c11 = cosine_sim(krn_base_add_vector0, krn_base_add_vector1, BASIS_SIZE * BASIS_SIZE);
+				float c12 = cosine_sim(krn_base_mul_vector0, krn_base_mul_vector1, BASIS_SIZE * BASIS_SIZE);
 
 				std::stringstream stream;       
 				stream << vp.v0 << "," << vp.v1 << "," << s9::ToString(c0)
@@ -508,26 +517,30 @@ void trans_count(  std::string results_file,
 
   out_file << "verb0,verb1,base_sim,sbj_obj_sim,sbj_obj_add,sbj_obj_mul,sum_sbj_obj,sum_sbj_obj_mul,sum_sbj_obj_add,human_sim" << endl;
 
-	int num_blocks = 1;
+	/*int num_blocks = 1;
 
 	#pragma omp parallel
 	{
 		num_blocks = omp_get_num_threads();
 	}
 
-	int block_size = VERBS_TO_CHECK.size() / num_blocks;
+	int block_size = VERBS_TO_CHECK.size() / num_blocks;*/
+
+
 
 	#pragma omp parallel
 	{   
-		int block_id = omp_get_thread_num();
+		/*int block_id = omp_get_thread_num();
 		int start = block_size * block_id;
 		int end = block_size * (block_id + 1);
 
 		if (block_id + 1 == num_blocks){
 			end = VERBS_TO_CHECK.size();
-		}
+		}*/
 
-		vector<float> base_vector0 (BASIS_SIZE);
+    std::string status;
+    
+    vector<float> base_vector0 (BASIS_SIZE);
 		vector<float> sum_subject0 (BASIS_SIZE);
 		vector<float> sum_object0 (BASIS_SIZE);
 		vector<float> sum_krn0 (BASIS_SIZE * BASIS_SIZE);
@@ -540,7 +553,8 @@ void trans_count(  std::string results_file,
 		vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
 		vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
 
-		for (int i=start; i < end; ++i){
+    #pragma omp for
+		for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
 			VerbPair vp = VERBS_TO_CHECK[i];
 
@@ -555,25 +569,31 @@ void trans_count(  std::string results_file,
 				sum_krn0.clear();
 				sum_krn1.clear();
 
+        status = "Verbs: " + vp.v0 + ", " + vp.v1 + "                             " + s9::ToString(i) + "of" + s9::ToString(VERBS_TO_CHECK.size()) + "  ";
+ 
+        int thread_num = omp_get_thread_num();
+        printf("\033[%d;0H%d-%s",thread_num+1, thread_num, status.c_str()); 
+        fflush(stdout);
+		 
 				read_subjects_objects(vp.v0,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_object0, sum_krn0);
 				read_subjects_objects(vp.v1,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_object1, sum_krn1);
 			
 				krn_mul(base_vector0, base_vector0, krn_base0);
 				krn_mul(base_vector1, base_vector1, krn_base1);
 				
-				float c0 = cosine_sim(base_vector0, base_vector1);
-				float c1 = cosine_sim(sum_krn0, sum_krn1);
+				float c0 = cosine_sim(base_vector0, base_vector1, BASIS_SIZE);
+				float c1 = cosine_sim(sum_krn0, sum_krn1, BASIS_SIZE * BASIS_SIZE);
 
 				vector<float> tk0 (BASIS_SIZE * BASIS_SIZE);		
 	      vsAdd(BASIS_SIZE * BASIS_SIZE, &sum_krn0[0], &krn_base0[0], &tk0[0]);
 
 				vector<float> tk1 (BASIS_SIZE * BASIS_SIZE);
 	      vsAdd(BASIS_SIZE * BASIS_SIZE, &sum_krn1[0], &krn_base1[0], &tk1[0]);
-				float c2 = cosine_sim(tk0, tk1);
+				float c2 = cosine_sim(tk0, tk1, BASIS_SIZE * BASIS_SIZE);
 
 				mul_vec(sum_krn0, krn_base0, tk0);
 			  mul_vec(sum_krn1, krn_base1, tk1);
-				float c3 = cosine_sim(tk0, tk1);
+				float c3 = cosine_sim(tk0, tk1, BASIS_SIZE * BASIS_SIZE);
 
 				vector<float> tm0 (BASIS_SIZE);
 				vector<float> tm1 (BASIS_SIZE);
@@ -581,7 +601,7 @@ void trans_count(  std::string results_file,
 	      vsAdd(BASIS_SIZE, &sum_subject0[0], &sum_subject0[0], &tm0[0]);
 	      vsAdd(BASIS_SIZE, &sum_subject1[0], &sum_object1[0], &tm1[0]);
 
-				float c4 = cosine_sim(tm0, tm1);
+				float c4 = cosine_sim(tm0, tm1, BASIS_SIZE);
         
 	      vsAdd(BASIS_SIZE, &sum_subject0[0], &sum_object0[0], &tm0[0]);
 
@@ -591,7 +611,7 @@ void trans_count(  std::string results_file,
       
         mul_vec(tm1, base_vector1, tm1);
 
-				float c5 = cosine_sim(tm0, tm1);
+				float c5 = cosine_sim(tm0, tm1, BASIS_SIZE);
 				
 	      vsAdd(BASIS_SIZE, &sum_subject0[0], &sum_object0[0], &tm0[0]);
 	      vsAdd(BASIS_SIZE, &base_vector0[0], &tm0[0], &tm0[0]);
@@ -599,7 +619,7 @@ void trans_count(  std::string results_file,
 	      vsAdd(BASIS_SIZE, &sum_subject1[0], &sum_object1[0], &tm1[0]);
 	      vsAdd(BASIS_SIZE, &base_vector1[0], &tm1[0], &tm1[0]);
 
-				float c6 = cosine_sim(tm0, tm1);
+				float c6 = cosine_sim(tm0, tm1, BASIS_SIZE);
 			
 				std::stringstream stream;
 

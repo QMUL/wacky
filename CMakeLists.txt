@@ -68,15 +68,30 @@ endif()
 
 # Test bits
 enable_testing()
+if (USE_MKL)
+	ADD_EXECUTABLE(wacky_test_basic test/basic.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc)
+	add_test( basic wacky_test_basic)
 
-ADD_EXECUTABLE(wacky_test_basic test/basic.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc)
-target_link_libraries(wacky_test_basic ${Boost_LIBRARIES}) 
-add_test( basic wacky_test_basic)
+	ADD_EXECUTABLE(wacky_test_verb test/verb.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc src/wacky_sbj_obj_mkl.cc src/wacky_verb.cc)
+	add_test( verb wacky_test_basic)
 
-ADD_EXECUTABLE(wacky_test_verb test/verb.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc src/wacky_sbj_obj.cc src/wacky_verb.cc)
-target_link_libraries(wacky_test_verb ${Boost_LIBRARIES}) 
-add_test( verb wacky_test_basic)
+	if (MKL_LIBRARY_PATH)
+		target_link_libraries(wacky_test_basic ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so)
+		target_link_libraries(wacky_test_verb ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so) 
+	else()
+		message(FATAL_ERROR "Failed to find MKL Library Path")
+	endif()
 
+
+else()
+	ADD_EXECUTABLE(wacky_test_basic test/basic.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc)
+	target_link_libraries(wacky_test_basic ${Boost_LIBRARIES}) 
+	add_test( basic wacky_test_basic)
+
+	ADD_EXECUTABLE(wacky_test_verb test/verb.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc src/wacky_sbj_obj.cc src/wacky_verb.cc)
+	target_link_libraries(wacky_test_verb ${Boost_LIBRARIES}) 
+	add_test( verb wacky_test_basic)
+endif()
 
 add_custom_command(TARGET wacky_test_basic PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory

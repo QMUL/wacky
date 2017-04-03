@@ -3,7 +3,7 @@
 The Wacky project is a set of tools for working with the ukwac dataset. It consists of 
 
 * A C++ program that does a lot of the heavy lifting 
-* A set of python scripts for analyis and further processing
+* A set of python scripts for analysis and further processing
 * A set of scripts for submission to QMUL Apocrita and other HPC services
 * Singularity definitions for creating containers to perform Tensorflow training
 * A Tensorflow word2vec example using wacky data.
@@ -72,12 +72,14 @@ If starting from scratch, the first part of any workflow with wacky is to create
 
     ./wacky -u ~/ukwac -l -v 500000 -o ~/output
 
-Once you have these files, you can choose which models you want to train and run. For example, if you want to train Tensorflow on this data, you will need to convert all the ukwac data into numbers. These numbers represent the dictionary position of that word. 
+
+The next command creates a set of integer files that represent the words as indices into the dictionary. More importantly two REQUIRED files are created at this stage - the total_count.txt and unk_count.txt. This lists the total count of words in ukwac and the number of words that didn't appear in the dictionary. These are used in creation of statistics later on.
+
 
     ./wacky -u ~/ukwac -r -l -o ~/output -i
 
-This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data, as well as the other models. Two REQUIRED files are created at this stage - the total_count.txt and unk_count.txt. This lists the total count of words in ukwac and the number of words that didn't appear in the dictionary. These are used in creation of statistics later on.
 
+This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data, as well as the other models.
 Alternatively, lets say you wish to use the original word2vec program. You would have to combine all the files together into one.
 
     ./wacky -u ~/ukwac -o ~/output -c

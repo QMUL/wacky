@@ -29,7 +29,7 @@ def read_sim_stats(base_dir, stats_file):
       else:
         verb_intransitive.append(verb)
 
-  verb_transitive, verb_intransitive
+  return verb_transitive, verb_intransitive
 
 def read_sim_file(base_dir, sim_file):
   '''Read the similarity file from http://people.ds.cam.ac.uk/dsg40/simverb.html '''
@@ -375,7 +375,7 @@ def cosine_sim(v0, v1, vec_size) :
   dist = 0
   # Not needed in the trans case
   if v1.shape[0] == vec_size:
-    v1 = v1.reshape(( v1.shape[0],))
+    v1 = v1.reshape(( vec_size, 1))
   else:
     v1 = v1.reshape((v1.shape[1], 1))
   n = np.dot(v0, v1)
@@ -528,14 +528,14 @@ def trans(verbs_to_check, verb_transitive,  dictionary, w2v_reverse, sbj_obj, ve
       sum_sbj_obj_mul_vector1 = r1[6]
       sum_sbj_obj_add_vector1 = r1[7]
 
-      cc[0].append(cosine_sim(base_vector0, base_vector1))  
-      cc[1].append(cosine_sim(sbj_obj_vector0, sbj_obj_vector1)) 
-      cc[2].append(cosine_sim(sbj_obj_add_vector0, sbj_obj_add_vector1)) 
-      cc[3].append(cosine_sim(sbj_obj_mul_vector0, sbj_obj_mul_vector1)) 
+      cc[0].append(cosine_sim(base_vector0, base_vector1, vec_size))  
+      cc[1].append(cosine_sim(sbj_obj_vector0, sbj_obj_vector1, vec_size)) 
+      cc[2].append(cosine_sim(sbj_obj_add_vector0, sbj_obj_add_vector1, vec_size)) 
+      cc[3].append(cosine_sim(sbj_obj_mul_vector0, sbj_obj_mul_vector1, vec_size)) 
 
-      cc[4].append(cosine_sim(sum_sbj_obj_vector0, sum_sbj_obj_vector1)) 
-      cc[5].append(cosine_sim(sum_sbj_obj_mul_vector0, sum_sbj_obj_mul_vector1)) 
-      cc[6].append(cosine_sim(sum_sbj_obj_add_vector0, sum_sbj_obj_add_vector1)) 
+      cc[4].append(cosine_sim(sum_sbj_obj_vector0, sum_sbj_obj_vector1, vec_size)) 
+      cc[5].append(cosine_sim(sum_sbj_obj_mul_vector0, sum_sbj_obj_mul_vector1, vec_size)) 
+      cc[6].append(cosine_sim(sum_sbj_obj_add_vector0, sum_sbj_obj_add_vector1, vec_size)) 
       
       sys.stdout.write(verb0 + "," + verb1 + ",")
        
@@ -615,16 +615,16 @@ def intrans(verbs_to_check, verb_intransitive, dictionary, w2v_reverse, vec_data
       krn_base_add_vector1 = r1[12] 
       krn_base_mul_vector1 = r1[13] 
       
-      cc[0].append(cosine_sim(base_vector0, base_vector1)) 
-      cc[1].append(cosine_sim(add_vector0, add_vector1))
-      cc[2].append(cosine_sim(min_vector0, min_vector1))
-      cc[3].append(cosine_sim(max_vector0, max_vector1))
-      cc[4].append(cosine_sim(add_base_add_vector0, add_base_add_vector1))
-      cc[5].append(cosine_sim(add_base_mul_vector0, add_base_mul_vector1))
-      cc[6].append(cosine_sim(min_base_add_vector0, min_base_add_vector1))
-      cc[7].append(cosine_sim(min_base_mul_vector0, min_base_mul_vector1))
-      cc[8].append(cosine_sim(max_base_add_vector0, max_base_add_vector1))
-      cc[9].append(cosine_sim(max_base_mul_vector0, max_base_mul_vector1))
+      cc[0].append(cosine_sim(base_vector0, base_vector1, vec_size))
+      cc[1].append(cosine_sim(add_vector0, add_vector1, vec_size))
+      cc[2].append(cosine_sim(min_vector0, min_vector1, vec_size))
+      cc[3].append(cosine_sim(max_vector0, max_vector1, vec_size))
+      cc[4].append(cosine_sim(add_base_add_vector0, add_base_add_vector1, vec_size))
+      cc[5].append(cosine_sim(add_base_mul_vector0, add_base_mul_vector1, vec_size))
+      cc[6].append(cosine_sim(min_base_add_vector0, min_base_add_vector1, vec_size))
+      cc[7].append(cosine_sim(min_base_mul_vector0, min_base_mul_vector1, vec_size))
+      cc[8].append(cosine_sim(max_base_add_vector0, max_base_add_vector1, vec_size))
+      cc[9].append(cosine_sim(max_base_mul_vector0, max_base_mul_vector1, vec_size))
       cc[10].append(kron_sim(krn_vector0, krn_vector1))
       cc[11].append(kron_sim(krn_base_add_vector0, krn_base_add_vector1))
       cc[12].append(kron_sim(krn_base_mul_vector0, krn_base_mul_vector1))
@@ -693,11 +693,11 @@ def trans_intrans(verbs_to_check, verb_transitive, dictionary, w2v_reverse, vec_
       sbj_add = r1[2]
       sbj_krn = r1[3]
       
-      cc[0].append(cosine_sim(base_sbj, base_sbj_obj))
-      cc[1].append(cosine_sim(sbj_add, sbj_obj_sum))
-      cc[2].append(cosine_sim(np.add(sbj_add,base_sbj), np.add(sbj_obj_sum, base_sbj_obj)))
+      cc[0].append(cosine_sim(base_sbj, base_sbj_obj, vec_size))
+      cc[1].append(cosine_sim(sbj_add, sbj_obj_sum, vec_size))
+      cc[2].append(cosine_sim(np.add(sbj_add,base_sbj), np.add(sbj_obj_sum, base_sbj_obj), vec_size))
       
-      cc[3].append(cosine_sim(sbj_add * base_sbj, sbj_obj_sum * base_sbj_obj))
+      cc[3].append(cosine_sim(sbj_add * base_sbj, sbj_obj_sum * base_sbj_obj, vec_size))
       cc[4].append(kron_sim(sbj_obj_krn, sbj_krn))
       cc[5].append(kron_sim( np.add(sbj_obj_krn, np.kron(base_sbj_obj, base_sbj_obj)), np.add(sbj_krn, np.kron(base_sbj, base_sbj))))
       cc[6].append(kron_sim(sbj_obj_krn * np.kron(base_sbj_obj, base_sbj_obj), sbj_krn * np.kron(base_sbj, base_sbj)))
@@ -733,13 +733,17 @@ def trans_intrans(verbs_to_check, verb_transitive, dictionary, w2v_reverse, vec_
 
 if __name__ == "__main__" :
 
+  ''' The main entry point. Only one of these is passed on the command line
+  at present. At some point they all should be. Some may need editing in
+  order to work with your setup. '''
+
   BASE_DIR = sys.argv[1]
   DICT_FILE = "dictionary.txt"
   SUBJECTS_FILE = "verb_subjects.txt"
   OBJECTS_FILE = "verb_objects.txt"
   SBJ_OBJ_FILE = "verb_sbj_obj.txt"
   W2V_DICT_FILE = "vocab.txt"
-  SIM_FILE = "SimVerb-3000-test.txt"
+  SIM_FILE = "SimVerb-500-dev.txt"
   STATS_FILE = "sim_stats.txt"
   unique_verbs = []
 
@@ -769,11 +773,6 @@ if __name__ == "__main__" :
     ('read', 're-read'),
     ('sleep', 'feel'),
   ]
-'''
-verbs_to_check = [
-    ('sleep', 'snooze'), 
-  ] 
-'''
 
   transitive = False
   both = False
@@ -782,9 +781,13 @@ verbs_to_check = [
   if len(sys.argv) >= 3:
     if sys.argv[2] == '-t':
       transitive = True
-
+    elif sys.argv[2] == '-i':
+      transitive = False
     elif sys.argv[2] == '-b':
       both = True
+    else:
+      print("second parameter needs to be -t, -i or -b")
+      sys.exit()
 
     if len(sys.argv) >= 4:
       if sys.argv[3] == '-w':
@@ -800,13 +803,13 @@ verbs_to_check = [
   if word:
     vec_data, vec_size = read_binary(BASE_DIR + "/vectors.bin", w2v_dictionary)
   else:
-    vec_data, vec_size = read_tensorflow(BASE_DIR + "/final_standard_embeddings.npy", w2v_dictionary)
+    vec_data, vec_size = read_tensorflow(BASE_DIR + "/final_standard_embeddings.npy")
 
   if transitive:
     sbj_obj = read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE)
     trans(verbs_to_check, verb_transitive, dictionary, w2v_reverse, sbj_obj, vec_data, vec_size, word)
   elif both:
-    read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE)
+    sbj_obj = read_sbj_obj_file(BASE_DIR, SBJ_OBJ_FILE)
     trans_intrans(verbs_to_check, verb_transitive, dictionary, w2v_reverse, vec_data, vec_size, sbj_obj, word)
   else:
     intrans(verbs_to_check, verb_intransitive, dictionary, w2v_reverse, vec_data, vec_size, subjects, word)

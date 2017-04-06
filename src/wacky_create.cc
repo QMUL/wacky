@@ -56,6 +56,7 @@ int create_dictionary(string OUTPUT_DIR,
 
   cout << "Creating Dictionary File" << endl;
 
+  size_t unk_count = 0;
   size_t idx = 0; 
 
   for (auto it = FREQ.begin(); it != FREQ.end(); it++){
@@ -68,7 +69,7 @@ int create_dictionary(string OUTPUT_DIR,
     DICTIONARY.push_back(it->first);
     idx++;
     if (idx >= VOCAB_SIZE){
-      break;
+      unk_count += it->second;
     }  
   }
  
@@ -86,6 +87,15 @@ int create_dictionary(string OUTPUT_DIR,
   }
   dictionary_file.flush();
   dictionary_file.close();
+
+  std::ofstream unk_file (OUTPUT_DIR + "/unk_count.txt");
+  if (unk_file.is_open()) {
+    unk_file << s9::ToString(unk_count) << endl;
+    unk_file.close();
+  } else {
+    cout << "Unable to open unk file for writing" << endl;
+    return 1;
+  }
 
   return 0;
 }
@@ -145,7 +155,6 @@ void create_basis(string OUTPUT_DIR,
   }
   basis_file.flush();
   basis_file.close();
-
 }
 
 
@@ -166,6 +175,8 @@ int create_freq(vector<string> filenames,
     set<string> & WORD_IGNORES,
     set<string> & ALLOWED_BASIS_WORDS,
     bool LEMMA_TIME) {
+
+  size_t total_count = 0;
 
   // Scan directory for the files
   for (string filepath : filenames){
@@ -211,7 +222,7 @@ int create_freq(vector<string> filenames,
 
             if (s9::IsAsciiPrintableString(val)){
               if (WORD_IGNORES.find(val) == WORD_IGNORES.end()){  
-
+               total_count++;
                auto result = FREQ.find(val); 
                 if (result == FREQ.end()){
                   #pragma omp critical
@@ -275,6 +286,15 @@ int create_freq(vector<string> filenames,
   }
   
   cout << "Finished writing ALLOWED file" << endl;
+
+  std::ofstream total_file (OUTPUT_DIR + "/total_count.txt");
+  if (total_file.is_open()) {
+    total_file << s9::ToString(total_count) << endl;
+    total_file.close();
+  } else {
+    cout << "Unable to open total file for writing" << endl;
+    return 1;
+  }
 
   return 0;
 
@@ -471,10 +491,6 @@ int create_integers(vector<string> filenames,
     bool LEMMA_TIME) {
 
   cout << "Creating Integer Files" << endl;
-
-  size_t unk_count = 0;
-  size_t total_count = 0;
-
   // Scan directory for the files
   for( string filepath : filenames) {
     int num_blocks =1; 
@@ -524,12 +540,9 @@ int create_integers(vector<string> filenames,
 
             if (DICTIONARY_FAST.find(val) == DICTIONARY_FAST.end()){
               int_file << s9::ToString(VOCAB_SIZE) << endl;
-              #pragma omp critical
-              unk_count++; 
             } else {
               int_file << s9::ToString( DICTIONARY_FAST[val] ) << endl;
               #pragma omp critical
-              total_count++;
               file_count++;
             }
           } 
@@ -550,24 +563,6 @@ int create_integers(vector<string> filenames,
     free(block_pointer);
     free(block_size);
 
-  }
-
-  std::ofstream unk_file (OUTPUT_DIR + "/unk_count.txt");
-  if (unk_file.is_open()) {
-    unk_file << s9::ToString(unk_count) << endl;
-    unk_file.close();
-  } else {
-    cout << "Unable to open unk file for writing" << endl;
-    return 1;
-  }
-
-  std::ofstream total_file (OUTPUT_DIR + "/total_count.txt");
-  if (total_file.is_open()) {
-    total_file << s9::ToString(total_count) << endl;
-    total_file.close();
-  } else {
-    cout << "Unable to open total file for writing" << endl;
-    return 1;
   }
 
   return 0;

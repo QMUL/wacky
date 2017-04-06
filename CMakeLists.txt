@@ -6,6 +6,7 @@ PROJECT(wacky)
 include_directories( "include" )
 
 # Boost for Memory Mapping the big files and testing
+# TODO - Tests dont work with boost 1.58 sadly :(
 FIND_PACKAGE( Boost 1.58 COMPONENTS program_options system filesystem unit_test_framework REQUIRED )
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 

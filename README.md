@@ -12,13 +12,7 @@ The Wacky project is a set of tools for working with the ukwac dataset. It consi
 
 Wacky is a C++ program that can be built with CMake. It uses Boost's memory mapping to map the large ukWaC data files, resulting in a lower memory usage. It can (and should) use [Intel's Math Library](https://software.intel.com/en-us/intel-mkl/) for extra speed when working out Kronecker products and matrix multiplication. There is an early draft of a CUDA version of the program but this is incomplete and should be ignored.
 
-Wacky creates a lot of files in its *working directory*. These files are summaries and conversions for use with later stages of wacky, or in other programs such as [word2vec](https://code.google.com/archive/p/word2vec) and [Tensorflow](https://www.tensorflow.org/tutorials/word2vec). Files such as (but not limited to):
-
-* freq.txt - the frequency of all the words.
-* dictionary.txt - the words we accept into our dictionary of a certain size
-* unk_count.txt - the total number of words not in the dictionary
-* total_count.txt - how many words does ukwac contain?
-* word_vectors.txt - the file of count vectors for all the words in ukwac
+Wacky creates a lot of files in its *working directory*. These files are summaries and conversions for use with later stages of wacky, or in other programs such as [word2vec](https://code.google.com/archive/p/word2vec) and [Tensorflow](https://www.tensorflow.org/tutorials/word2vec). 
 
 ## Building Wacky
 
@@ -34,6 +28,7 @@ Simply create a directory and run cmake as you normally would. Example:
 * OpenMP - splits processing across local cores. Increases speed dramatically.
 * Intel Math Library (OPTIONAL but HIGHLY RECOMMENDED) - this gives massive performance boost. The default routines are much slower
 * GCC - this program should work with clang and icc as well but it has not been tested yet.
+* A copy of the ukwac corpus.
 
 ## Running Wacky
 
@@ -42,6 +37,13 @@ Depending on the command line flags, wacky can perform several operations on the
     ./wacky -u ~/ukwac -l -v 50000 -o ~/output
 
 ... will scan the directory ~/ukwac for the ukwac files themselves. It will then proceed to create a set of summary files, such as the dictionary, the frequency and the total counts into the directory ~/output. The dictionary will contain 50000 entries + the unknown entry. Finally, wacky will use the *lemmatized* versions of the word. For example, the word *working* will be converted / counted as *work*.
+
+### Adapting to other Corpus
+
+Wacky is designed to run with the ukwac corpus formatted in a particular way. ukWac entries look something like this:
+
+
+
 
 ### Command line options
 
@@ -109,6 +111,75 @@ With our subject and object file created we can begin to work on the various mod
     ./wacky -o ~/output -r -l -p  -s ~/simverb.txt
 
 The -s parameter is a link to one of the SimVerb files you can find at [Daniela Gerz's page at Cambridge University](http://people.ds.cam.ac.uk/dsg40/simverb.html) - it is a list of verb pairs and ratings that we use to train and test our models.
+
+## Summary Files
+
+Depending on the workflow, Wacky can be used to create summary files that can then be used in programs written in R, Python, or any other language. Wacky creates files such as (but not limited to):
+
+* freq.txt - the frequency of all the words.
+* dictionary.txt - the words we accept into our dictionary of a certain size
+* unk_count.txt - the total number of words not in the dictionary
+* total_count.txt - how many words does ukwac contain?
+* word_vectors.txt - the file of count vectors for all the words in ukwac
+
+These are perhaps the most useful. In order to create a complete set of summary files and word count vectors, one needs to run twice as follows:
+ 
+    ./wacky -u ~/ukwac -l -v 500000 -o ~/output
+    ./wacky -u ~/ukwac -l -o ~/output -r -w -j 5 -e 1000 -g 100
+
+As mentioned previously, these lines will create a set of initial summary files, a set of integer lookups and a set of word vectors with the specified sizes and windows. Inside the *output* directory you should see a set of files with formats given below. On a reasonable desktop machine, this is likely to take at least 1 hour (ukwac is quite large).
+
+### File Formats
+
+The following files are created by Wacky with the following formats:
+
+#### basis.txt
+
+A set of indices into the dictionary, 1 per line, showing which words form the basis.
+
+#### dictionary.txt
+
+A list of words, one per line, that form the dictionary. The line number is the index, starting at 0.
+
+#### freq.txt
+
+The frequency of all the *unique* tokens in ukwac. This is affected by the *lemmatize* flag. Each line starts with a word, followed by a comma then a space, then a number. The order is alphabetical
+
+#### integers_xxxxxx.txt
+
+A whole set of files starting with integers, and a series of numbers. The number depends on how many cores your machine has. Each file contains part of the corpus with all words replaced by their index into the dictionary. One number occurs per line. These files are mainly used with Tensorflow.
+
+#### sim_stats.txt
+
+Created when we look at the verb subjects and objects. Each line has a word and three numbers, each one separated by a space. The first number is the number of subjects, the second is the number of objects and the last number is the total.
+
+#### size_xxxxxx.txt
+
+These files list the number of numbers in each of the integers_xxxxx.txt files. One number on one line.
+
+#### total_count.txt
+
+One number that lists the total number of words in ukWaC.
+
+#### unk_count.txt
+
+How many words did not fall in the dictionary and were therefore classed as unknown. One number on one line.
+
+#### verb_objects.txt
+
+Each line represents a verb. The first number is the index of this verb in the dictionary. The following numbers are the indices of all the objects of that verb. The numbers are separated by a space.
+
+#### verb_subjects.txt
+
+Same as the above but for subjects.
+
+#### verb_sbj_obj.txt
+
+Same as the above but for both subjects and objects.
+
+#### word_vectors.txt
+
+The word vectors for every word in the dictionary. The first number on each line is that word's index into the dictionary. All following numbers are the raw counts, separated by a space. One can take the order of these numbers and check against basis.txt and dictionary.txt to find out which word is represented.
 
 # Tensorflow training
 

@@ -344,15 +344,15 @@ int main(int argc, char* argv[]) {
 
     } else {
       cout << "You must pass -r and -s along with -p" << endl;
+      return 1;
     }
-    return 1;
   }
 
   // Are we combining files?
   if (options.combine) {
     cout << "Combining ukwac into a large file of text" << endl;
     combine_ukwac(filenames, options.combine_file);
-    return 1;
+    return 0;
   }
  
   // Are we creating our verb subject and object files

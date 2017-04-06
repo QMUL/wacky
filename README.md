@@ -1,4 +1,4 @@
-# Wacky
+  # Wacky
 
 The Wacky project is a set of tools for working with the ukwac dataset. It consists of 
 
@@ -42,8 +42,16 @@ Depending on the command line flags, wacky can perform several operations on the
 
 Wacky is designed to run with the ukwac corpus formatted in a particular way. ukWac entries look something like this:
 
+    <text>
+    <s>
+    Last  last  JJ  1 4 NMOD
+    updated update  VVN 2 4 NMOD
+    December  December  NP  3 4 NMOD
+    1999  @card@  CD  4 0 ROOT
+    </s>
+    </text>
 
-
+This is the output created by the *MaltParser* apparently ([http://wacky.sslmit.unibo.it/doku.php?id=corpora](http://wacky.sslmit.unibo.it/doku.php?id=corpora)).
 
 ### Command line options
 

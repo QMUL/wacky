@@ -141,7 +141,7 @@ void ParseCommandLine(int argc, char* argv[], WackyOptions &options) {
   int c;
   int digit_optind = 0;
 
-  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:e:j:f:biwnyzpad?")) != -1) {
+  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:g:e:j:f:biwnyzpad?")) != -1) {
   	int this_option_optind = optind ? optind : 1;
   	switch (c) {
       case 0 :

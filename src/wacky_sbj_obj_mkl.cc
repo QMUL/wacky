@@ -502,10 +502,11 @@ void trans_count(  std::string results_file,
 		VerbPair vp = VERBS_TO_CHECK[i];
 		if(VERB_TRANSITIVE.find(vp.v0) != VERB_TRANSITIVE.end() &&
 			VERB_TRANSITIVE.find(vp.v1) != VERB_TRANSITIVE.end()){
-			//cout << vp.v0 << "," << vp.v1 << endl;
 			total_verbs ++;
 		}	
 	}
+
+  cout << "Total Trans Count: " << total_verbs << endl;
 
   // Open the file to write results
   std::ofstream out_file (results_file);

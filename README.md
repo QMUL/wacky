@@ -83,22 +83,21 @@ If starting from scratch, the first part of any workflow with wacky is to create
     ./wacky -u ~/ukwac -l -v 500000 -o ~/output
 
 
-The next command creates a set of integer files that represent the words as indices into the dictionary. More importantly two REQUIRED files are created at this stage - the total_count.txt and unk_count.txt. This lists the total count of words in ukwac and the number of words that didn't appear in the dictionary. These are used in creation of statistics later on.
+An example for the next step - what if you want to create classic word vector counts for use with your models? To do that you would need to run the following:
 
+    ./wacky -u ~/ukwac -l -o ~/output -r -w -j 5 -e 1000 -g 100
+
+This creates a set of word vectors that are 1000 items long using a window of 5 and ignoring the top 100 most popular words.
+
+The next command creates a set of integer files that represent the words as indices into the dictionary. 
 
     ./wacky -u ~/ukwac -r -l -o ~/output -i
-
 
 This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data, as well as the other models.
 Alternatively, lets say you wish to use the original word2vec program. You would have to combine all the files together into one.
 
     ./wacky -u ~/ukwac -o ~/output -c
 
-Finally, what if you want to create classic word vector counts for use with your models? To do that you would need to run the following:
-
-    ./wacky -u ~/ukwac -l -o ~/output -r -w -j 5 -e 1000 -g 100
-
-This creates a set of word vectors that are 1000 items long using a window of 5 and ignoring the top 100 most popular words.
 
 ### wacky subject-object workflows
 

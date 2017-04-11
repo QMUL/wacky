@@ -379,3 +379,42 @@ int read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & D
 }
 
 
+/**
+ * Read in the word vector counts for analysis. We keep the RAW values
+ * @param OUTPUT_DIR the output directory
+ * @param DICTIONARY the dictionary
+ * @param BASIS_VECTOR the vector of ints that represents the basis
+ * @param WORD_VECTORS the vector of vectors we shall fill
+ * @return int whether we succeeded or not
+ */
+
+int read_count_raw(string OUTPUT_DIR, vector<string> & DICTIONARY, vector<int>  & BASIS_VECTOR, vector< vector<float> > & WORD_VECTORS, set<int> & WORDS_TO_CHECK) {
+  cout << "Reading the word_vectors count" << endl;
+  std::ifstream count_file (OUTPUT_DIR + "/word_vectors.txt");
+  string line;
+  size_t idx = 0;
+ 
+  if (!count_file.is_open()) {
+    return 1;
+  }
+
+  while ( getline (count_file,line) && idx < DICTIONARY.size()) {
+    line = s9::RemoveChar(line,'\n');
+    vector<string> tokens = s9::SplitStringWhitespace(line);
+   
+    vector<float> tv; 
+
+		if (WORDS_TO_CHECK.find(idx) != WORDS_TO_CHECK.end())	{
+      for (int i=0; i < tokens.size(); ++i) {
+		    float cct = s9::FromString<float>(tokens[i]);
+			  tv.push_back(cct);
+      }
+		}
+
+		WORD_VECTORS.push_back(tv);
+    idx++;
+  }
+  return 0;
+}
+
+

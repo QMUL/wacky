@@ -41,6 +41,9 @@ int   read_freq(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, st
 //! read in the count vectors
 int  read_count(std::string OUTPUT_DIR, std::map<std::string, size_t> & FREQ, std::vector<std::string> & DICTIONARY, std::vector<int>  & BASIS_VECTOR, std::vector< std::vector<float> > & WORD_VECTORS, size_t TOTAL_COUNT, std::set<int> & WORDS_TO_CHECK );
 
+//! read in the count vectors raw
+int  read_count_raw(std::string OUTPUT_DIR, std::vector<std::string> & DICTIONARY, std::vector<int>  & BASIS_VECTOR, std::vector< std::vector<float> > & WORD_VECTORS, std::set<int> & WORDS_TO_CHECK );
+
 //! read in the insist words
 int  read_insist_words(std::string OUTPUT_DIR, std::set<std::string> & INSIST_BASIS_WORDS);
 

@@ -87,6 +87,7 @@ struct WackyOptions {
   bool count;
   bool intransitive;
 	bool transitive;
+  bool variance;
 
   size_t UNK_COUNT;
   size_t TOTAL_COUNT;     // TODO - not really an option so needs moving I think
@@ -141,7 +142,7 @@ void ParseCommandLine(int argc, char* argv[], WackyOptions &options) {
   int c;
   int digit_optind = 0;
 
-  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:g:e:j:f:biwnyzpad?")) != -1) {
+  while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:g:e:j:f:biwnthyzpad?")) != -1) {
   	int this_option_optind = optind ? optind : 1;
   	switch (c) {
       case 0 :
@@ -210,6 +211,9 @@ void ParseCommandLine(int argc, char* argv[], WackyOptions &options) {
         break;
       case 'p':
         options.count = true;
+        break;
+      case 'h':
+        options.variance = true;
         break;
       default:
         std::cout << "?? getopt returned character code" << c << std::endl;
@@ -379,5 +383,24 @@ int main(int argc, char* argv[]) {
     if (create_simverbs(filenames, options.simverb_file, options.WORKING_DIR, SIMVERBS, SIMVERBS_COUNT, SIMVERBS_OBJECTS, SIMVERBS_ALONE, options.LEMMA_TIME ) !=0)  { return 1; }
   }
 
+  // Are we analyising the variance of the word vector verb distances?
+  if (options.variance) {
+
+    if (options.read_in) {
+      cout << "Analysing variance for each verb" << endl;
+  
+       if (read_total_file(options.WORKING_DIR, options.TOTAL_COUNT) != 0 ) { cout << "read total file failed" << endl; return 1; }
+      if (read_unk_file(options.WORKING_DIR, options.UNK_COUNT)  != 0 ) { cout << "read unk file failed" << endl; return 1; }
+      if (read_sim_file(options.simverb_file, VERBS_TO_CHECK) != 0 ) { cout << "read sim file failed" << endl; return 1; }
+      if (read_sim_stats(options.WORKING_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE) != 0 ) { cout << "read sim_stats file failed" << endl; return 1; }
+
+   		if(read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ) != 0 ) { cout << "read subject/object file failed" << endl; return 1; }
+
+			generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+		  if (read_count_raw(options.WORKING_DIR, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, WORDS_TO_CHECK)  != 0 ) { cout << "read count file failed" << endl; return 1; }
+      
+       variance_count(options.RESULTS_FILE, VERBS_TO_CHECK, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
+    }
+  }
   return 0;
 }

@@ -827,3 +827,114 @@ void all_count( std::string results_file,
 
   out_file.close();
 }
+
+/**
+ * Return the variance of the verbs to be checked
+ * @param VERBS_TO_CHECK a vector of VerbPair
+ * @param BASIS_SIZE the size of our word vectors
+ * @param DICTIONARY_FAST the fast dictionary 
+ * @param VERB_SBJ_OBJ the vector of vectors of verb subject-object pairs
+ * @param WORD_VECTORS our word count vectors
+ */
+
+void variance_count( std::string results_file,
+  std::vector<VerbPair> & VERBS_TO_CHECK,
+  int BASIS_SIZE,
+  map<string,int> & DICTIONARY_FAST,
+  vector< vector<int> > & VERB_SBJ_OBJ,
+  vector< vector<float> > & WORD_VECTORS) {
+
+  // Get all the unique verbs in the set to check
+  set<string> verbs_to_check_set;
+
+  for (VerbPair vp : VERBS_TO_CHECK){
+    verbs_to_check.insert(vp.v0);
+    verbs_to_check.insert(vp.v1);
+  }
+
+  vector<string> verbs_to_check;
+  std::copy(verbs_to_check_set.begin(), verbs_to_check_set.end(), std::back_inserter(verbs_to_check));
+
+  // Open the file to write results
+  std::ofstream out_file (results_file);
+  if (!out_file.is_open()) {
+    cout << "Unable to open " << results_file << " for writing" << endl;
+    return;
+  }
+  
+  out_file << "verb,variance" << endl;
+	
+  // TODO - Better to use a for loop so that fast threads can do work and not sit still
+  #pragma omp parallel
+	{   
+		std::string status;
+
+    #pragma omp for
+		for (int i=0; i < verbs_to_check.size(); ++i){
+    
+      string verb = verbs_to_check[i];
+
+      status = "Verb: " + verb + "                                 " + s9::ToString(i) + "of" + s9::ToString(VERBS_TO_CHECK.size()) + "  ";
+  
+      int thread_num = omp_get_thread_num();
+      printf("\033[%d;0H%d-%s",thread_num+1, thread_num, status.c_str()); 
+      fflush(stdout);
+		
+      int vidx = DICTIONARY_FAST[verb];
+      vector<int> subobs = VERB_SBJ_OBJ[vidx];
+      vector<float> distances;
+
+      for (int j=0; j < subobs.size()-1; ++j){
+          
+        int sidx = subobs[j];
+        vector<int> wvj = WORD_VECTORS[sidx];
+
+        for (int k=j+1; k < subobs.size(); ++k){
+
+          int tidx = subobs[k];
+          vector<int> wvk = WORD_VECTORS[tidx];
+
+          // Now compute the distance
+
+          float dd = 0;
+          for (int m = 0; m < BASIS_SIZE; ++m){
+            float tf = static_cast<float>(wvj[m] - wvk[m]);
+            dd += (tf*tf);
+          }
+
+          float distance = sqrt(dd);
+          
+          distances.append(distance);
+        }
+      }
+
+
+      float variance = 0;
+      float mean = 0;
+
+      for (float tf : distances){
+        mean += tf;
+      }
+
+      mean = tf / static_cast<float>(distances.size());
+
+      for (float tf : distances){
+        float tt = tf - mean;
+        variance += (tt * tt); 
+      }
+
+      std::stringstream stream;
+    
+      stream << verb << "," << s9:ToString(tt) << endl;
+
+      #pragma omp critical
+      {
+        out_file << stream.str();
+        out_file.flush();
+      }
+    }    
+
+	}
+
+  out_file.close();
+}

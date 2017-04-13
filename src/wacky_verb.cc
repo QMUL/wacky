@@ -423,6 +423,10 @@ int create_simverbs(vector<string> filenames, string simverb_path,
 
   std::ifstream simverb_file(simverb_path);
   string line;
+ 
+  if (!simverb_file.is_open()) {
+    return 1;
+  }
 
   while ( getline (simverb_file,line) ) {
     line = s9::RemoveChar(line,'\n'); 
@@ -601,6 +605,11 @@ int create_simverbs(vector<string> filenames, string simverb_path,
 
   string filename = OUTPUT_DIR + "/sim_stats.txt";
   std::ofstream sim_file (filename);
+ 
+  if (!sim_file.is_open()) {
+    return 1;
+  }
+
   int idv = 0;
   for (string verb : SIMVERBS){
     sim_file << verb << " " << SIMVERBS_OBJECTS[idv] << " " << SIMVERBS_ALONE[idv] << " " << SIMVERBS_COUNT[idv] << endl;

@@ -285,12 +285,15 @@ int main(int argc, char* argv[]) {
     read_freq(options.WORKING_DIR, FREQ, FREQ_FLIPPED, ALLOWED_BASIS_WORDS);
     read_dictionary(options.WORKING_DIR, DICTIONARY_FAST, DICTIONARY, options.VOCAB_SIZE);
     read_insist_words(options.WORKING_DIR, INSIST_BASIS_WORDS);
-    create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, INSIST_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
+    read_basis(options.WORKING_DIR, BASIS_VECTOR, options.BASIS_SIZE);
+    //create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, INSIST_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
 
   } else {
     cout << "Creating frequency and dictionary" << endl;
     if (create_freq(filenames, options.WORKING_DIR,FREQ, FREQ_FLIPPED, WORD_IGNORES, ALLOWED_BASIS_WORDS, options.LEMMA_TIME) != 0)  { return 1; }    
     if (create_dictionary(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, options.VOCAB_SIZE) != 0) { return 1; }
+    create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, INSIST_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
+
   }
 	
   cout << "Vocab Size: " << options.VOCAB_SIZE << endl; 

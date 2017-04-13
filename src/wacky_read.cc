@@ -209,6 +209,32 @@ int read_sim_stats(string OUTPUT_DIR, set<string> & VERB_TRANSITIVE, set<string>
   return 1;
 }
 
+
+
+int read_basis(string OUTPUT_DIR,
+  vector<int> & BASIS_VECTOR,
+  size_t & BASIS_SIZE) {
+
+  std::ifstream total_file (OUTPUT_DIR + "/basis.txt");
+  string line;
+
+  if (total_file.is_open()) {
+    while ( getline (total_file,line) ) {
+      line = s9::RemoveChar(line,'\n');
+      int bidx = s9::FromString<int>(line);
+      BASIS_VECTOR.push_back(bidx);
+    }
+  
+    BASIS_SIZE = BASIS_VECTOR.size();
+    total_file.close();
+    return 0;
+  }
+
+  return 1;
+}
+
+
+
 /**
 * Read in the verb pair comparisons file
 * @param OUTPUT_DIR the output directory

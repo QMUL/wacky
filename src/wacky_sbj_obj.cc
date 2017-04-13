@@ -444,7 +444,6 @@ void trans_count(std::string results_file,
   vector< vector<int> > & VERB_SBJ_OBJ,
   vector< vector<float> > & WORD_VECTORS) {
 
-
 	int total_verbs = 0;
 	// Print out the total number we should expect
 	for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
@@ -512,11 +511,9 @@ void trans_count(std::string results_file,
 				sum_krn0.clear();
 				sum_krn1.clear();
 
-
 				read_subjects_objects(vp.v0,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_object0, sum_krn0);
 
 				read_subjects_objects(vp.v1,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_object1, sum_krn1);
-
 			
 				krn_base0 = krn_mul(base_vector0, base_vector0);
 				krn_base1 = krn_mul(base_vector1, base_vector1);
@@ -755,6 +752,9 @@ void all_count(std::string results_file,
  * @param WORD_VECTORS our word count vectors
  */
 
+// TODO - do we want to check the variance of cosine distances instead? Maybe :/ I mean
+// that is what we are using at the end of the day?
+
 void variance_count( std::string results_file,
   std::vector<VerbPair> & VERBS_TO_CHECK,
   int BASIS_SIZE,
@@ -792,12 +792,12 @@ void variance_count( std::string results_file,
     
       string verb = verbs_to_check[i];
 
-      status = "Verb: " + verb + "                                 " + s9::ToString(i) + "of" + s9::ToString(VERBS_TO_CHECK.size()) + "  ";
+      /*status = "Verb: " + verb + "                                 " + s9::ToString(i) + "of" + s9::ToString(VERBS_TO_CHECK.size()) + "  ";
   
       int thread_num = omp_get_thread_num();
       printf("\033[%d;0H%d-%s",thread_num+1, thread_num, status.c_str()); 
       fflush(stdout);
-		
+		*/
       int vidx = DICTIONARY_FAST[verb];
       vector<int> subobs = VERB_SBJ_OBJ[vidx];
       vector<float> distances;
@@ -805,13 +805,22 @@ void variance_count( std::string results_file,
       for (int j=0; j < subobs.size()-1; ++j){
           
         int sidx = subobs[j];
-        vector<float> wvj = WORD_VECTORS[sidx];
+        ublas::vector<float> wvj (BASIS_SIZE);
+          
+        for (int k = 0; k < BASIS_SIZE; k++){
+          wvj(k) = WORD_VECTORS[sidx][k];
+        }
 
         for (int k=j+1; k < subobs.size(); ++k){
 
           int tidx = subobs[k];
-          vector<float> wvk = WORD_VECTORS[tidx];
-
+          ublas::vector<float> wvk(BASIS_SIZE);
+        
+          for (int m = 0; m < BASIS_SIZE; m++){
+            wvk(m) = WORD_VECTORS[sidx][m];
+          }
+    
+      
           // Now compute the distance
 
           float dd = 0;
@@ -823,6 +832,11 @@ void variance_count( std::string results_file,
           float distance = sqrt(dd);
           
           distances.push_back(distance);
+
+          //float distance = cosine_sim(wvj,wvk);
+
+          //if (distance < 2.0) { distances.push_back(distance); }
+
         }
       }
 

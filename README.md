@@ -105,19 +105,21 @@ Wacky can also work on the verbs in the ukwac dataset and create summaries and v
 
 The first thing to do is create a list of all the verbs, their subjects and their objects.
 
-    ./wacky -u ~/ukwac -o ~/output -r -l -b -n
+    ./wacky -u ~/ukwac -o ~/output -r -l -b -n -s ~/simverb.txt
 
-This creates a large file - *verb_sbj_obj.txt* that contains the index of the verb and the indicies of it's subjects and/or objects. We also get a sim_stats.txt file that contains the counts of subjects and objects for each verb. 
+This creates a large file - *verb_sbj_obj.txt* that contains the index of the verb and the indicies of it's subjects and/or objects. We also get a sim_stats.txt file that contains the counts of subjects and objects for each verb that is fiven in the simverb.txt file.
+
+Note that we *have* to provide a list of verbs for which we are generating the statistics on whether or not a verb is transitive or intransitive. The -n and -s flags are used for this purpose. 
+
+The -s parameter is a link to one of the SimVerb files you can find at [Daniela Gerz's page at Cambridge University](http://people.ds.cam.ac.uk/dsg40/simverb.html) - it is a list of verb pairs and ratings that we use to train and test our models.
 
 Note that this incantation allows for duplicates in the subject/object list. If we only want to include a subject or object once we would call:
 
-    ./wacky -u ~/ukwac -o ~/output -r -l -b -y -z -n  
+    ./wacky -u ~/ukwac -o ~/output -r -l -b -y -z -n -s ~/simverb.txt
 
 With our subject and object file created we can begin to work on the various models we might have. If you want to work with the tensorflow or word2vec models, you need to use the included python scripts. If you are working with the wacky-created word vectors, you can run the models like so:
 
-    ./wacky -o ~/output -r -l -p  -s ~/simverb.txt
-
-The -s parameter is a link to one of the SimVerb files you can find at [Daniela Gerz's page at Cambridge University](http://people.ds.cam.ac.uk/dsg40/simverb.html) - it is a list of verb pairs and ratings that we use to train and test our models.
+    ./wacky -o ~/output -r -l -p -s ~/simverb.txt
 
 ## Summary Files
 

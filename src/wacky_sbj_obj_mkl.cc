@@ -846,13 +846,13 @@ void variance_count( std::string results_file,
 
   // Get all the unique verbs in the set to check
   set<string> verbs_to_check_set;
-
+  vector<string> verbs_to_check;
+  
   for (VerbPair vp : VERBS_TO_CHECK){
-    verbs_to_check.insert(vp.v0);
-    verbs_to_check.insert(vp.v1);
+    verbs_to_check_set.insert(vp.v0);
+    verbs_to_check_set.insert(vp.v1);
   }
 
-  vector<string> verbs_to_check;
   std::copy(verbs_to_check_set.begin(), verbs_to_check_set.end(), std::back_inserter(verbs_to_check));
 
   // Open the file to write results
@@ -887,12 +887,12 @@ void variance_count( std::string results_file,
       for (int j=0; j < subobs.size()-1; ++j){
           
         int sidx = subobs[j];
-        vector<int> wvj = WORD_VECTORS[sidx];
+        vector<float> wvj = WORD_VECTORS[sidx];
 
         for (int k=j+1; k < subobs.size(); ++k){
 
           int tidx = subobs[k];
-          vector<int> wvk = WORD_VECTORS[tidx];
+          vector<float> wvk = WORD_VECTORS[tidx];
 
           // Now compute the distance
 
@@ -904,7 +904,7 @@ void variance_count( std::string results_file,
 
           float distance = sqrt(dd);
           
-          distances.append(distance);
+          distances.push_back(distance);
         }
       }
 
@@ -916,16 +916,18 @@ void variance_count( std::string results_file,
         mean += tf;
       }
 
-      mean = tf / static_cast<float>(distances.size());
+      mean = mean / static_cast<float>(distances.size());
 
       for (float tf : distances){
         float tt = tf - mean;
         variance += (tt * tt); 
       }
+      
+      variance *= 1.0/static_cast<float>(distances.size());
 
       std::stringstream stream;
     
-      stream << verb << "," << s9:ToString(tt) << endl;
+      stream << verb << "," << s9::ToString(variance) << endl;
 
       #pragma omp critical
       {

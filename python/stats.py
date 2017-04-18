@@ -176,7 +176,7 @@ if __name__ == "__main__" :
   DICTIONARY = read_dictionary(BASE_DIR, DICT_FILE)
   verbs_to_check, paired = read_sim_file(BASE_DIR, SIM_FILE)
 
-  #stats(SBJ_OBJ, DICTIONARY, verbs_to_check, False)
-  #stats(SBJ_OBJ, DICTIONARY, verbs_to_check, True)
+  stats(SBJ_OBJ, DICTIONARY, verbs_to_check, False)
+  stats(SBJ_OBJ, DICTIONARY, verbs_to_check, True)
 
-  counts(SBJS, OBJS, DICTIONARY, verbs_to_check)
+  #counts(SBJS, OBJS, DICTIONARY, verbs_to_check)

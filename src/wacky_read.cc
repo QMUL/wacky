@@ -32,7 +32,7 @@ int read_dictionary(string OUTPUT_DIR, map<string,int> & DICTIONARY_FAST, vector
       DICTIONARY_FAST[word] = idx;
       idx+=1;
     }
-	  VOCAB_SIZE = DICTIONARY.size();
+    VOCAB_SIZE = DICTIONARY.size();
     return 0;
   }
   return 1;
@@ -316,37 +316,37 @@ int read_freq(string OUTPUT_DIR, map<string, size_t> & FREQ, vector< pair<string
 
 void generate_words_to_check(set<int> & WORDS_TO_CHECK, vector< vector<int> > & VERB_SBJ_OBJ, vector< vector<int> > & VERB_SUBJECTS, vector< vector<int> > & VERB_OBJECTS, vector<VerbPair> & VERBS_TO_CHECK, map<string,int> DICTIONARY_FAST ) {
 
-	for (VerbPair vp : VERBS_TO_CHECK){
-		int idx0 = DICTIONARY_FAST[vp.v0];
-		int idx1 = DICTIONARY_FAST[vp.v1];
+  for (VerbPair vp : VERBS_TO_CHECK){
+    int idx0 = DICTIONARY_FAST[vp.v0];
+    int idx1 = DICTIONARY_FAST[vp.v1];
 
-		WORDS_TO_CHECK.insert(idx0);
-		WORDS_TO_CHECK.insert(idx1);
+    WORDS_TO_CHECK.insert(idx0);
+    WORDS_TO_CHECK.insert(idx1);
 
-		for (int j =0; j < VERB_SBJ_OBJ[idx0].size(); ++j){
-			WORDS_TO_CHECK.insert(VERB_SBJ_OBJ[idx0][j]);			
-		}
+    for (int j =0; j < VERB_SBJ_OBJ[idx0].size(); ++j){
+      WORDS_TO_CHECK.insert(VERB_SBJ_OBJ[idx0][j]);      
+    }
 
-		for (int j =0; j < VERB_SBJ_OBJ[idx1].size(); ++j){
-			WORDS_TO_CHECK.insert(VERB_SBJ_OBJ[idx1][j]);			
-		}
-		
-		for (int j =0; j < VERB_SUBJECTS[idx0].size(); ++j){
-			WORDS_TO_CHECK.insert(VERB_SUBJECTS[idx0][j]);			
-		}
+    for (int j =0; j < VERB_SBJ_OBJ[idx1].size(); ++j){
+      WORDS_TO_CHECK.insert(VERB_SBJ_OBJ[idx1][j]);      
+    }
+    
+    for (int j =0; j < VERB_SUBJECTS[idx0].size(); ++j){
+      WORDS_TO_CHECK.insert(VERB_SUBJECTS[idx0][j]);      
+    }
 
-		for (int j =0; j < VERB_SUBJECTS[idx1].size(); ++j){
-			WORDS_TO_CHECK.insert(VERB_SUBJECTS[idx1][j]);			
-		}
-		
-		for (int j =0; j < VERB_OBJECTS[idx0].size(); ++j){
-			WORDS_TO_CHECK.insert(VERB_OBJECTS[idx0][j]);			
-		}
+    for (int j =0; j < VERB_SUBJECTS[idx1].size(); ++j){
+      WORDS_TO_CHECK.insert(VERB_SUBJECTS[idx1][j]);      
+    }
+    
+    for (int j =0; j < VERB_OBJECTS[idx0].size(); ++j){
+      WORDS_TO_CHECK.insert(VERB_OBJECTS[idx0][j]);      
+    }
 
-		for (int j =0; j < VERB_OBJECTS[idx1].size(); ++j){
-			WORDS_TO_CHECK.insert(VERB_OBJECTS[idx1][j]);			
-		}	
-	}
+    for (int j =0; j < VERB_OBJECTS[idx1].size(); ++j){
+      WORDS_TO_CHECK.insert(VERB_OBJECTS[idx1][j]);      
+    }  
+  }
 
 }
 
@@ -378,27 +378,27 @@ int read_count(string OUTPUT_DIR, map<string, size_t> & FREQ, vector<string> & D
    
     vector<float> tv; 
 
-		if (WORDS_TO_CHECK.find(idx) != WORDS_TO_CHECK.end())	{
+    if (WORDS_TO_CHECK.find(idx) != WORDS_TO_CHECK.end())  {
 
-			for (int i =0; i < tokens.size(); ++i) {
-				float ct = static_cast<float>(FREQ[DICTIONARY[BASIS_VECTOR[i]]]);
-				float pmi = 0;
+      for (int i =0; i < tokens.size(); ++i) {
+        float ct = static_cast<float>(FREQ[DICTIONARY[BASIS_VECTOR[i]]]);
+        float pmi = 0;
 
-				if (ct != 0.0){					
-					float cc = static_cast<float>(FREQ[DICTIONARY[idx]]);
-					if (cc != 0.0) {
-						float cct = s9::FromString<float>(tokens[i]);
-						if (cct != 0.0) {
-							pmi = log( (cct/ ct) / (cc / static_cast<float>(TOTAL_COUNT)));
-						}
-					}
-				}
-				tv.push_back(pmi);
+        if (ct != 0.0){          
+          float cc = static_cast<float>(FREQ[DICTIONARY[idx]]);
+          if (cc != 0.0) {
+            float cct = s9::FromString<float>(tokens[i]);
+            if (cct != 0.0) {
+              pmi = log( (cct/ ct) / (cc / static_cast<float>(TOTAL_COUNT)));
+            }
+          }
+        }
+        tv.push_back(pmi);
 
-			}
-		}
+      }
+    }
 
-		WORD_VECTORS.push_back(tv);
+    WORD_VECTORS.push_back(tv);
     idx++;
   }
   return 0;
@@ -430,14 +430,14 @@ int read_count_raw(string OUTPUT_DIR, vector<string> & DICTIONARY, vector<int>  
    
     vector<float> tv; 
 
-		if (WORDS_TO_CHECK.find(idx) != WORDS_TO_CHECK.end())	{
+    if (WORDS_TO_CHECK.find(idx) != WORDS_TO_CHECK.end())  {
       for (int i=0; i < tokens.size(); ++i) {
-		    float cct = s9::FromString<float>(tokens[i]);
-			  tv.push_back(cct);
+        float cct = s9::FromString<float>(tokens[i]);
+        tv.push_back(cct);
       }
-		}
+    }
 
-		WORD_VECTORS.push_back(tv);
+    WORD_VECTORS.push_back(tv);
     idx++;
   }
   return 0;

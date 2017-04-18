@@ -86,22 +86,22 @@ float cosine_sim(vector<float> & v0, vector<float> & v1, int size) {
     l1 += v1[i] * v1[i];
   }
 
-	// I really dont like using exceptions but here is an (*arf*) exceptional case! :D 
-	try {
-  	float n0 = sqrt(l0);
-  	float n1 = sqrt(l1);
-  	float d = n0 * n1;
+  // I really dont like using exceptions but here is an (*arf*) exceptional case! :D 
+  try {
+    float n0 = sqrt(l0);
+    float n1 = sqrt(l1);
+    float d = n0 * n1;
 
     //cout << "n0,n1,d,s0,s1,l0,l1 " << n0 << "," << n1 << "," << d << "," << v0.size() << "," << v1.size() << "," << l0 << "," << l1 <<  endl;
 
-		// I removed the epsilon check here but not sure if that was right to do
-  	if (d != 0.0f) {
-    	float sim = dot / d;
-    	dist = acos(sim) / M_PI;
-  	}
-	} catch (std::exception &e){
-		std::cout << "Exception occured at cosine_similarity: " << e.what() <<  std::endl;
-	}
+    // I removed the epsilon check here but not sure if that was right to do
+    if (d != 0.0f) {
+      float sim = dot / d;
+      dist = acos(sim) / M_PI;
+    }
+  } catch (std::exception &e){
+    std::cout << "Exception occured at cosine_similarity: " << e.what() <<  std::endl;
+  }
 
   return 1.0 - dist;
 
@@ -166,21 +166,21 @@ float cosine_sim(ublas::vector<float> & v0, ublas::vector<float> & v1) {
     l1 += v1(i) * v1(i);
   }
 
-	// I really dont like using exceptions but here is an (*arf*) exceptional case! :D 
-	try {
-  	float n0 = sqrt(l0);
-  	float n1 = sqrt(l1);
+  // I really dont like using exceptions but here is an (*arf*) exceptional case! :D 
+  try {
+    float n0 = sqrt(l0);
+    float n1 = sqrt(l1);
 
-  	float d = n0 * n1;
+    float d = n0 * n1;
 
-		// I removed the epsilon check here but not sure if that was right to do
-  	if (d != 0.0f) {
-    	float sim = dot / d;
-    	dist = acos(sim) / M_PI;
-  	}
-	} catch (std::exception &e){
-		std::cout << "Exception occured at cosine_similarity: " << e.what() <<  std::endl;
-	}
+    // I removed the epsilon check here but not sure if that was right to do
+    if (d != 0.0f) {
+      float sim = dot / d;
+      dist = acos(sim) / M_PI;
+    }
+  } catch (std::exception &e){
+    std::cout << "Exception occured at cosine_similarity: " << e.what() <<  std::endl;
+  }
 
   return 1.0 - dist;
 

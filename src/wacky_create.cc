@@ -52,12 +52,14 @@ int create_dictionary(string OUTPUT_DIR,
     vector< pair<string,size_t> > & FREQ_FLIPPED,
     map<string,int> & DICTIONARY_FAST,
     vector<string> & DICTIONARY,
-    size_t VOCAB_SIZE) {
+    size_t & VOCAB_SIZE) {
 
   cout << "Creating Dictionary File" << endl;
 
   size_t unk_count = 0;
-  size_t idx = 0; 
+  size_t idx = 0;
+
+  if (VOCAB_SIZE < 0 ) { VOCAB_SIZE = 5000; }
 
   for (auto it = FREQ.begin(); it != FREQ.end(); it++){
     FREQ_FLIPPED.push_back(*it);
@@ -74,6 +76,9 @@ int create_dictionary(string OUTPUT_DIR,
   }
  
   std::sort(DICTIONARY.begin(), DICTIONARY.end());
+
+  // In case we have a dictionary that is smaller than what we've asked for set it here
+  VOCAB_SIZE = DICTIONARY.size();
 
   // I suspect we dont actually need the total count
   DICTIONARY.push_back(string("UNK"));
@@ -139,7 +144,7 @@ void create_basis(string OUTPUT_DIR,
       if (idx > IGNORE_WINDOW) {
         if (ALLOWED_BASIS_WORDS.find(it->first) != ALLOWED_BASIS_WORDS.end()) {
           BASIS_VECTOR.push_back(DICTIONARY_FAST[it->first]);
-				}
+        }
       } else{ 
         idx++;
       }
@@ -194,7 +199,7 @@ int create_freq(vector<string> filenames,
     int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
     if (result == -1){
       return -1;
-    }	
+    }  
 
     // Now begin the threading block
     // Probably a little slow reading char by char right?
@@ -207,14 +212,14 @@ int create_freq(vector<string> filenames,
       char *mem = block_pointer[block_id];
       string str;
 
-      for(std::size_t i = 0; i < block_size[block_id]; ++i){
+      for(size_t i = 0; i < block_size[block_id]; ++i){
         char data = *mem;
         if (data != '\n' && data != '\r'){
           str += data;
         } else {
           // Can now look at the string and work on our FREQ
           vector<string> tokens = s9::SplitStringWhitespace(str);  
-          if (tokens.size() > 2) {
+          if (tokens.size() > 5) {
             string val = s9::ToLower(tokens[0]);
             if (LEMMA_TIME) {
               val = s9::ToLower(tokens[1]); // Use the canonical form of the word
@@ -222,7 +227,9 @@ int create_freq(vector<string> filenames,
 
             if (s9::IsAsciiPrintableString(val)){
               if (WORD_IGNORES.find(val) == WORD_IGNORES.end()){  
+               #pragma omp atomic
                total_count++;
+               
                auto result = FREQ.find(val); 
                 if (result == FREQ.end()){
                   #pragma omp critical
@@ -239,6 +246,7 @@ int create_freq(vector<string> filenames,
                 }  else {
                   #pragma omp atomic 
                   FREQ[val] = FREQ[val] + 1;
+                  
                 }
               }
             }
@@ -332,19 +340,19 @@ int create_word_vectors(vector<string> filenames,
     size_t BASIS_SIZE,
     size_t WINDOW_SIZE,
     bool LEMMA_TIME) {
-	
+  
   int num_blocks =1; 
-		
+    
 
-	// Start by setting the counts - we add an extra 1 for the UNK value (but UNK does not occur in the basis)
-	for (int i =0; i < VOCAB_SIZE+1; ++i) {
-	  vector<float> ti; 	
-		ti.reserve(VOCAB_SIZE);
-		for (int j=0; j < BASIS_SIZE; ++j) {
-			ti.push_back(0.0);
-		}	
-		WORD_VECTORS.push_back(ti);
-	}
+  // Start by setting the counts - we add an extra 1 for the UNK value (but UNK does not occur in the basis)
+  for (int i =0; i < VOCAB_SIZE+1; ++i) {
+    vector<float> ti;   
+    ti.reserve(VOCAB_SIZE);
+    for (int j=0; j < BASIS_SIZE; ++j) {
+      ti.push_back(0.0);
+    }  
+    WORD_VECTORS.push_back(ti);
+  }
 
   for( string filepath : filenames) {
 
@@ -352,31 +360,31 @@ int create_word_vectors(vector<string> filenames,
     size_t * block_size;
 
     // Cant pass this into _breakup sadly
-		file_mapping m_file(filepath.c_str(), read_only);
-		mapped_region region(m_file, read_only);  
+    file_mapping m_file(filepath.c_str(), read_only);
+    mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
-		if (result == -1){
-			return -1;
-		}	
+    int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
+    if (result == -1){
+      return -1;
+    }  
 
     cout << "Reading file " << filepath << endl;
 
     omp_set_num_threads(num_blocks);
-		#pragma omp parallel
-		{   
-			int block_id = omp_get_thread_num();
-			char *mem = block_pointer[block_id];
-			size_t file_count = 0;
-			std::string str;
-			std::vector<int> sentence;
+    #pragma omp parallel
+    {   
+      int block_id = omp_get_thread_num();
+      char *mem = block_pointer[block_id];
+      size_t file_count = 0;
+      std::string str;
+      std::vector<int> sentence;
       bool recording = false;
 
-			for(std::size_t i = 0; i < block_size[block_id]; ++i){
-				char data = *mem;
-				if (data != '\n' && data != '\r'){
-					str += data;
-				} else {  
+      for(std::size_t i = 0; i < block_size[block_id]; ++i){
+        char data = *mem;
+        if (data != '\n' && data != '\r'){
+          str += data;
+        } else {  
           //  Can now look at the string and work on our FREQ
           vector<string> tokens = s9::SplitStringWhitespace(str);  
           
@@ -443,34 +451,34 @@ int create_word_vectors(vector<string> filenames,
             }
           } 
           str = "";
-				}
-				mem++;
-			}    
-		} // end parallel bit
+        }
+        mem++;
+      }    
+    } // end parallel bit
     
     // These need to be freed as breakup assigns them. A bit naughty
     //free(block_pointer);
     //free(block_size);
-	}
+  }
 
-	// Finished all the files, now quit
+  // Finished all the files, now quit
   std::ofstream wv_file (OUTPUT_DIR + "/word_vectors.txt");
   if (wv_file.is_open()) {
-		size_t idx = 0;
-		for (vector<float> tv : WORD_VECTORS){
-			for (float tf : tv){
+    size_t idx = 0;
+    for (vector<float> tv : WORD_VECTORS){
+      for (float tf : tv){
         int ti = static_cast<int>(tf);
-    		wv_file << s9::ToString(ti) << " ";
-			}
-			wv_file << endl;
-		}
-  	wv_file.close();
+        wv_file << s9::ToString(ti) << " ";
+      }
+      wv_file << endl;
+    }
+    wv_file.close();
   } else {
     cout << "Unable to open word_vec file for writing" << endl;
     return 1;
   }
 
-	return 0;
+  return 0;
 }
 
 
@@ -485,7 +493,8 @@ int create_word_vectors(vector<string> filenames,
  */
 
 int create_integers(vector<string> filenames,
-    string OUTPUT_DIR,
+    string OUTPUT_DIR, 
+    set<string> & WORD_IGNORES,
     map<string,int> & DICTIONARY_FAST,
     size_t VOCAB_SIZE,
     bool LEMMA_TIME) {
@@ -500,13 +509,13 @@ int create_integers(vector<string> filenames,
 
     // Cant pass this into _breakup sadly
     // break the file we are looking at into chunks to process
-		file_mapping m_file(filepath.c_str(), read_only);
-		mapped_region region(m_file, read_only);  
+    file_mapping m_file(filepath.c_str(), read_only);
+    mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
-		if (result == -1){
-			return -1;
-		}	
+    int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
+    if (result == -1){
+      return -1;
+    }  
     
     omp_set_num_threads(num_blocks);
     #pragma omp parallel
@@ -530,20 +539,27 @@ int create_integers(vector<string> filenames,
           str += data;
         } else {       
           // Can now look at the string and work on our FREQ
+          
           vector<string> tokens = s9::SplitStringWhitespace(str);  
-          if (tokens.size() > 1) {
+          if (tokens.size() > 5) {
             string val = s9::ToLower(tokens[0]);
             
             if (LEMMA_TIME) {
               val = s9::ToLower(tokens[1]);
             }
 
-            if (DICTIONARY_FAST.find(val) == DICTIONARY_FAST.end()){
-              int_file << s9::ToString(VOCAB_SIZE) << endl;
-            } else {
-              int_file << s9::ToString( DICTIONARY_FAST[val] ) << endl;
-              #pragma omp critical
-              file_count++;
+            if (s9::IsAsciiPrintableString(val)){
+            
+              if (WORD_IGNORES.find(val) == WORD_IGNORES.end()){  
+      
+                if (DICTIONARY_FAST.find(val) == DICTIONARY_FAST.end()){
+                  int_file << s9::ToString(VOCAB_SIZE) << endl;
+                } else {
+                  int_file << s9::ToString( DICTIONARY_FAST[val] ) << endl;
+                  #pragma omp critical
+                  file_count++;
+                }
+              }
             }
           } 
           str = "";

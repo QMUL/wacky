@@ -86,7 +86,7 @@ struct WackyOptions {
   bool combine;
   bool count;
   bool intransitive;
-	bool transitive;
+  bool transitive;
   bool variance;
 
   size_t UNK_COUNT;
@@ -96,7 +96,7 @@ struct WackyOptions {
   string WORKING_DIR;     // Our current working directory
   bool  LEMMA_TIME;       // Use the lemma or stem of the word
   size_t IGNORE_WINDOW;   // How many most frequent words do we ignore completely in the basis?
-  size_t WINDOW_SIZE;		  // Our sliding window size, either side of the chosen word
+  size_t WINDOW_SIZE;      // Our sliding window size, either side of the chosen word
   bool  UNIQUE_SUBJECTS;
   bool  UNIQUE_OBJECTS;
 
@@ -143,8 +143,8 @@ void ParseCommandLine(int argc, char* argv[], WackyOptions &options) {
   int digit_optind = 0;
 
   while ((c = getopt(argc, (char **)argv, "u:o:v:ls:rc:g:e:j:f:biwnthyzpad?")) != -1) {
-  	int this_option_optind = optind ? optind : 1;
-  	switch (c) {
+    int this_option_optind = optind ? optind : 1;
+    switch (c) {
       case 0 :
         break;
       case 'u' :
@@ -171,7 +171,7 @@ void ParseCommandLine(int argc, char* argv[], WackyOptions &options) {
       case 'a':
         options.intransitive = true;
         break;
-			case 'd':
+      case 'd':
         options.transitive = true;
         break;
       case 'i':
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
   options.combine = false;
   options.count = false;
   options.intransitive = false;
-	options.transitive = false;
+  options.transitive = false;
   options.ukdir = ".";
 
   options.UNK_COUNT = 0;
@@ -292,10 +292,8 @@ int main(int argc, char* argv[]) {
     cout << "Creating frequency and dictionary" << endl;
     if (create_freq(filenames, options.WORKING_DIR,FREQ, FREQ_FLIPPED, WORD_IGNORES, ALLOWED_BASIS_WORDS, options.LEMMA_TIME) != 0)  { return 1; }    
     if (create_dictionary(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, options.VOCAB_SIZE) != 0) { return 1; }
-    create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, INSIST_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
-
   }
-	
+  
   cout << "Vocab Size: " << options.VOCAB_SIZE << endl; 
  
   // Initialise our verb to subject/object maps
@@ -322,25 +320,25 @@ int main(int argc, char* argv[]) {
       if (read_sim_file(options.simverb_file, VERBS_TO_CHECK) != 0 ) { cout << "read sim file failed" << endl; return 1; }
       if (read_sim_stats(options.WORKING_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE) != 0 ) { cout << "read sim_stats file failed" << endl; return 1; }
 
-    	if (options.intransitive){
+      if (options.intransitive){
         if (read_subject_file(options.WORKING_DIR, VERB_SUBJECTS) != 0 ) { cout << "read subject file failed" << endl; return 1; }
         generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
-				if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK) != 0 ) { cout << "read count file failed" << endl; return 1; }
+        if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK) != 0 ) { cout << "read count file failed" << endl; return 1; }
         intrans_count( options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS);
 
       } else if (options.transitive) {
         if (read_subject_file(options.WORKING_DIR, VERB_SUBJECTS) != 0 ) { cout << "read subject file failed" << endl; return 1; }
         if ( read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ) != 0 ) { cout << "read total file failed" << endl; return 1; }
 
-				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+        generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
 
-				if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK) != 0 ) { cout << "read count file failed" << endl; return 1; }
+        if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK) != 0 ) { cout << "read count file failed" << endl; return 1; }
         trans_count( options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
       } else {
-     		if(read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ) != 0 ) { cout << "read subject/object file failed" << endl; return 1; }
+         if(read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ) != 0 ) { cout << "read subject/object file failed" << endl; return 1; }
 
-				generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
-				if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK)  != 0 ) { cout << "read count file failed" << endl; return 1; }
+        generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+        if (read_count(options.WORKING_DIR, FREQ, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, options.TOTAL_COUNT, WORDS_TO_CHECK)  != 0 ) { cout << "read count file failed" << endl; return 1; }
 
 #ifdef _USE_CUDA
         all_count_cuda(options.RESULTS_FILE, VERBS_TO_CHECK, VERB_TRANSITIVE, VERB_INTRANSITIVE, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, VERB_SUBJECTS, WORD_VECTORS);
@@ -371,12 +369,15 @@ int main(int argc, char* argv[]) {
   // Are we converting words to numbers for tensorflow?
   if (options.integers) {
     cout << "Create integer files" << endl;
-    if (create_integers(filenames, options.WORKING_DIR, DICTIONARY_FAST, options.VOCAB_SIZE, options.LEMMA_TIME) != 0) { return 1; }
+    if (create_integers(filenames, options.WORKING_DIR, WORD_IGNORES, DICTIONARY_FAST, options.VOCAB_SIZE, options.LEMMA_TIME) != 0) { return 1; }
   }
 
   // Are we creating our word vectors?
   if (options.word_vectors){
     cout << "Creating word vectors" << endl;
+    create_basis(options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, INSIST_BASIS_WORDS, options.BASIS_SIZE, options.IGNORE_WINDOW);
+
+
     if (create_word_vectors(filenames, options.WORKING_DIR, FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, BASIS_VECTOR, WORD_IGNORES, WORD_VECTORS, ALLOWED_BASIS_WORDS, options.VOCAB_SIZE, options.BASIS_SIZE, options.WINDOW_SIZE, options.LEMMA_TIME) != 0)  { return 1; }
   }
   
@@ -397,10 +398,10 @@ int main(int argc, char* argv[]) {
       if (read_sim_file(options.simverb_file, VERBS_TO_CHECK) != 0 ) { cout << "read sim file failed" << endl; return 1; }
       if (read_sim_stats(options.WORKING_DIR, VERB_TRANSITIVE, VERB_INTRANSITIVE) != 0 ) { cout << "read sim_stats file failed" << endl; return 1; }
 
-   		if(read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ) != 0 ) { cout << "read subject/object file failed" << endl; return 1; }
+       if(read_subject_object_file(options.WORKING_DIR, VERB_SBJ_OBJ) != 0 ) { cout << "read subject/object file failed" << endl; return 1; }
 
-			generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
-		  if (read_count_raw(options.WORKING_DIR, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, WORDS_TO_CHECK)  != 0 ) { cout << "read count file failed" << endl; return 1; }
+      generate_words_to_check(WORDS_TO_CHECK, VERB_SBJ_OBJ, VERB_SUBJECTS, VERB_OBJECTS, VERBS_TO_CHECK,DICTIONARY_FAST );
+      if (read_count_raw(options.WORKING_DIR, DICTIONARY, BASIS_VECTOR, WORD_VECTORS, WORDS_TO_CHECK)  != 0 ) { cout << "read count file failed" << endl; return 1; }
       
        variance_count(options.RESULTS_FILE, VERBS_TO_CHECK, options.BASIS_SIZE, DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS);
     }

@@ -92,6 +92,11 @@ else()
 	ADD_EXECUTABLE(wacky_test_verb test/verb.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc src/wacky_sbj_obj.cc src/wacky_verb.cc)
 	target_link_libraries(wacky_test_verb ${Boost_LIBRARIES}) 
 	add_test( verb wacky_test_basic)
+
+	ADD_EXECUTABLE(wacky_test_math test/math.cc src/wacky_math.cc)
+	target_link_libraries(wacky_test_math ${Boost_LIBRARIES}) 
+	add_test( math wacky_test_basic)
+
 endif()
 
 add_custom_command(TARGET wacky_test_basic PRE_BUILD

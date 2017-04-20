@@ -10,7 +10,7 @@ The Wacky project is a set of tools for working with the ukwac dataset. It consi
 
 # wacky program
 
-Wacky is a C++ program that can be built with CMake. It uses Boost's memory mapping to map the large ukWaC data files, resulting in a lower memory usage. It can (and should) use [Intel's Math Library](https://software.intel.com/en-us/intel-mkl/) for extra speed when working out Kronecker products and matrix multiplication. There is an early draft of a CUDA version of the program but this is incomplete and should be ignored.
+Wacky is a C++ program that can be built with CMake. It uses Boost's memory mapping to map the large ukWaC data files, resulting in a lower memory usage. There is an early draft of a CUDA version of the program but this is incomplete and should be ignored.
 
 Wacky creates a lot of files in its *working directory*. These files are summaries and conversions for use with later stages of wacky, or in other programs such as [word2vec](https://code.google.com/archive/p/word2vec) and [Tensorflow](https://www.tensorflow.org/tutorials/word2vec). 
 
@@ -26,9 +26,16 @@ Simply create a directory and run cmake as you normally would. Example:
 
 * Boost Libraries - needed for memory mapped I/O.
 * OpenMP - splits processing across local cores. Increases speed dramatically.
-* Intel Math Library (OPTIONAL but HIGHLY RECOMMENDED) - this gives massive performance boost. The default routines are much slower
-* GCC - this program should work with clang and icc as well but it has not been tested yet.
+* Intel Math Library - this gives a performance boost. The default routines are much slower
+* GCC or Intel Compiler. Clang has not been tested but I don't see a reason why it shouldn't.
+* Python3 if you want to generate stats and further models.
 * A copy of the ukwac corpus.
+
+### Intel MKL Bugs
+
+Currently, the Intel MKL version is somewhat buggy in it's final model evaluation steps and should be avoided until it is fixed.
+
+Eventually, the [Intel's Math Library](https://software.intel.com/en-us/intel-mkl/) should be used for extra speed when working out Kronecker products and matrix multiplication. 
 
 ## Running Wacky
 

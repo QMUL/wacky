@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(verb_create_test) {
   int r2 = read_freq("./output", FREQ, FREQ_FLIPPED, ALLOWED_BASIS_WORDS); 
   int r3 = read_dictionary("./output", DICTIONARY_FAST, DICTIONARY, VOCAB_SIZE);
 
-  BOOST_CHECK_EQUAL(VOCAB_SIZE, 821);
+  BOOST_CHECK_EQUAL(VOCAB_SIZE, 820);
 
   create_basis("./output", FREQ, FREQ_FLIPPED, DICTIONARY_FAST, BASIS_VECTOR, ALLOWED_BASIS_WORDS, INSIST_BASIS_WORDS, 250, 100);
 
@@ -92,8 +92,10 @@ BOOST_AUTO_TEST_CASE(verb_create_test) {
   BOOST_CHECK_EQUAL(BASIS_VECTOR.size(), 250);
  
   // Create then read the sim verbs
-  int r5 = create_simverbs(filenames, "simverbs.txt", "./output", SIMVERBS, SIMVERBS_COUNT, SIMVERBS_OBJECTS, SIMVERBS_ALONE, true );
+  int r5 = create_simverbs(filenames, "simverb.txt", "./output", SIMVERBS, SIMVERBS_COUNT, SIMVERBS_OBJECTS, SIMVERBS_ALONE, true );
 
+  BOOST_CHECK_EQUAL(r5, 0);
+  
   int r6 = read_sim_stats("./output", VERB_TRANSITIVE, VERB_INTRANSITIVE);
   BOOST_CHECK_EQUAL(r6, 0);
 

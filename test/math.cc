@@ -2,19 +2,14 @@
 // so we do it this way instead. Kept the original way in case we change back.
 //#define BOOST_TEST_MAIN
 #define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE wacky basic test suite
+#define BOOST_TEST_MODULE wacky math test suite
 #include <boost/test/included/unit_test.hpp>
 
 
 #include <iostream>
 #include <fstream>
-#include <map>
-#include <unordered_map>
 #include <vector>
-#include <set>
-#include <dirent.h>
 #include <omp.h>
-#include <deque>
 
 #include "string_utils.hpp"
 #include "wacky_math.hpp"
@@ -25,8 +20,8 @@ using namespace std;
 
 BOOST_AUTO_TEST_CASE(math_test) {
 
-#ifdef _USE_MKL_
-
+#ifdef _USE_MKL
+  cout << "Addition and mutliplication with MKL" << endl;
   vector<float> tv0 = {1,2,3,4,5,6,7,8,9,0};
   vector<float> tv1 = {1,2,3,4,5,6,7,8,9,0};
  
@@ -34,7 +29,9 @@ BOOST_AUTO_TEST_CASE(math_test) {
 
   BOOST_CHECK_EQUAL(tv1[2], 6);
 
-  //vsMul(nsize, &sum_krn0[0], &krn_base0[0], &tk0[0]);
+  vsMul(10, &tv0[0], &tv1[0], &tv1[0]);
+
+  BOOST_CHECK_EQUAL(tv1[0], 2);
 
 #endif
 

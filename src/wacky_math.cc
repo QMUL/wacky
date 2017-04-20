@@ -12,20 +12,6 @@
 
 using namespace std;
 
-/**
- * Multiply vectors together
- * @param v0 a std vector of float
- * @param v1 a std vector of float
- */
-
-void mul_vec( vector<float> & v0, vector<float> & v1, vector<float> & r) { 
-//  for (int i = 0; i < v0.size(); ++i){
-//    r[i] = v0[i] * v1[i];
-//  }
-
-  MKL_INT n = v0.size();
-  vsMul(n, &v0[0], &v1[0], &r[0]);
-}
 
 /**
  * Create the Kronecker product for the special case of two 1 dimensional vectors

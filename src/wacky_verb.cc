@@ -425,6 +425,7 @@ int create_simverbs(vector<string> filenames, string simverb_path,
   string line;
  
   if (!simverb_file.is_open()) {
+    cout << "Cannot open simverb file: " << simverb_path << endl;
     return 1;
   }
 

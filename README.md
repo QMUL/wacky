@@ -93,15 +93,9 @@ An example for the next step - what if you want to create classic word vector co
     ./wacky -u ~/ukwac -l -o ~/output -r -w -j 5 -e 1000 -g 100
 
 This creates a set of word vectors that are 1000 items long using a window of 5 and ignoring the top 100 most popular words.
-<<<<<<< HEAD
 
 The next command creates a set of integer files that represent the words as indices into the dictionary. 
 
-=======
-
-The next command creates a set of integer files that represent the words as indices into the dictionary. 
-
->>>>>>> 269de6021916ebee1c346b209a899d4a0ca29740
     ./wacky -u ~/ukwac -r -l -o ~/output -i
 
 This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data, as well as the other models.

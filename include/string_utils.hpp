@@ -80,7 +80,7 @@ namespace s9 {
     return true;
   }
 
-	inline std::string ToPrecision(float num, int n) {
+  inline std::string ToPrecision(float num, int n) {
 
     if(num == 0) {
       return "0";
@@ -94,7 +94,7 @@ namespace s9 {
     std::ostringstream oss;
     oss << shifted/magnitude;
     return oss.str();
-	}
+  }
 
   inline std::string ToPrecision(double num, int n) {
 
@@ -110,7 +110,7 @@ namespace s9 {
     std::ostringstream oss;
     oss << shifted/magnitude;
     return oss.str();
-	}
+  }
 
 
   /**

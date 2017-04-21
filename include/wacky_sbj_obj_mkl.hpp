@@ -64,5 +64,13 @@ void all_count(std::string results_file,
   std::vector< std::vector<int> > & VERB_SBJ_OBJ,
 	std::vector< std::vector<int> > & VERB_SUBJECTS,
   std::vector< std::vector<float> > & WORD_VECTORS);
+
+//! Return the variance
+void variance_count(std::string results_file,
+    std::vector<VerbPair> & VERBS_TO_CHECK,
+  int BASIS_SIZE,
+  std::map<std::string,int> & DICTIONARY_FAST,
+  std::vector< std::vector<int> > & VERB_SBJ_OBJ,
+  std::vector< std::vector<float> > & WORD_VECTORS);
  
 #endif

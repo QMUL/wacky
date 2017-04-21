@@ -3,7 +3,7 @@
 //#define BOOST_TEST_MAIN
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE wacky basic test suite
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 
 #include <iostream>
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(dictionary_freq_create_test) {
   // First, test that we can create correct dictionaries and frequencies 
   int r0 = create_freq(filenames, "./output", FREQ, FREQ_FLIPPED, WORD_IGNORES, ALLOWED_BASIS_WORDS, true); 
   int r1 = create_dictionary("./output", FREQ, FREQ_FLIPPED, DICTIONARY_FAST, DICTIONARY, VOCAB_SIZE);
-  int r2 = create_integers(filenames, "./output", DICTIONARY_FAST, VOCAB_SIZE, true);
+  int r2 = create_integers(filenames, "./output", WORD_IGNORES, DICTIONARY_FAST, VOCAB_SIZE, true);
   
   BOOST_CHECK_EQUAL(r0, 0);
   BOOST_CHECK_EQUAL(r1, 0);
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(dictionary_freq_read_test) {
   
   int r1 = read_unk_file("./output", UNK_COUNT);
   BOOST_CHECK_EQUAL(r1, 0);
-  BOOST_CHECK_EQUAL(UNK_COUNT, 224);
+  BOOST_CHECK_EQUAL(UNK_COUNT, 0);
 
   int r2 = read_freq("./output", FREQ, FREQ_FLIPPED, ALLOWED_BASIS_WORDS);
   BOOST_CHECK_EQUAL(r2, 0);

@@ -16,10 +16,10 @@ option(USE_MKL "Use the MKL Intel Library for the math" NO)
 
 # Options (gcc mostly) 
 SET(CMAKE_CXX_FLAGS "-std=c++11 -static-libstdc++")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -std=c++11 -static-libstdc++")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -std=c++11 -static-libstdc++ -D_GLIBCXX_USE_CXX11_ABI=0")
 
-SET(CMAKE_CXX_FLAGS_PROFILE "-pg")
-SET(CMAKE_C_FLAGS_PROFILE "-pg")
+SET(CMAKE_CXX_FLAGS_PROFILE "-pg -std=c++11 -static-libstdc++")
+SET(CMAKE_C_FLAGS_PROFILE "-pg -std=c++11 static-libstdc++")
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
@@ -76,9 +76,13 @@ if (USE_MKL)
 	ADD_EXECUTABLE(wacky_test_verb test/verb.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc src/wacky_sbj_obj_mkl.cc src/wacky_verb.cc)
 	add_test( verb wacky_test_basic)
 
+	ADD_EXECUTABLE(wacky_test_math test/math.cc src/wacky_math.cc)
+	add_test( wmath wacky_test_math)
+
 	if (MKL_LIBRARY_PATH)
 		target_link_libraries(wacky_test_basic ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so)
-		target_link_libraries(wacky_test_verb ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so) 
+		target_link_libraries(wacky_test_verb ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so) 	
+		target_link_libraries(wacky_test_math ${Boost_LIBRARIES} ${MKL_LIBRARY_PATH}/libmkl_rt.so) 
 	else()
 		message(FATAL_ERROR "Failed to find MKL Library Path")
 	endif()
@@ -92,6 +96,11 @@ else()
 	ADD_EXECUTABLE(wacky_test_verb test/verb.cc src/wacky_create.cc src/wacky_math.cc src/wacky_read.cc src/wacky_breakup.cc src/wacky_sbj_obj.cc src/wacky_verb.cc)
 	target_link_libraries(wacky_test_verb ${Boost_LIBRARIES}) 
 	add_test( verb wacky_test_basic)
+
+	ADD_EXECUTABLE(wacky_test_math test/math.cc src/wacky_math.cc)
+	target_link_libraries(wacky_test_math ${Boost_LIBRARIES}) 
+	add_test( wmath wacky_test_math)
+
 endif()
 
 add_custom_command(TARGET wacky_test_basic PRE_BUILD

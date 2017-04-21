@@ -1,4 +1,4 @@
-# Wacky
+  # Wacky
 
 The Wacky project is a set of tools for working with the ukwac dataset. It consists of 
 
@@ -10,7 +10,7 @@ The Wacky project is a set of tools for working with the ukwac dataset. It consi
 
 # wacky program
 
-Wacky is a C++ program that can be built with CMake. It uses Boost's memory mapping to map the large ukWaC data files, resulting in a lower memory usage. It can (and should) use [Intel's Math Library](https://software.intel.com/en-us/intel-mkl/) for extra speed when working out Kronecker products and matrix multiplication. There is an early draft of a CUDA version of the program but this is incomplete and should be ignored.
+Wacky is a C++ program that can be built with CMake. It uses Boost's memory mapping to map the large ukWaC data files, resulting in a lower memory usage. There is an early draft of a CUDA version of the program but this is incomplete and should be ignored.
 
 Wacky creates a lot of files in its *working directory*. These files are summaries and conversions for use with later stages of wacky, or in other programs such as [word2vec](https://code.google.com/archive/p/word2vec) and [Tensorflow](https://www.tensorflow.org/tutorials/word2vec). 
 
@@ -26,9 +26,13 @@ Simply create a directory and run cmake as you normally would. Example:
 
 * Boost Libraries - needed for memory mapped I/O.
 * OpenMP - splits processing across local cores. Increases speed dramatically.
-* Intel Math Library (OPTIONAL but HIGHLY RECOMMENDED) - this gives massive performance boost. The default routines are much slower
-* GCC - this program should work with clang and icc as well but it has not been tested yet.
+* Intel Math Library - this gives a performance boost. The default routines are much slower
+* GCC or Intel Compiler. Clang has not been tested but I don't see a reason why it shouldn't.
+* Python3 if you want to generate stats and further models.
 * A copy of the ukwac corpus.
+
+### Intel MKL
+The [Intel's Math Library](https://software.intel.com/en-us/intel-mkl/) should be used for extra speed when working out Kronecker products and matrix multiplication. I haven't yet tested the claims that MKL is much faster but it seems to be. 
 
 ## Running Wacky
 
@@ -42,8 +46,16 @@ Depending on the command line flags, wacky can perform several operations on the
 
 Wacky is designed to run with the ukwac corpus formatted in a particular way. ukWac entries look something like this:
 
+    <text>
+    <s>
+    Last  last  JJ  1 4 NMOD
+    updated update  VVN 2 4 NMOD
+    December  December  NP  3 4 NMOD
+    1999  @card@  CD  4 0 ROOT
+    </s>
+    </text>
 
-
+This is the output created by the *MaltParser* apparently ([http://wacky.sslmit.unibo.it/doku.php?id=corpora](http://wacky.sslmit.unibo.it/doku.php?id=corpora)).
 
 ### Command line options
 
@@ -75,22 +87,21 @@ If starting from scratch, the first part of any workflow with wacky is to create
     ./wacky -u ~/ukwac -l -v 500000 -o ~/output
 
 
-The next command creates a set of integer files that represent the words as indices into the dictionary. More importantly two REQUIRED files are created at this stage - the total_count.txt and unk_count.txt. This lists the total count of words in ukwac and the number of words that didn't appear in the dictionary. These are used in creation of statistics later on.
+An example for the next step - what if you want to create classic word vector counts for use with your models? To do that you would need to run the following:
 
+    ./wacky -u ~/ukwac -l -o ~/output -r -w -j 5 -e 1000 -g 100
+
+This creates a set of word vectors that are 1000 items long using a window of 5 and ignoring the top 100 most popular words.
+
+The next command creates a set of integer files that represent the words as indices into the dictionary. 
 
     ./wacky -u ~/ukwac -r -l -o ~/output -i
-
 
 This creates a whole load of lookup files (depending on how many cores your computer has). At this point, you can start to train your tensorflow model on the ukwac data, as well as the other models.
 Alternatively, lets say you wish to use the original word2vec program. You would have to combine all the files together into one.
 
     ./wacky -u ~/ukwac -o ~/output -c
 
-Finally, what if you want to create classic word vector counts for use with your models? To do that you would need to run the following:
-
-    ./wacky -u ~/ukwac -l -o ~/output -r -w -j 5 -e 1000 -g 100
-
-This creates a set of word vectors that are 1000 items long using a window of 5 and ignoring the top 100 most popular words.
 
 ### wacky subject-object workflows
 
@@ -98,19 +109,21 @@ Wacky can also work on the verbs in the ukwac dataset and create summaries and v
 
 The first thing to do is create a list of all the verbs, their subjects and their objects.
 
-    ./wacky -u ~/ukwac -o ~/output -r -l -b -n
+    ./wacky -u ~/ukwac -o ~/output -r -l -b -n -s ~/simverb.txt
 
-This creates a large file - *verb_sbj_obj.txt* that contains the index of the verb and the indicies of it's subjects and/or objects. We also get a sim_stats.txt file that contains the counts of subjects and objects for each verb. 
+This creates a large file - *verb_sbj_obj.txt* that contains the index of the verb and the indicies of it's subjects and/or objects. We also get a sim_stats.txt file that contains the counts of subjects and objects for each verb that is fiven in the simverb.txt file.
+
+Note that we *have* to provide a list of verbs for which we are generating the statistics on whether or not a verb is transitive or intransitive. The -n and -s flags are used for this purpose. 
+
+The -s parameter is a link to one of the SimVerb files you can find at [Daniela Gerz's page at Cambridge University](http://people.ds.cam.ac.uk/dsg40/simverb.html) - it is a list of verb pairs and ratings that we use to train and test our models.
 
 Note that this incantation allows for duplicates in the subject/object list. If we only want to include a subject or object once we would call:
 
-    ./wacky -u ~/ukwac -o ~/output -r -l -b -y -z -n  
+    ./wacky -u ~/ukwac -o ~/output -r -l -b -y -z -n -s ~/simverb.txt
 
 With our subject and object file created we can begin to work on the various models we might have. If you want to work with the tensorflow or word2vec models, you need to use the included python scripts. If you are working with the wacky-created word vectors, you can run the models like so:
 
-    ./wacky -o ~/output -r -l -p  -s ~/simverb.txt
-
-The -s parameter is a link to one of the SimVerb files you can find at [Daniela Gerz's page at Cambridge University](http://people.ds.cam.ac.uk/dsg40/simverb.html) - it is a list of verb pairs and ratings that we use to train and test our models.
+    ./wacky -o ~/output -r -l -p -s ~/simverb.txt
 
 ## Summary Files
 

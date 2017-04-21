@@ -15,7 +15,7 @@ from scipy import stats
 
 
 def read_dictionary(BASE_DIR, DICT_FILE) :
- ''' Read in the dictionary file from the base dir and file name '''
+  ''' Read in the dictionary file from the base dir and file name '''
     
   dictionary = []
   with open(BASE_DIR + "/" + DICT_FILE,'r') as f:
@@ -99,13 +99,12 @@ def read_csv_file(filepath):
 
       # check to see if there any mistakes
       # Basically, are any of our factors 2.0?
-      for i in range(0,num_compares-1):
-        if float(tokens[2+i]) >= 2.0 or 'nan' in tokens[2+i] or float(tokens[2+i]) == 1.0:
-          continue
-
-      for i in range(0,num_compares):
+  
+      #for i in range(0,num_compares):
+      #  if float(tokens[2+i]) >= 2.0 or 'nan' in tokens[2+i] or float(tokens[2+i]) == 1.0:
+      for i in range(0,num_compares): 
         cc[i].append(float(tokens[2+i]))
-    
+      
       human.append(float(tokens[-1]))
 
       verbs0.append(verb0)

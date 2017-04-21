@@ -193,7 +193,7 @@ void create_verb_subjects(string str_buffer, vector<int> & verb_sbj_pairs,
 
                 auto widx = DICTIONARY_FAST.find(verb);
               
-									 
+                   
                 if (widx != DICTIONARY_FAST.end()){  
                   // We choose between unique or otherwise
                   if (UNIQUE_SUBJECTS){
@@ -201,11 +201,11 @@ void create_verb_subjects(string str_buffer, vector<int> & verb_sbj_pairs,
                       #pragma omp critical
                       {
                 
-							        	VERB_SUBJECTS[widx->second].push_back(vidx->second);
+                        VERB_SUBJECTS[widx->second].push_back(vidx->second);
                         verb_sbj_pairs.push_back(widx->second);
                         verb_sbj_pairs.push_back(s9::FromString<int>(tokens2[3]));
-                        verb_sbj_pairs.push_back(vidx->second);												
-											}
+                        verb_sbj_pairs.push_back(vidx->second);                        
+                      }
                     }
                   } else {
                     #pragma omp critical
@@ -267,13 +267,13 @@ int create_verb_subject_object(vector<string> filenames,
     size_t * block_size;
 
     // Cant pass this into _breakup sadly
-		file_mapping m_file(filepath.c_str(), read_only);
-		mapped_region region(m_file, read_only);  
+    file_mapping m_file(filepath.c_str(), read_only);
+    mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
-		if (result == -1){
-			return -1;
-		}	
+    int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
+    if (result == -1){
+      return -1;
+    }  
  
     // Progress basically
     size_t progress = 0;
@@ -293,7 +293,7 @@ int create_verb_subject_object(vector<string> filenames,
       //  cout << "ERROR: Unable to up " << filename << " for writing." << endl;
       //}
 
-			for(std::size_t i = 0; i < block_size[block_id]; ++i){
+      for(std::size_t i = 0; i < block_size[block_id]; ++i){
         char data = *mem;
         if (ssmt.compare("</s>") != 0){
           str_buffer += data;
@@ -423,6 +423,11 @@ int create_simverbs(vector<string> filenames, string simverb_path,
 
   std::ifstream simverb_file(simverb_path);
   string line;
+ 
+  if (!simverb_file.is_open()) {
+    cout << "Cannot open simverb file: " << simverb_path << endl;
+    return 1;
+  }
 
   while ( getline (simverb_file,line) ) {
     line = s9::RemoveChar(line,'\n'); 
@@ -457,13 +462,13 @@ int create_simverbs(vector<string> filenames, string simverb_path,
     size_t * block_size;
 
     // Cant pass this into _breakup sadly
-		file_mapping m_file(filepath.c_str(), read_only);
-		mapped_region region(m_file, read_only);  
+    file_mapping m_file(filepath.c_str(), read_only);
+    mapped_region region(m_file, read_only);  
 
-		int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
-		if (result == -1){
-			return -1;
-		}	
+    int result = breakup(block_pointer, block_size, m_file, region, num_blocks );
+    if (result == -1){
+      return -1;
+    }  
 
     // Now do the search
     omp_set_num_threads(num_blocks); 
@@ -601,6 +606,11 @@ int create_simverbs(vector<string> filenames, string simverb_path,
 
   string filename = OUTPUT_DIR + "/sim_stats.txt";
   std::ofstream sim_file (filename);
+ 
+  if (!sim_file.is_open()) {
+    return 1;
+  }
+
   int idv = 0;
   for (string verb : SIMVERBS){
     sim_file << verb << " " << SIMVERBS_OBJECTS[idv] << " " << SIMVERBS_ALONE[idv] << " " << SIMVERBS_COUNT[idv] << endl;

@@ -27,7 +27,7 @@
 #include <exception>
 
 #ifdef _USE_MKL
-void mul_vec( std::vector<float> & v0, std::vector<float> & v, std::vector<float> &r);
+void mul_vec_slow( std::vector<float> & v0, std::vector<float> & v, std::vector<float> &r);
 void krn_mul( std::vector<float> & a, std::vector<float> & b, std::vector<float> &r);
 float cosine_sim(std::vector<float> & v0, std::vector<float> & v1, int size);
 #else

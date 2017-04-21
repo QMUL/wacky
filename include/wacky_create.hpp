@@ -34,7 +34,7 @@ int create_dictionary(std::string OUTPUT_DIR,
     std::vector< std::pair<std::string,size_t> > & FREQ_FLIPPED,
     std::map<std::string,int> & DICTIONARY_FAST,
     std::vector<std::string> & DICTIONARY,
-    size_t VOCAB_SIZE);
+    size_t & VOCAB_SIZE);
 
 //! create our basis vector
 void create_basis(std::string OUTPUT_DIR,
@@ -74,7 +74,8 @@ int create_word_vectors(std::vector<std::string> filenames,
 
 //! create files of numbers for the tensorflow version
 int create_integers(std::vector<std::string> filenames,
-    std::string OUTPUT_DIR,
+    std::string OUTPUT_DIR, 
+    std::set<std::string> & WORD_IGNORES,
     std::map<std::string,int> & DICTIONARY_FAST,
     size_t VOCAB_SIZE,
     bool LEMMA_TIME);

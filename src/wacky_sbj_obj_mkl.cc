@@ -273,6 +273,7 @@ void read_subjects_few(string verb, map<string,int> & DICTIONARY_FAST,
     vsAdd(nsize, &add_vector[0], &sbj_vector[0], &add_vector[0]);
     
     krn_mul(sbj_vector, sbj_vector, tk);
+   
     vsAdd(ksize, &krn_vector[0], &tk[0], &krn_vector[0]); 
     prg++;
   }
@@ -420,7 +421,6 @@ void intrans_count(  std::string results_file,
         
         vsMul(BASIS_SIZE * BASIS_SIZE, &max_vector1[0], &base_vector1[0], &max_base_mul_vector1[0]);
         krn_mul(base_vector1, base_vector1, td);
-        
         vsAdd(BASIS_SIZE * BASIS_SIZE, &krn_vector1[0], &td[0], &krn_base_add_vector1[0]);
         vsMul(BASIS_SIZE * BASIS_SIZE, &krn_vector1[0], &td[0], &krn_base_mul_vector1[0]);
 
@@ -609,7 +609,6 @@ void trans_count(  std::string results_file,
         vsAdd(BASIS_SIZE, &base_vector0[0], &tm0[0], &tm0[0]);
         vsAdd(BASIS_SIZE, &sum_subject1[0], &sum_object1[0], &tm1[0]);
         vsAdd(BASIS_SIZE, &base_vector1[0], &tm1[0], &tm1[0]);
-
         float c6 = cosine_sim(tm0, tm1, BASIS_SIZE);
       
         std::stringstream stream;
@@ -732,14 +731,12 @@ void all_count( std::string results_file,
       fflush(stdout);
 
     
-      int stat = 0;
       if(VERB_TRANSITIVE.find(vp.v0) != VERB_TRANSITIVE.end() &&
           VERB_TRANSITIVE.find(vp.v1) != VERB_TRANSITIVE.end()){
 
       	read_subjects_objects_few(vp.v0,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_krn0);
 
         read_subjects_objects_few(vp.v1,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_krn1);
-        stat = 1;
 
       } else if(VERB_TRANSITIVE.find(vp.v0) == VERB_TRANSITIVE.end() &&
           VERB_TRANSITIVE.find(vp.v1) != VERB_TRANSITIVE.end()){
@@ -747,19 +744,16 @@ void all_count( std::string results_file,
         read_subjects_few(vp.v0,DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_krn0);
 
         read_subjects_objects_few(vp.v1,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_krn1);
-        stat = 2;
       } else if(VERB_TRANSITIVE.find(vp.v0) != VERB_TRANSITIVE.end() &&
           VERB_TRANSITIVE.find(vp.v1) == VERB_TRANSITIVE.end()){
       
         read_subjects_objects_few(vp.v0,DICTIONARY_FAST, VERB_SBJ_OBJ, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_krn0);
 
         read_subjects_few(vp.v1,DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_krn1);
-        stat = 3;
       } else {
       
         read_subjects_few(vp.v0,DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS, BASIS_SIZE, base_vector0, sum_subject0, sum_krn0);
         read_subjects_few(vp.v1,DICTIONARY_FAST, VERB_SUBJECTS, WORD_VECTORS, BASIS_SIZE, base_vector1, sum_subject1, sum_krn1);
-        stat = 4;
       }
  
       krn_mul(base_vector0, base_vector0, krn_base0);
@@ -893,7 +887,7 @@ void variance_count( std::string results_file,
       float variance = 0;
       float mean = 0;
 
-      for (float tf : distances){
+     for (float tf : distances){
         mean += tf;
       }
 

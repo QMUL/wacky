@@ -258,31 +258,7 @@ void intrans_count( std::string results_file,
   vector< vector<int> > & VERB_SUBJECTS,
   vector< vector<float> > & WORD_VECTORS) {
   
-  int num_blocks = 1;
-
-  #pragma omp parallel
-  {
-    num_blocks = omp_get_num_threads();
-  }
-
-  int block_size = VERBS_TO_CHECK.size() / num_blocks;
-
-  int total_verbs = 0;
-  // Print out the total number we should expect
-  /*for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
-
-      VerbPair vp = VERBS_TO_CHECK[i];
-      if(VERB_INTRANSITIVE.find(vp.v0) != VERB_INTRANSITIVE.end() &&
-          VERB_INTRANSITIVE.find(vp.v1) != VERB_INTRANSITIVE.end()){
-        cout << vp.v0 << "," << vp.v1 << endl;
-        total_verbs ++;
-      }
-  
-  }*/
-  //cout << "Total verbs: " << s9::ToString(total_verbs) << endl;
-  //cout << "Block Size: " << block_size << ", num_blocks: " << num_blocks << endl;
-
-  // Open the file to write results
+ // Open the file to write results
   std::ofstream out_file (results_file);
   if (!out_file.is_open()) {
     cout << "Unable to open " << results_file << " for writing" << endl;
@@ -293,14 +269,9 @@ void intrans_count( std::string results_file,
 
   #pragma omp parallel
   {   
-    int block_id = omp_get_thread_num();
-    int start = block_size * block_id;
-    int end = block_size * (block_id + 1);
-    if (block_id + 1 == num_blocks){
-      end = VERBS_TO_CHECK.size();
-    }
-
-    for (int i=start; i < end; ++i){
+    
+    #pragma omp parallel fior
+    for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
       VerbPair vp = VERBS_TO_CHECK[i];
 
@@ -464,25 +435,8 @@ void trans_count(std::string results_file,
   }
   out_file << "verb0,verb1,base_sim,sbj_obj_sim,sbj_obj_add,sbj_obj_mul,sum_sbj_obj,sum_sbj_obj_mul,sum_sbj_obj_add,human_sim" << endl;
 
-  int num_blocks = 1;
-
-  #pragma omp parallel
-  {
-    num_blocks = omp_get_num_threads();
-  }
-
-  int block_size = VERBS_TO_CHECK.size() / num_blocks;
-
   #pragma omp parallel
   {   
-    int block_id = omp_get_thread_num();
-    int start = block_size * block_id;
-    int end = block_size * (block_id + 1);
-
-    if (block_id + 1 == num_blocks){
-      end = VERBS_TO_CHECK.size();
-    }
-
     ublas::vector<float> base_vector0 (BASIS_SIZE);
     ublas::vector<float> sum_subject0 (BASIS_SIZE);
     ublas::vector<float> sum_object0 (BASIS_SIZE);
@@ -496,7 +450,8 @@ void trans_count(std::string results_file,
     ublas::vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
     ublas::vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
 
-    for (int i=start; i < end; ++i){
+    #pragma omp parallel for
+    for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
       VerbPair vp = VERBS_TO_CHECK[i];
 
@@ -622,25 +577,8 @@ void all_count(std::string results_file,
  
   out_file << "verb0,verb1,base_sim,cs1,cs2,cs3,cs4,cs5,cs6,human_sim" << endl;
 
-  int num_blocks = 1;
-
-  #pragma omp parallel
-  {
-    num_blocks = omp_get_num_threads();
-  }
-
-  int block_size = VERBS_TO_CHECK.size() / num_blocks;
-
   #pragma omp parallel
   {   
-    int block_id = omp_get_thread_num();
-    int start = block_size * block_id;
-    int end = block_size * (block_id + 1);
-
-    if (block_id + 1 == num_blocks){
-      end = VERBS_TO_CHECK.size();
-    }
-
     ublas::vector<float> base_vector0 (BASIS_SIZE);
     ublas::vector<float> sum_subject0 (BASIS_SIZE);
     ublas::vector<float> sum_krn0 (BASIS_SIZE * BASIS_SIZE);
@@ -652,7 +590,8 @@ void all_count(std::string results_file,
     ublas::vector<float> krn_base0 (BASIS_SIZE * BASIS_SIZE);
     ublas::vector<float> krn_base1 (BASIS_SIZE * BASIS_SIZE);
 
-    for (int i=start; i < end; ++i){
+    #pragma omp parallel for
+    for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
       VerbPair vp = VERBS_TO_CHECK[i];
 

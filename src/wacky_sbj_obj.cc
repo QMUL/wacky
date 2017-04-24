@@ -270,7 +270,7 @@ void intrans_count( std::string results_file,
   #pragma omp parallel
   {   
     
-    #pragma omp parallel fior
+    #pragma omp parallel for
     for (int i=0; i < VERBS_TO_CHECK.size(); ++i){
 
       VerbPair vp = VERBS_TO_CHECK[i];

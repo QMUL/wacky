@@ -70,7 +70,7 @@ void read_subjects_objects(string verb, map<string,int> & DICTIONARY_FAST,
     fflush(stdout);
     vsAdd(ksize, &sum_krn[0], &tk[0], &sum_krn[0]);
     vsAdd(nsize, &sum_subject[0], &sbj_vector[0], &sum_subject[0]);
-    vsAdd(nsize, &sum_object[0], &obj_vector[0], &sum_subject[0]);
+    vsAdd(nsize, &sum_object[0], &obj_vector[0], &sum_object[0]);
   
   }
 
@@ -131,11 +131,13 @@ void read_subjects_objects_few(string verb, map<string,int> & DICTIONARY_FAST,
     printf("\033[%d;50H%d-Progress:%f",thread_num+1,thread_num, progress); 
     fflush(stdout);
     // TODO dont keep redeclaring tk
+    vector<float> ts (BASIS_SIZE);
     vector<float> tk (BASIS_SIZE * BASIS_SIZE);
     krn_mul(sbj_vector, obj_vector, tk);
 
     vsAdd(ksize, &sum_krn[0], &tk[0], &sum_krn[0]);
-    vsAdd(nsize, &sbj_vector[0], &obj_vector[0], &sum_subject[0]);
+    vsAdd(nsize, &sbj_vector[0], &obj_vector[0], &ts[0]); 
+    vsAdd(nsize, &sum_subject[0], &ts[0], &sum_subject[0]);
   }
 }
 
@@ -766,8 +768,8 @@ void all_count( std::string results_file,
       vsAdd(nsize, &sum_subject1[0], &base_vector1[0], &tv1[0]);
 
       float c2 = cosine_sim(tv0,tv1, BASIS_SIZE);
-      vsMul(nsize, &sum_subject0[0],&base_vector0[0], &tv0[0]);
-      vsMul(nsize, &sum_subject1[0],&base_vector1[0], &tv1[0]);
+      vsMul(nsize, &sum_subject0[0], &base_vector0[0], &tv0[0]);
+      vsMul(nsize, &sum_subject1[0], &base_vector1[0], &tv1[0]);
  
       float c3 = cosine_sim(tv0,tv1, BASIS_SIZE);
       float c4 = cosine_sim(sum_krn0, sum_krn1, BASIS_SIZE * BASIS_SIZE);

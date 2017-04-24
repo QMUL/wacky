@@ -128,7 +128,7 @@ void read_subjects_objects_few(string verb, map<string,int> & DICTIONARY_FAST,
     float progress = float(i)/float(subs_obs.size()) * 100.0;
     int thread_num = omp_get_thread_num();
     
-    printf("\033[%d;50H%d-Progress:%f",thread_num+1,thread_num, progress); 
+    printf("\033[%d;50H%d-Progress objects :%f",thread_num+1,thread_num, progress); 
     fflush(stdout);
     // TODO dont keep redeclaring tk
     vector<float> ts (BASIS_SIZE);
@@ -248,9 +248,6 @@ void read_subjects_few(string verb, map<string,int> & DICTIONARY_FAST,
 
   int vidx = DICTIONARY_FAST[verb];
   vector<int> subjects = VERB_SUBJECTS[vidx];
-
-  printf("\033[subjects size:%d",VERB_SUBJECTS.size()); 
-  fflush(stdout);
    
   for (int i=0; i < BASIS_SIZE; ++i){
     base_vector[i] = WORD_VECTORS[vidx][i];
@@ -270,7 +267,7 @@ void read_subjects_few(string verb, map<string,int> & DICTIONARY_FAST,
     vector<float> sbj_vector (WORD_VECTORS[i]); 
     float progress = float(prg)/float(subjects.size()) * 100.0;
     int thread_num = omp_get_thread_num();
-    printf("\033[%d;50H%d-Progress:%f",thread_num+1, thread_num, progress); 
+    printf("\033[%d;50H%d-Progress_subjects:%f",thread_num+1, thread_num, progress); 
     fflush(stdout);
     vsAdd(nsize, &add_vector[0], &sbj_vector[0], &add_vector[0]);
     
